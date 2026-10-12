@@ -15,15 +15,24 @@ function MyCourses() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-courses", user.id],
     queryFn: async () => {
-      const { data: enr, error } = await supabase
-        .from("enrollments")
-        .select("course_id, courses(id, slug, titulo, descricao_curta, capa_url, modules(ordem, lessons(id, ordem)))")
-        .eq("user_id", user.id)
-        .eq("status", "ativa");
-      if (error) throw error;
+      const cols = "id, slug, titulo, descricao_curta, capa_url, modules(ordem, lessons(id, ordem))";
+      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      let courses;
+      if (isAdmin) {
+        const { data, error } = await supabase.from("courses").select(cols).eq("status", "publicado").order("created_at");
+        if (error) throw error;
+        courses = data ?? [];
+      } else {
+        const { data: enr, error } = await supabase
+          .from("enrollments")
+          .select(`course_id, courses(${cols})`)
+          .eq("user_id", user.id)
+          .eq("status", "ativa");
+        if (error) throw error;
+        courses = (enr ?? []).flatMap((e) => (e.courses ? [e.courses] : []));
+      }
       const { data: prog } = await supabase.from("lesson_progress").select("lesson_id, concluida, atualizado_em").eq("user_id", user.id);
-      return (enr ?? []).filter((e) => e.courses).map((e) => {
-        const c = e.courses!;
+      return courses.map((c) => {
         const lessons = [...c.modules].sort((a, b) => a.ordem - b.ordem).flatMap((m) => [...m.lessons].sort((a, b) => a.ordem - b.ordem));
         const ids = new Set(lessons.map((l) => l.id));
         const mine = (prog ?? []).filter((p) => ids.has(p.lesson_id));
