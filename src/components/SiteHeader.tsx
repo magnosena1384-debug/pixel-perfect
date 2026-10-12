@@ -33,6 +33,7 @@ export function SiteHeader() {
         <Logo />
         <nav className="flex items-center gap-1 text-sm sm:gap-2">
           <Link to="/" className="hidden rounded-full px-3 py-2 hover:bg-muted sm:inline">Cursos</Link>
+          <Link to="/gestao" className="rounded-full px-3 py-2 hover:bg-muted">Gestão</Link>
           {user ? (
             <>
               <Link to="/meus-cursos" className="rounded-full px-3 py-2 hover:bg-muted">Meus cursos</Link>

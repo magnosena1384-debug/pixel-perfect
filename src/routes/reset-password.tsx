@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { translateAuthError } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ function ResetPage() {
     e.preventDefault();
     if (pw.length < 8) return void toast.error("Mínimo de 8 caracteres.");
     const { error } = await supabase.auth.updateUser({ password: pw });
-    if (error) return void toast.error(error.message);
+    if (error) return void toast.error(translateAuthError(error));
     toast.success("Senha atualizada!");
     navigate({ to: "/meus-cursos" });
   }

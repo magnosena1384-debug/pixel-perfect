@@ -40,3 +40,21 @@ export function formatDuration(sec: number) {
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)}h ${m % 60}min`;
 }
+
+const AUTH_ERRORS: [RegExp, string][] = [
+  [/invalid login credentials/i, "E-mail ou senha incorretos."],
+  [/email not confirmed/i, "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada."],
+  [/weak|easy to guess|pwned/i, "Essa senha é fraca ou já vazou em outros sites. Escolha uma senha diferente."],
+  [/already registered|already been registered/i, "Este e-mail já tem cadastro. Faça login ou recupere sua senha."],
+  [/rate limit|too many/i, "Muitas tentativas. Aguarde alguns minutos e tente novamente."],
+  [/at least \d+ characters|password should be/i, "A senha precisa ter no mínimo 8 caracteres."],
+  [/invalid.*email|email.*invalid/i, "E-mail inválido."],
+  [/same.*password|different from the old/i, "A nova senha deve ser diferente da atual."],
+  [/current password/i, "Senha atual incorreta."],
+  [/session|jwt|expired/i, "Link expirado ou sessão inválida. Solicite um novo link."],
+];
+
+export function translateAuthError(err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return AUTH_ERRORS.find(([re]) => re.test(msg))?.[1] ?? (msg || "Erro inesperado. Tente novamente.");
+}
