@@ -129,7 +129,7 @@ function CourseEditor() {
     const { error } = await supabase
       .from("modules")
       .insert({ course_id: id, titulo: newModule.trim(), ordem: course!.modules.length + 1 });
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     setNewModule("");
     refresh();
   }
@@ -223,10 +223,10 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const preco = Math.round(Number(form.preco.replace(/\./g, "").replace(",", ".")) * 100);
-    if (!form.titulo.trim()) return toast.error("Informe o título.");
+    if (!form.titulo.trim()) return void toast.error("Informe o título.");
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(form.slug))
-      return toast.error("Slug inválido: use letras minúsculas, números e hífens.");
-    if (!Number.isFinite(preco) || preco < 0) return toast.error("Preço inválido.");
+      return void toast.error("Slug inválido: use letras minúsculas, números e hífens.");
+    if (!Number.isFinite(preco) || preco < 0) return void toast.error("Preço inválido.");
     const { error } = await supabase
       .from("courses")
       .update({
@@ -238,7 +238,7 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
       })
       .eq("id", course.id);
     if (error)
-      return toast.error(
+      return void toast.error(
         error.code === "23505" ? "Já existe um curso com esse slug." : error.message,
       );
     toast.success("Curso salvo");
@@ -250,7 +250,7 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
       .from("courses")
       .update({ status: publicado ? "publicado" : "rascunho" })
       .eq("id", course.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success(publicado ? "Curso publicado" : "Curso voltou para rascunho");
     onSaved();
   }
@@ -263,7 +263,7 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
       .upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       setUploading(false);
-      return toast.error(error.message);
+      return void toast.error(error.message);
     }
     const { data } = supabase.storage.from("capas").getPublicUrl(path);
     const { error: e2 } = await supabase
@@ -271,7 +271,7 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
       .update({ capa_url: data.publicUrl })
       .eq("id", course.id);
     setUploading(false);
-    if (e2) return toast.error(e2.message);
+    if (e2) return void toast.error(e2.message);
     toast.success("Capa atualizada");
     onSaved();
   }
@@ -284,7 +284,7 @@ function CourseDetails({ course, onSaved }: { course: CourseRow; onSaved: () => 
     )
       return;
     const { error } = await supabase.from("courses").delete().eq("id", course.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success("Curso excluído");
     onSaved();
     navigate({ to: "/admin" });
@@ -446,19 +446,19 @@ function ModuleEditor({
   useEffect(() => setTitulo(m.titulo), [m.titulo]);
 
   async function rename() {
-    if (!titulo.trim() || titulo === m.titulo) return setTitulo(m.titulo);
+    if (!titulo.trim() || titulo === m.titulo) return void setTitulo(m.titulo);
     const { error } = await supabase
       .from("modules")
       .update({ titulo: titulo.trim() })
       .eq("id", m.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     onChanged();
   }
 
   async function remove() {
     if (!confirm(`Excluir o módulo "${m.titulo}" e suas ${m.lessons.length} aulas?`)) return;
     const { error } = await supabase.from("modules").delete().eq("id", m.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     onChanged();
   }
 
@@ -468,7 +468,7 @@ function ModuleEditor({
     const { error } = await supabase
       .from("lessons")
       .insert({ module_id: m.id, titulo: newLesson.trim(), ordem: m.lessons.length + 1 });
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     setNewLesson("");
     onChanged();
   }
@@ -586,8 +586,8 @@ function LessonEditor({
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const min = Number(form.minutos.replace(",", "."));
-    if (!form.titulo.trim()) return toast.error("Informe o título da aula.");
-    if (!Number.isFinite(min) || min < 0) return toast.error("Duração inválida.");
+    if (!form.titulo.trim()) return void toast.error("Informe o título da aula.");
+    if (!Number.isFinite(min) || min < 0) return void toast.error("Duração inválida.");
     const { error } = await supabase
       .from("lessons")
       .update({
@@ -596,21 +596,21 @@ function LessonEditor({
         duracao_seg: Math.round(min * 60),
       })
       .eq("id", l.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success("Aula salva");
     onChanged();
   }
 
   async function setPreview(is_preview: boolean) {
     const { error } = await supabase.from("lessons").update({ is_preview }).eq("id", l.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     onChanged();
   }
 
   async function remove() {
     if (!confirm(`Excluir a aula "${l.titulo}"?`)) return;
     const { error } = await supabase.from("lessons").delete().eq("id", l.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     if (l.video_path) await supabase.storage.from("videos").remove([l.video_path]);
     onChanged();
   }
@@ -624,14 +624,14 @@ function LessonEditor({
       .upload(path, file, { contentType: file.type });
     if (error) {
       setProgress(null);
-      return toast.error(error.message);
+      return void toast.error(error.message);
     }
     const update: { video_path: string; duracao_seg?: number } = { video_path: path };
     if (duracao) update.duracao_seg = duracao;
     const { error: e2 } = await supabase.from("lessons").update(update).eq("id", l.id);
     if (e2) {
       setProgress(null);
-      return toast.error(e2.message);
+      return void toast.error(e2.message);
     }
     if (l.video_path && l.video_path !== path)
       await supabase.storage.from("videos").remove([l.video_path]);
@@ -643,7 +643,7 @@ function LessonEditor({
   async function removeVideo() {
     if (!l.video_path || !confirm("Remover o vídeo desta aula?")) return;
     const { error } = await supabase.from("lessons").update({ video_path: null }).eq("id", l.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     await supabase.storage.from("videos").remove([l.video_path]);
     onChanged();
   }
@@ -651,7 +651,7 @@ function LessonEditor({
   async function addLink(e: React.FormEvent) {
     e.preventDefault();
     if (!asset.titulo.trim() || !/^https?:\/\//.test(asset.url))
-      return toast.error("Informe um título e uma URL começando com http(s)://");
+      return void toast.error("Informe um título e uma URL começando com http(s)://");
     const { error } = await supabase.from("lesson_assets").insert({
       lesson_id: l.id,
       tipo: "link",
@@ -659,7 +659,7 @@ function LessonEditor({
       url: asset.url.trim(),
       ordem: l.lesson_assets.length + 1,
     });
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     setAsset({ titulo: "", url: "" });
     onChanged();
   }
@@ -672,7 +672,7 @@ function LessonEditor({
       .upload(path, file, { contentType: file.type });
     if (error) {
       setProgress(null);
-      return toast.error(error.message);
+      return void toast.error(error.message);
     }
     const { error: e2 } = await supabase.from("lesson_assets").insert({
       lesson_id: l.id,
@@ -682,13 +682,13 @@ function LessonEditor({
       ordem: l.lesson_assets.length + 1,
     });
     setProgress(null);
-    if (e2) return toast.error(e2.message);
+    if (e2) return void toast.error(e2.message);
     onChanged();
   }
 
   async function removeAsset(a: Lesson["lesson_assets"][number]) {
     const { error } = await supabase.from("lesson_assets").delete().eq("id", a.id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     if (a.tipo === "arquivo") await supabase.storage.from("materiais").remove([a.url]);
     onChanged();
   }

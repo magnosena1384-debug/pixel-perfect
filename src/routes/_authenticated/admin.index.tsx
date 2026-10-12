@@ -43,12 +43,12 @@ function Dashboard() {
     },
   });
 
-  async function create(e: React.FormEvent): Promise<void> {
+  async function create(e: React.FormEvent) {
     e.preventDefault();
     if (!titulo.trim()) return;
     const { data: c, error } = await supabase.from("courses").insert({ titulo, slug: `${slugify(titulo)}-${Date.now().toString(36)}` }).select("id").single();
     if (error) return void toast.error(error.message);
-    toast.success("Curso criado"); void c; void navigate;
+    navigate({ to: "/admin/cursos/$id", params: { id: c.id } });
   }
 
   const stats = [
@@ -79,7 +79,7 @@ function Dashboard() {
         </div>
         <div className="mt-6 divide-y">
           {data?.courses.map((c) => (
-            <Link key={c.id} to="/cursos/$slug" params={{ slug: c.slug }} className="flex flex-wrap items-center justify-between gap-2 py-4 hover:bg-muted/50">
+            <Link key={c.id} to="/admin/cursos/$id" params={{ id: c.id }} className="flex flex-wrap items-center justify-between gap-2 py-4 hover:bg-muted/50">
               <div>
                 <p className="font-semibold">{c.titulo}</p>
                 <p className="text-sm text-muted-foreground">{c.nAulas} aulas · {c.nAlunos} alunos · conclusão {c.rate}%</p>
