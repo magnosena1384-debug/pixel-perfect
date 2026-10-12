@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatBRL } from "@/lib/auth";
+import { formatBRL, plural } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Dashboard,
@@ -82,11 +82,11 @@ function Dashboard() {
             <Link key={c.id} to="/cursos/$slug" params={{ slug: c.slug }} className="flex flex-wrap items-center justify-between gap-2 py-4 hover:bg-muted/50">
               <div>
                 <p className="font-semibold">{c.titulo}</p>
-                <p className="text-sm text-muted-foreground">{c.nAulas} aulas · {c.nAlunos} alunos · conclusão {c.rate}%</p>
+                <p className="text-sm text-muted-foreground">{plural(c.nAulas, "aula", "aulas")} · {plural(c.nAlunos, "aluno", "alunos")} · conclusão {c.rate}%</p>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <span>{formatBRL(c.preco_centavos)}</span>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${c.status === "publicado" ? "bg-primary" : "bg-muted"}`}>{c.status}</span>
+                <span>{c.preco_centavos ? formatBRL(c.preco_centavos) : "Gratuito"}</span>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${c.status === "publicado" ? "bg-primary" : "bg-muted"}`}>{c.status === "publicado" ? "Publicado" : "Rascunho"}</span>
               </div>
             </Link>
           ))}

@@ -38,7 +38,11 @@ export function formatBRL(cents: number) {
 export function formatDuration(sec: number) {
   const m = Math.round(sec / 60);
   if (m < 60) return `${m} min`;
-  return `${Math.floor(m / 60)}h ${m % 60}min`;
+  return `${Math.floor(m / 60)}h ${m % 60} min`;
+}
+
+export function plural(n: number, singular: string, pluralForm: string) {
+  return `${n} ${n === 1 ? singular : pluralForm}`;
 }
 
 const AUTH_ERRORS: [RegExp, string][] = [

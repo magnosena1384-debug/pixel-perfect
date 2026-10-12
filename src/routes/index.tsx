@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { formatBRL, formatDuration } from "@/lib/auth";
+import { formatBRL, formatDuration, plural } from "@/lib/auth";
 import hero from "@/assets/hero.jpg";
 
 export const Route = createFileRoute("/")({
@@ -49,11 +49,11 @@ function Index() {
           <div className="pb-12 md:pb-20">
             <p className="eyebrow text-lime">Plataforma de treinamento</p>
             <h1 className="mt-4 text-5xl font-bold leading-[0.95] md:text-7xl">
-              A melhor forma de aprender.
+              Treinamento para quem está na pista.
             </h1>
             <div className="my-6 h-px w-40 bg-secondary-foreground/40" />
             <p className="max-w-md text-lg opacity-90">
-              Aulas em vídeo para sua equipe dominar a operação, no seu ritmo e de onde parou.
+              Aulas em vídeo para sua equipe aprender a operação no próprio ritmo.
             </p>
             <Button asChild size="lg" className="mt-8 rounded-full px-8 font-semibold">
               <a href="#cursos">Ver cursos</a>
@@ -88,7 +88,7 @@ function Index() {
                   <h3 className="text-xl font-semibold group-hover:text-forest">{c.titulo}</h3>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.descricao_curta}</p>
                   <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{c.nAulas} aulas · {formatDuration(c.duracao)}</span>
+                    <span className="text-muted-foreground">{plural(c.nAulas, "aula", "aulas")} · {formatDuration(c.duracao)}</span>
                     <span className="font-semibold">{c.preco_centavos ? formatBRL(c.preco_centavos) : "Gratuito"}</span>
                   </div>
                 </div>
