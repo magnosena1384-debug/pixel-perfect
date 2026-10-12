@@ -158,6 +158,67 @@ export type Database = {
           },
         ]
       }
+      lesson_questions: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          pergunta: string
+          resposta: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          pergunta: string
+          resposta?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          pergunta?: string
+          resposta?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_transcripts: {
+        Row: {
+          atualizado_em: string
+          lesson_id: string
+          texto: string
+        }
+        Insert: {
+          atualizado_em?: string
+          lesson_id: string
+          texto?: string
+        }
+        Update: {
+          atualizado_em?: string
+          lesson_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_transcripts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           descricao: string

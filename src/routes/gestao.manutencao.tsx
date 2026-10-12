@@ -29,6 +29,7 @@ function Manutencao() {
   const [categoria, setCategoria] = useState<string>(CATEGORIAS_MANUTENCAO[0]!);
   const [registrando, setRegistrando] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
+  const [editando, setEditando] = useState<string | null>(null);
   const [novo, setNovo] = useState({ nome: "", periodicidade: "30" });
 
   const status = (i: ItemManutencao): { prox: string | null; s: Situacao } => {
@@ -134,6 +135,13 @@ function Manutencao() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setEditando(editando === i.id ? null : i.id)}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
                           confirm("Excluir este item e seu histórico?") &&
                           salvar((l) => l.filter((x) => x.id !== i.id))
@@ -143,6 +151,17 @@ function Manutencao() {
                       </Button>
                     </div>
                   </div>
+                  {editando === i.id && (
+                    <EditarItem
+                      item={i}
+                      onSalvar={(novo) => {
+                        salvar((l) => l.map((x) => (x.id === novo.id ? novo : x)));
+                        setEditando(null);
+                        toast.success("Item atualizado");
+                      }}
+                      onCancelar={() => setEditando(null)}
+                    />
+                  )}
                   {registrando === i.id && (
                     <FormInspecao onSalvar={(insp) => registrar(i.id, insp)} />
                   )}
@@ -236,6 +255,66 @@ function FormInspecao({ onSalvar }: { onSalvar: (i: Inspecao) => void }) {
       <div className="flex items-end">
         <Button type="submit" className="w-full rounded-full">
           Salvar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EditarItem({
+  item,
+  onSalvar,
+  onCancelar,
+}: {
+  item: ItemManutencao;
+  onSalvar: (i: ItemManutencao) => void;
+  onCancelar: () => void;
+}) {
+  const [f, setF] = useState({
+    nome: item.nome,
+    categoria: item.categoria,
+    dias: String(item.periodicidade_dias),
+  });
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const dias = Number(f.dias);
+        if (!f.nome.trim()) return void toast.error("Informe o nome do item.");
+        if (!Number.isInteger(dias) || dias < 1) return void toast.error("Periodicidade inválida.");
+        onSalvar({
+          ...item,
+          nome: f.nome.trim(),
+          categoria: f.categoria,
+          periodicidade_dias: dias,
+        });
+      }}
+      className="mt-3 grid gap-3 rounded-2xl bg-muted p-4 sm:grid-cols-5"
+    >
+      <Campo label="Item" className="sm:col-span-2">
+        <Input value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} required />
+      </Campo>
+      <Campo label="Categoria">
+        <Seletor
+          opcoes={CATEGORIAS_MANUTENCAO}
+          value={f.categoria}
+          onChange={(e) => setF({ ...f, categoria: e.target.value })}
+        />
+      </Campo>
+      <Campo label="Periodicidade (dias)">
+        <Input
+          type="number"
+          min={1}
+          value={f.dias}
+          onChange={(e) => setF({ ...f, dias: e.target.value })}
+        />
+      </Campo>
+      <div className="flex items-end gap-2">
+        <Button type="submit" className="rounded-full">
+          Salvar
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancelar}>
+          Cancelar
         </Button>
       </div>
     </form>

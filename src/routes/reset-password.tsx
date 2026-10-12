@@ -10,9 +10,9 @@ import { Logo } from "@/components/SiteHeader";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Nova senha — Lemon Operações" },
+      { title: "Nova senha — Postos Lemon" },
       { name: "description", content: "Defina uma nova senha para sua conta." },
-      { property: "og:title", content: "Nova senha — Lemon Operações" },
+      { property: "og:title", content: "Nova senha — Postos Lemon" },
       { property: "og:description", content: "Defina uma nova senha para sua conta." },
     ],
   }),

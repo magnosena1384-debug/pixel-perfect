@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/meus-cursos")({
-  head: () => ({ meta: [{ title: "Meus cursos — Lemon Operações" }] }),
+  head: () => ({ meta: [{ title: "Meus cursos — Postos Lemon" }] }),
   component: MyCourses,
 });
 

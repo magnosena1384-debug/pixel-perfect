@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data } = await supabase.rpc("has_role", { _user_id: context.user.id, _role: "admin" });
     if (!data) throw redirect({ to: "/meus-cursos" });
   },
-  head: () => ({ meta: [{ title: "Admin — Lemon Operações" }] }),
+  head: () => ({ meta: [{ title: "Admin — Postos Lemon" }] }),
   component: AdminLayout,
 });
 

@@ -3,6 +3,8 @@ import {
   addDias,
   calcularAlertas,
   diasAte,
+  lerColecao,
+  unidadesPadrao,
   situacao,
   type Documento,
   type ItemManutencao,
@@ -57,5 +59,20 @@ describe("gestão: vencimentos", () => {
       base,
     );
     expect(alertas.map((a) => a.id)).toEqual(["nunca", "2026-10-01", "2026-10-20"]);
+  });
+});
+
+describe("gestão: unidades", () => {
+  it("cria as 10 unidades padrão com ids distintos", () => {
+    const us = unidadesPadrao();
+    expect(us).toHaveLength(10);
+    expect(new Set(us.map((u) => u.id)).size).toBe(10);
+  });
+
+  it("dados antigos (sem unidade) aparecem só na primeira unidade", () => {
+    localStorage.setItem("gestao:rotinas", JSON.stringify([{ id: "r1", titulo: "Caixa" }]));
+    expect(lerColecao<{ id: string }>("u1", "rotinas").map((r) => r.id)).toEqual(["r1"]);
+    expect(lerColecao("u2", "rotinas")).toEqual([]);
+    localStorage.clear();
   });
 });

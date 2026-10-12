@@ -755,6 +755,7 @@ function LessonEditor({
 
       {open && (
         <div className="grid gap-6 bg-muted/40 px-4 py-5 md:grid-cols-2">
+          <TranscriptEditor lessonId={l.id} />
           <form onSubmit={save} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Título</Label>
@@ -877,5 +878,59 @@ function LessonEditor({
         </div>
       )}
     </li>
+  );
+}
+
+function TranscriptEditor({ lessonId }: { lessonId: string }) {
+  const [texto, setTexto] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ["transcricao", lessonId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lesson_transcripts")
+        .select("texto")
+        .eq("lesson_id", lessonId)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.texto ?? "";
+    },
+  });
+  useEffect(() => {
+    if (data !== undefined) setTexto(data);
+  }, [data]);
+
+  async function salvar() {
+    setSalvando(true);
+    const { error } = await supabase
+      .from("lesson_transcripts")
+      .upsert({ lesson_id: lessonId, texto, atualizado_em: new Date().toISOString() });
+    setSalvando(false);
+    if (error) return void toast.error(error.message);
+    toast.success("Conteúdo salvo");
+  }
+
+  return (
+    <div className="space-y-1.5 md:col-span-2 md:order-last">
+      <Label>Conteúdo da aula para as dúvidas (IA)</Label>
+      <Textarea
+        rows={6}
+        placeholder="Cole a transcrição do vídeo, o resumo ou o procedimento ensinado. A IA responde às dúvidas dos alunos só com base neste texto e na descrição."
+        value={texto}
+        disabled={isLoading}
+        onChange={(e) => setTexto(e.target.value)}
+      />
+      <p className="text-xs text-muted-foreground">Este texto não aparece na página da aula.</p>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="rounded-full"
+        disabled={salvando || isLoading}
+        onClick={salvar}
+      >
+        {salvando ? "Salvando…" : "Salvar conteúdo"}
+      </Button>
+    </div>
   );
 }

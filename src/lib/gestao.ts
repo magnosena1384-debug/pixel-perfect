@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 // Dados da área de gestão ficam no localStorage enquanto o backend não está disponível.
 
@@ -347,8 +347,7 @@ function subscribe(cb: () => void) {
 
 const vazio = () => [];
 
-export function useColecao<T>(nome: string, seed: () => T[] = vazio) {
-  const key = `gestao:${nome}`;
+function useArmazenado<T>(key: string, seed: () => T[]) {
   const lista = useSyncExternalStore(
     subscribe,
     () => read<T>(key, seed),
@@ -369,6 +368,83 @@ export function useColecao<T>(nome: string, seed: () => T[] = vazio) {
     [key, seed],
   );
   return [lista, salvar] as const;
+}
+
+// ---------- Unidades ----------
+
+export type Unidade = { id: string; nome: string };
+
+export const TOTAL_UNIDADES = 10;
+
+export function unidadesPadrao(): Unidade[] {
+  return Array.from({ length: TOTAL_UNIDADES }, (_, i) => ({
+    id: `u${i + 1}`,
+    nome: `Posto ${String(i + 1).padStart(2, "0")}`,
+  }));
+}
+
+const CHAVE_UNIDADES = "gestao:unidades";
+const CHAVE_UNIDADE_ATUAL = "gestao:unidade-atual";
+
+export function useUnidades() {
+  return useArmazenado<Unidade>(CHAVE_UNIDADES, unidadesPadrao);
+}
+
+export function useUnidadeAtual() {
+  const [unidades] = useUnidades();
+  const id = useSyncExternalStore(
+    subscribe,
+    () => readRaw(CHAVE_UNIDADE_ATUAL),
+    () => null,
+  );
+  const atual = unidades.find((u) => u.id === id) ?? unidades[0] ?? unidadesPadrao()[0]!;
+  const selecionar = useCallback((novo: string) => {
+    try {
+      localStorage.setItem(CHAVE_UNIDADE_ATUAL, novo);
+    } catch {
+      // ignora: a seleção vale só enquanto a página estiver aberta
+    }
+    listeners.forEach((l) => l());
+  }, []);
+  return [atual, selecionar] as const;
+}
+
+// Antes das unidades os dados ficavam em "gestao:<nome>"; eles passam a ser da primeira unidade.
+function chaveColecao(unidade: string, nome: string) {
+  return `gestao:${unidade}:${nome}`;
+}
+
+function comLegado<T>(unidade: string, nome: string, seed: () => T[]) {
+  if (unidade !== "u1") return seed;
+  return () => {
+    const legado = readRaw(`gestao:${nome}`);
+    if (!legado) return seed();
+    try {
+      return JSON.parse(legado) as T[];
+    } catch {
+      return seed();
+    }
+  };
+}
+
+export function useColecao<T>(nome: string, seed: () => T[] = vazio) {
+  const [unidade] = useUnidadeAtual();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seedUnidade = useMemo(() => comLegado(unidade.id, nome, seed), [unidade.id, nome]);
+  return useArmazenado<T>(chaveColecao(unidade.id, nome), seedUnidade);
+}
+
+/** Lê uma coleção de qualquer unidade, fora de componentes (ex.: contagem de alertas por unidade). */
+export function lerColecao<T>(unidade: string, nome: string, seed: () => T[] = vazio) {
+  return read<T>(chaveColecao(unidade, nome), comLegado(unidade, nome, seed));
+}
+
+export function alertasDaUnidade(unidade: string) {
+  return calcularAlertas(
+    lerColecao<Documento>(unidade, "documentos"),
+    lerColecao<ItemManutencao>(unidade, "manutencao", manutencaoPadrao),
+    lerColecao<Rotina>(unidade, "rotinas"),
+  );
 }
 
 export function useAlertas() {
