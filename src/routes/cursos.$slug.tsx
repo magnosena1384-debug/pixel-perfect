@@ -4,15 +4,15 @@ import { Lock, PlayCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
-import { formatBRL, formatDuration, useAuth } from "@/lib/auth";
+import { formatBRL, formatDuration, plural, useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/cursos/$slug")({
   head: () => ({
     meta: [
       { title: "Curso — Lemon Operações" },
-      { name: "description", content: "Detalhes do curso e currículo completo." },
+      { name: "description", content: "Detalhes do curso e todas as aulas." },
       { property: "og:title", content: "Curso — Lemon Operações" },
-      { property: "og:description", content: "Detalhes do curso e currículo completo." },
+      { property: "og:description", content: "Detalhes do curso e todas as aulas." },
     ],
   }),
   component: CoursePage,
@@ -66,7 +66,7 @@ function CoursePage() {
             <p className="eyebrow text-lime">Curso</p>
             <h1 className="mt-3 text-4xl font-bold md:text-6xl">{course.titulo}</h1>
             <p className="mt-4 max-w-xl text-lg opacity-80">{course.descricao_curta}</p>
-            <p className="mt-6 text-sm opacity-70">{lessons.length} aulas · {formatDuration(total)}</p>
+            <p className="mt-6 text-sm opacity-70">{plural(lessons.length, "aula", "aulas")} · {formatDuration(total)}</p>
           </div>
           <div className="rounded-3xl bg-card p-6 text-card-foreground">
             <p className="text-3xl font-bold">{course.preco_centavos ? formatBRL(course.preco_centavos) : "Gratuito"}</p>
@@ -87,7 +87,7 @@ function CoursePage() {
       </section>
       <section className="mx-auto max-w-6xl px-4 py-12">
         {course.descricao && <p className="mb-10 max-w-3xl whitespace-pre-line text-muted-foreground">{course.descricao}</p>}
-        <h2 className="mb-6 text-2xl font-bold uppercase">Currículo</h2>
+        <h2 className="mb-6 text-2xl font-bold uppercase">Conteúdo do curso</h2>
         <div className="space-y-4">
           {course.modules.map((m, i) => (
             <div key={m.id} className="overflow-hidden rounded-3xl border bg-card">

@@ -181,7 +181,7 @@ function LessonPage() {
             <h1 className="text-2xl font-bold md:text-3xl">{lesson.titulo}</h1>
             {access && (
               <Button variant={done ? "secondary" : "default"} className="rounded-full font-semibold" onClick={() => save(videoRef.current?.currentTime ?? 0, !done)}>
-                {done ? "Concluída ✓" : "Marcar como concluída"}
+                {done ? "Concluída" : "Marcar como concluída"}
               </Button>
             )}
           </div>
@@ -198,7 +198,7 @@ function LessonPage() {
             <TabsList className="w-full">
               <TabsTrigger value="aula" className="flex-1">Aula</TabsTrigger>
               <TabsTrigger value="mat" className="flex-1">Materiais</TabsTrigger>
-              <TabsTrigger value="cur" className="flex-1">Currículo</TabsTrigger>
+              <TabsTrigger value="cur" className="flex-1">Conteúdo</TabsTrigger>
             </TabsList>
             <TabsContent value="aula"><p className="whitespace-pre-line pt-3 text-muted-foreground">{lesson.descricao || "Sem descrição."}</p></TabsContent>
             <TabsContent value="mat" className="pt-3">{materials}</TabsContent>

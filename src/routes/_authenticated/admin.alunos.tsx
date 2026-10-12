@@ -53,7 +53,7 @@ function Students() {
     <div className="space-y-6">
       <form onSubmit={grant} className="flex flex-wrap items-end gap-3 rounded-3xl bg-card p-6">
         <div className="min-w-60 flex-1">
-          <p className="eyebrow mb-2 text-forest">Conceder acesso manual</p>
+          <p className="eyebrow mb-2 text-forest">Liberar acesso manualmente</p>
           <Input type="email" placeholder="email@aluno.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm">
@@ -66,7 +66,7 @@ function Students() {
       <div className="rounded-3xl bg-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold uppercase">Alunos</h2>
-          <Input placeholder="Buscar" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Buscar por nome ou e-mail" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
         </div>
         <div className="mt-4 divide-y">
           {list.map((p) => {
@@ -80,7 +80,7 @@ function Students() {
                     <span key={e.id} className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs ${e.status === "ativa" ? "bg-accent" : "bg-muted line-through"}`}>
                       {courseName(e.course_id)}
                       <button type="button" className="font-semibold underline" onClick={() => setStatus(e.id, e.status === "ativa" ? "revogada" : "ativa")}>
-                        {e.status === "ativa" ? "revogar" : "reativar"}
+                        {e.status === "ativa" ? "Revogar" : "Reativar"}
                       </button>
                     </span>
                   ))}
