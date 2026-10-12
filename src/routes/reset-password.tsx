@@ -21,11 +21,11 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPage() {
   const navigate = useNavigate();
   const [pw, setPw] = useState("");
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (pw.length < 8) return toast.error("Mínimo de 8 caracteres.");
+    if (pw.length < 8) return void toast.error("Mínimo de 8 caracteres.");
     const { error } = await supabase.auth.updateUser({ password: pw });
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success("Senha atualizada!");
     navigate({ to: "/meus-cursos" });
   }

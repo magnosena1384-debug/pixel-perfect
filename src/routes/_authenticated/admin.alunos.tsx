@@ -28,21 +28,21 @@ function Students() {
     },
   });
 
-  async function grant(e: React.FormEvent) {
+  async function grant(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     const target = data?.profiles.find((p) => p.email.toLowerCase() === email.trim().toLowerCase());
-    if (!target) return toast.error("Nenhuma conta com esse e-mail. O aluno precisa se cadastrar primeiro.");
-    if (!courseId) return toast.error("Escolha um curso.");
+    if (!target) return void toast.error("Nenhuma conta com esse e-mail. O aluno precisa se cadastrar primeiro.");
+    if (!courseId) return void toast.error("Escolha um curso.");
     const { error } = await supabase.from("enrollments").upsert({ user_id: target.id, course_id: courseId, status: "ativa", origem: "manual" }, { onConflict: "user_id,course_id" });
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success("Acesso liberado");
     setEmail("");
     qc.invalidateQueries({ queryKey: ["admin-students"] });
   }
 
-  async function setStatus(id: string, status: "ativa" | "revogada") {
+  async function setStatus(id: string, status: "ativa" | "revogada"): Promise<void> {
     const { error } = await supabase.from("enrollments").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["admin-students"] });
   }
 
