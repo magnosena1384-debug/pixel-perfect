@@ -8,7 +8,7 @@ export function Logo({ inverted = false }: { inverted?: boolean }) {
   return (
     <Link to="/" className="flex flex-col leading-none">
       <span className={`text-[10px] font-medium lowercase tracking-wide ${inverted ? "text-lime" : "text-forest"}`}>
-        operações
+        postos
       </span>
       <span className={`wordmark text-2xl ${inverted ? "text-background" : "text-foreground"}`}>Lemon</span>
     </Link>
