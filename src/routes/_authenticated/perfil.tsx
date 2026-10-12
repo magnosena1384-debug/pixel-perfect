@@ -22,16 +22,16 @@ function Profile() {
     supabase.from("profiles").select("nome").eq("id", user.id).single().then(({ data }) => setNome(data?.nome ?? ""));
   }, [user.id]);
 
-  async function saveName(e: React.FormEvent) {
+  async function saveName(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     const { error } = await supabase.from("profiles").update({ nome }).eq("id", user.id);
     error ? toast.error(error.message) : toast.success("Perfil salvo");
   }
-  async function savePw(e: React.FormEvent) {
+  async function savePw(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (pw.length < 8) return toast.error("Mínimo de 8 caracteres.");
+    if (pw.length < 8) return void toast.error("Mínimo de 8 caracteres.");
     const { error } = await supabase.auth.updateUser({ password: pw, current_password: cur } as never);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(error.message);
     toast.success("Senha alterada");
     setPw(""); setCur("");
   }
