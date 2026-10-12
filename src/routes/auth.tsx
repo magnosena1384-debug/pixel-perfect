@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/SiteHeader";
+import { translateAuthError } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -67,7 +68,7 @@ function AuthPage() {
         setSent("Se o e-mail existir, você receberá um link para redefinir a senha.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro inesperado");
+      toast.error(translateAuthError(err));
     } finally {
       setBusy(false);
     }

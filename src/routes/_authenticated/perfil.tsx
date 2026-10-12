@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { translateAuthError } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -22,16 +23,16 @@ function Profile() {
     supabase.from("profiles").select("nome").eq("id", user.id).single().then(({ data }) => setNome(data?.nome ?? ""));
   }, [user.id]);
 
-  async function saveName(e: React.FormEvent) {
+  async function saveName(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     const { error } = await supabase.from("profiles").update({ nome }).eq("id", user.id);
-    error ? toast.error(error.message) : toast.success("Perfil salvo");
+    error ? toast.error(translateAuthError(error)) : toast.success("Perfil salvo");
   }
-  async function savePw(e: React.FormEvent) {
+  async function savePw(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (pw.length < 8) return toast.error("Mínimo de 8 caracteres.");
+    if (pw.length < 8) return void toast.error("Mínimo de 8 caracteres.");
     const { error } = await supabase.auth.updateUser({ password: pw, current_password: cur } as never);
-    if (error) return toast.error(error.message);
+    if (error) return void toast.error(translateAuthError(error));
     toast.success("Senha alterada");
     setPw(""); setCur("");
   }
