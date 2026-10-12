@@ -12,10 +12,10 @@ import { translateAuthError } from "@/lib/auth";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar — Lemon Operações" },
-      { name: "description", content: "Acesse sua conta na plataforma Lemon Operações." },
-      { property: "og:title", content: "Entrar — Lemon Operações" },
-      { property: "og:description", content: "Acesse sua conta na plataforma Lemon Operações." },
+      { title: "Entrar — Postos Lemon" },
+      { name: "description", content: "Acesse sua conta na plataforma Postos Lemon." },
+      { property: "og:title", content: "Entrar — Postos Lemon" },
+      { property: "og:description", content: "Acesse sua conta na plataforma Postos Lemon." },
     ],
   }),
   component: AuthPage,
@@ -83,6 +83,7 @@ function AuthPage() {
     <div className="grid min-h-screen md:grid-cols-2">
       <div className="dot-grid relative hidden items-end p-10 md:flex">
         <div className="rounded-3xl bg-ink p-8 text-cream">
+          <p className="text-sm font-medium lowercase tracking-wide text-lime">postos</p>
           <p className="wordmark text-5xl text-lime">Lemon</p>
           <p className="mt-2 text-lg">Treinamento que acompanha sua rotina.</p>
         </div>

@@ -9,9 +9,9 @@ import hero from "@/assets/hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lemon Operações — Cursos e treinamentos" },
+      { title: "Postos Lemon — Cursos e treinamentos" },
       { name: "description", content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista." },
-      { property: "og:title", content: "Lemon Operações — Cursos e treinamentos" },
+      { property: "og:title", content: "Postos Lemon — Cursos e treinamentos" },
       { property: "og:description", content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -98,7 +98,7 @@ function Index() {
         )}
       </section>
       <footer className="bg-ink py-10 text-cream">
-        <div className="mx-auto max-w-6xl px-4 text-sm opacity-80">© {new Date().getFullYear()} Lemon Operações</div>
+        <div className="mx-auto max-w-6xl px-4 text-sm opacity-80">© {new Date().getFullYear()} Postos Lemon</div>
       </footer>
     </div>
   );

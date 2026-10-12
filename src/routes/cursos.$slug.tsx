@@ -9,9 +9,9 @@ import { formatBRL, formatDuration, useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/cursos/$slug")({
   head: () => ({
     meta: [
-      { title: "Curso — Lemon Operações" },
+      { title: "Curso — Postos Lemon" },
       { name: "description", content: "Detalhes do curso e currículo completo." },
-      { property: "og:title", content: "Curso — Lemon Operações" },
+      { property: "og:title", content: "Curso — Postos Lemon" },
       { property: "og:description", content: "Detalhes do curso e currículo completo." },
     ],
   }),

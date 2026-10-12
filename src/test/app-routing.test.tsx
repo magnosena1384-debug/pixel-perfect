@@ -14,4 +14,12 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches the admin course editor for /admin/cursos/:id", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/admin/cursos/abc");
+
+    expect(matches.at(-1)?.routeId).toBe("/_authenticated/admin/cursos/$id");
+  });
 });

@@ -3,6 +3,8 @@ import {
   addDias,
   calcularAlertas,
   diasAte,
+  diferencas,
+  uid,
   situacao,
   type Documento,
   type ItemManutencao,
@@ -57,5 +59,28 @@ describe("gestão: vencimentos", () => {
       base,
     );
     expect(alertas.map((a) => a.id)).toEqual(["nunca", "2026-10-01", "2026-10-20"]);
+  });
+});
+
+describe("gestão: gravação no banco", () => {
+  it("grava só o que mudou e apaga o que saiu da lista", () => {
+    const antes = [
+      { id: "a", v: 1 },
+      { id: "b", v: 1 },
+      { id: "c", v: 1 },
+    ];
+    const depois = [
+      { id: "a", v: 1 },
+      { id: "b", v: 2 },
+      { id: "d", v: 1 },
+    ];
+    const { gravar, apagar } = diferencas(antes, depois);
+    expect(gravar.map((i) => i.id)).toEqual(["b", "d"]);
+    expect(apagar).toEqual(["c"]);
+  });
+
+  it("ids novos ficam em ordem de criação", () => {
+    const ids = Array.from({ length: 50 }, () => uid());
+    expect([...ids].sort()).toEqual(ids);
   });
 });

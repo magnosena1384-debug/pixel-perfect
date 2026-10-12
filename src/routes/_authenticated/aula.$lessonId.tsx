@@ -8,9 +8,10 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LessonQuestions } from "@/components/LessonQuestions";
 
 export const Route = createFileRoute("/_authenticated/aula/$lessonId")({
-  head: () => ({ meta: [{ title: "Aula — Lemon Operações" }] }),
+  head: () => ({ meta: [{ title: "Aula — Postos Lemon" }] }),
   component: LessonPage,
 });
 
@@ -193,16 +194,24 @@ function LessonPage() {
             {lesson.descricao && <p className="whitespace-pre-line text-muted-foreground">{lesson.descricao}</p>}
             <h2 className="mb-3 mt-8 text-lg font-bold uppercase">Materiais</h2>
             {materials}
+            {access && (
+              <>
+                <h2 className="mb-3 mt-8 text-lg font-bold uppercase">Dúvidas</h2>
+                <LessonQuestions lessonId={lessonId} userId={user.id} />
+              </>
+            )}
           </div>
           <Tabs defaultValue="aula" className="mt-6 lg:hidden">
             <TabsList className="w-full">
               <TabsTrigger value="aula" className="flex-1">Aula</TabsTrigger>
               <TabsTrigger value="mat" className="flex-1">Materiais</TabsTrigger>
               <TabsTrigger value="cur" className="flex-1">Currículo</TabsTrigger>
+              {access && <TabsTrigger value="duv" className="flex-1">Dúvidas</TabsTrigger>}
             </TabsList>
             <TabsContent value="aula"><p className="whitespace-pre-line pt-3 text-muted-foreground">{lesson.descricao || "Sem descrição."}</p></TabsContent>
             <TabsContent value="mat" className="pt-3">{materials}</TabsContent>
             <TabsContent value="cur" className="pt-3">{curriculum}</TabsContent>
+            {access && <TabsContent value="duv" className="pt-3"><LessonQuestions lessonId={lessonId} userId={user.id} /></TabsContent>}
           </Tabs>
         </div>
         <aside className="hidden rounded-3xl border bg-card p-5 lg:block">{curriculum}</aside>
