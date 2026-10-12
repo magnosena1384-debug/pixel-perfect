@@ -15,6 +15,13 @@
       "when": 1791820800000,
       "tag": "0001_duvidas_aulas",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791907200000,
+      "tag": "0002_gestao_unidades_acessos",
+      "breakpoints": true
     }
   ]
 }

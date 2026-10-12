@@ -88,6 +88,51 @@ export type Database = {
           },
         ]
       }
+      gestao_acessos: {
+        Row: {
+          modulos: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Insert: {
+          modulos?: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Update: {
+          modulos?: string[]
+          unidade_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gestao_itens: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao?: string
+          dados?: Json
+          id?: string
+          unidade_id?: string
+        }
+        Relationships: []
+      }
       lesson_assets: {
         Row: {
           id: string
@@ -313,6 +358,24 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades: {
+        Row: {
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -336,6 +399,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      pode_gestao: {
+        Args: { _modulo: string; _unidade_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_lesson: {
         Args: { _lesson_id: string; _user_id: string }
         Returns: boolean

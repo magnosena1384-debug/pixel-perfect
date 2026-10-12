@@ -3,8 +3,8 @@ import {
   addDias,
   calcularAlertas,
   diasAte,
-  lerColecao,
-  unidadesPadrao,
+  diferencas,
+  uid,
   situacao,
   type Documento,
   type ItemManutencao,
@@ -62,17 +62,25 @@ describe("gestão: vencimentos", () => {
   });
 });
 
-describe("gestão: unidades", () => {
-  it("cria as 10 unidades padrão com ids distintos", () => {
-    const us = unidadesPadrao();
-    expect(us).toHaveLength(10);
-    expect(new Set(us.map((u) => u.id)).size).toBe(10);
+describe("gestão: gravação no banco", () => {
+  it("grava só o que mudou e apaga o que saiu da lista", () => {
+    const antes = [
+      { id: "a", v: 1 },
+      { id: "b", v: 1 },
+      { id: "c", v: 1 },
+    ];
+    const depois = [
+      { id: "a", v: 1 },
+      { id: "b", v: 2 },
+      { id: "d", v: 1 },
+    ];
+    const { gravar, apagar } = diferencas(antes, depois);
+    expect(gravar.map((i) => i.id)).toEqual(["b", "d"]);
+    expect(apagar).toEqual(["c"]);
   });
 
-  it("dados antigos (sem unidade) aparecem só na primeira unidade", () => {
-    localStorage.setItem("gestao:rotinas", JSON.stringify([{ id: "r1", titulo: "Caixa" }]));
-    expect(lerColecao<{ id: string }>("u1", "rotinas").map((r) => r.id)).toEqual(["r1"]);
-    expect(lerColecao("u2", "rotinas")).toEqual([]);
-    localStorage.clear();
+  it("ids novos ficam em ordem de criação", () => {
+    const ids = Array.from({ length: 50 }, () => uid());
+    expect([...ids].sort()).toEqual(ids);
   });
 });

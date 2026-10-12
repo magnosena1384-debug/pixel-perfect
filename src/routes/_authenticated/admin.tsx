@@ -19,8 +19,28 @@ function AdminLayout() {
       <SiteHeader />
       <div className="mx-auto max-w-6xl px-4 py-8">
         <nav className="mb-8 flex gap-2">
-          <Link to="/admin" activeOptions={{ exact: true }} className={link} activeProps={{ className: "bg-ink text-cream" }}>Painel</Link>
-          <Link to="/admin/alunos" className={link} activeProps={{ className: "bg-ink text-cream" }}>Alunos</Link>
+          <Link
+            to="/admin"
+            activeOptions={{ exact: true }}
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Painel
+          </Link>
+          <Link
+            to="/admin/alunos"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Alunos
+          </Link>
+          <Link
+            to="/admin/acessos"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Acessos
+          </Link>
         </nav>
         <Outlet />
       </div>
