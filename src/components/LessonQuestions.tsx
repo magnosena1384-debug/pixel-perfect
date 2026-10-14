@@ -69,7 +69,9 @@ export function LessonQuestions({ lessonId, userId }: { lessonId: string; userId
           {historico.map((q) => (
             <li key={q.id} className="rounded-2xl border p-4 text-sm">
               <p className="font-semibold">{q.pergunta}</p>
-              <p className="mt-2 whitespace-pre-line text-muted-foreground">{q.resposta.replace(/\*\*(.+?)\*\*/g, "$1").replace(/^\s*[-*] /gm, "• ")}</p>
+              <p className="mt-2 whitespace-pre-line text-muted-foreground">
+                {q.resposta.replace(/\*\*(.+?)\*\*/g, "$1").replace(/^\s*[-*] /gm, "• ")}
+              </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {new Date(q.created_at).toLocaleString("pt-BR")}
               </p>

@@ -75,7 +75,9 @@ function AuthPage() {
   }
 
   async function google() {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
+    const r = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/auth",
+    });
     if (r.error) toast.error("Não foi possível entrar com Google.");
   }
 
@@ -101,39 +103,100 @@ function AuthPage() {
               {mode === "signup" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="nome">Nome</Label>
-                  <Input id="nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+                  <Input
+                    id="nome"
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
                 </div>
               )}
               <div className="space-y-1.5">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               {mode !== "forgot" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="pw">Senha</Label>
-                  <Input id="pw" type="password" required minLength={mode === "signup" ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input
+                    id="pw"
+                    type="password"
+                    required
+                    minLength={mode === "signup" ? 8 : undefined}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
               )}
               {mode === "signup" && (
                 <label className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-1"
+                  />
                   Li e aceito os termos de uso e a política de privacidade.
                 </label>
               )}
-              <Button type="submit" disabled={busy} className="w-full rounded-full font-semibold" size="lg">
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-full font-semibold"
+                size="lg"
+              >
                 {mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Enviar link"}
               </Button>
               {mode !== "forgot" && (
-                <Button type="button" variant="outline" className="w-full rounded-full" size="lg" onClick={google}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-full"
+                  size="lg"
+                  onClick={google}
+                >
                   Continuar com Google
                 </Button>
               )}
             </form>
           )}
           <div className="mt-6 flex flex-col gap-2 text-sm">
-            {mode !== "login" && <button className="text-left text-forest hover:underline" onClick={() => { setMode("login"); setSent(null); }}>Já tenho conta</button>}
-            {mode !== "signup" && <button className="text-left text-forest hover:underline" onClick={() => { setMode("signup"); setSent(null); }}>Criar uma conta</button>}
-            {mode === "login" && <button className="text-left text-muted-foreground hover:underline" onClick={() => setMode("forgot")}>Esqueci minha senha</button>}
+            {mode !== "login" && (
+              <button
+                className="text-left text-forest hover:underline"
+                onClick={() => {
+                  setMode("login");
+                  setSent(null);
+                }}
+              >
+                Já tenho conta
+              </button>
+            )}
+            {mode !== "signup" && (
+              <button
+                className="text-left text-forest hover:underline"
+                onClick={() => {
+                  setMode("signup");
+                  setSent(null);
+                }}
+              >
+                Criar uma conta
+              </button>
+            )}
+            {mode === "login" && (
+              <button
+                className="text-left text-muted-foreground hover:underline"
+                onClick={() => setMode("forgot")}
+              >
+                Esqueci minha senha
+              </button>
+            )}
           </div>
         </div>
       </div>
