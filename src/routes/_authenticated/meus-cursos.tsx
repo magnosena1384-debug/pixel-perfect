@@ -15,11 +15,19 @@ function MyCourses() {
   const { data, isLoading } = useQuery({
     queryKey: ["my-courses", user.id],
     queryFn: async () => {
-      const cols = "id, slug, titulo, descricao_curta, capa_url, modules(ordem, lessons(id, ordem))";
-      const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
+      const cols =
+        "id, slug, titulo, descricao_curta, capa_url, modules(ordem, lessons(id, ordem))";
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
       let courses;
       if (isAdmin) {
-        const { data, error } = await supabase.from("courses").select(cols).eq("status", "publicado").order("created_at");
+        const { data, error } = await supabase
+          .from("courses")
+          .select(cols)
+          .eq("status", "publicado")
+          .order("created_at");
         if (error) throw error;
         courses = data ?? [];
       } else {
@@ -31,14 +39,22 @@ function MyCourses() {
         if (error) throw error;
         courses = (enr ?? []).flatMap((e) => (e.courses ? [e.courses] : []));
       }
-      const { data: prog } = await supabase.from("lesson_progress").select("lesson_id, concluida, atualizado_em").eq("user_id", user.id);
+      const { data: prog } = await supabase
+        .from("lesson_progress")
+        .select("lesson_id, concluida, atualizado_em")
+        .eq("user_id", user.id);
       return courses.map((c) => {
-        const lessons = [...c.modules].sort((a, b) => a.ordem - b.ordem).flatMap((m) => [...m.lessons].sort((a, b) => a.ordem - b.ordem));
+        const lessons = [...c.modules]
+          .sort((a, b) => a.ordem - b.ordem)
+          .flatMap((m) => [...m.lessons].sort((a, b) => a.ordem - b.ordem));
         const ids = new Set(lessons.map((l) => l.id));
         const mine = (prog ?? []).filter((p) => ids.has(p.lesson_id));
         const done = mine.filter((p) => p.concluida).length;
         const last = [...mine].sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em))[0];
-        const next = last?.lesson_id ?? lessons.find((l) => !mine.some((p) => p.lesson_id === l.id && p.concluida))?.id ?? lessons[0]?.id;
+        const next =
+          last?.lesson_id ??
+          lessons.find((l) => !mine.some((p) => p.lesson_id === l.id && p.concluida))?.id ??
+          lessons[0]?.id;
         return { ...c, pct: lessons.length ? Math.round((done / lessons.length) * 100) : 0, next };
       });
     },
@@ -55,14 +71,20 @@ function MyCourses() {
         ) : !data?.length ? (
           <div className="mt-8 rounded-3xl bg-muted p-8">
             <p>Você ainda não tem cursos liberados.</p>
-            <Button asChild className="mt-4 rounded-full"><Link to="/">Ver catálogo</Link></Button>
+            <Button asChild className="mt-4 rounded-full">
+              <Link to="/">Ver catálogo</Link>
+            </Button>
           </div>
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((c) => (
               <div key={c.id} className="flex flex-col overflow-hidden rounded-3xl border bg-card">
                 <div className="aspect-video">
-                  {c.capa_url ? <img src={c.capa_url} alt={c.titulo} className="h-full w-full object-cover" /> : <div className="dot-grid h-full" />}
+                  {c.capa_url ? (
+                    <img src={c.capa_url} alt={c.titulo} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="dot-grid h-full" />
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="text-xl font-semibold">{c.titulo}</h3>
@@ -72,7 +94,9 @@ function MyCourses() {
                   </div>
                   {c.next && (
                     <Button asChild className="mt-5 rounded-full font-semibold">
-                      <Link to="/aula/$lessonId" params={{ lessonId: c.next }}>Continuar de onde parei</Link>
+                      <Link to="/aula/$lessonId" params={{ lessonId: c.next }}>
+                        Continuar de onde parei
+                      </Link>
                     </Button>
                   )}
                 </div>

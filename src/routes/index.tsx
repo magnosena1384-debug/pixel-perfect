@@ -10,9 +10,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Postos Lemon — Cursos e treinamentos" },
-      { name: "description", content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista." },
+      {
+        name: "description",
+        content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista.",
+      },
       { property: "og:title", content: "Postos Lemon — Cursos e treinamentos" },
-      { property: "og:description", content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista." },
+      {
+        property: "og:description",
+        content: "Aulas em vídeo para equipes Lemon: atendimento, segurança e operação de pista.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -26,13 +32,19 @@ function useCatalog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, slug, titulo, descricao_curta, capa_url, preco_centavos, modules(lessons(duracao_seg))")
+        .select(
+          "id, slug, titulo, descricao_curta, capa_url, preco_centavos, modules(lessons(duracao_seg))",
+        )
         .eq("status", "publicado")
         .order("created_at");
       if (error) throw error;
       return data.map((c) => {
         const lessons = c.modules.flatMap((m) => m.lessons);
-        return { ...c, nAulas: lessons.length, duracao: lessons.reduce((s, l) => s + l.duracao_seg, 0) };
+        return {
+          ...c,
+          nAulas: lessons.length,
+          duracao: lessons.reduce((s, l) => s + l.duracao_seg, 0),
+        };
       });
     },
   });
@@ -59,7 +71,13 @@ function Index() {
               <a href="#cursos">Ver cursos</a>
             </Button>
           </div>
-          <img src={hero} alt="Atendente sorrindo na pista" width={1024} height={1200} className="mx-auto max-h-[520px] w-auto object-contain" />
+          <img
+            src={hero}
+            alt="Atendente sorrindo na pista"
+            width={1024}
+            height={1200}
+            className="mx-auto max-h-[520px] w-auto object-contain"
+          />
         </div>
       </section>
 
@@ -74,22 +92,40 @@ function Index() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((c) => (
-              <Link key={c.id} to="/cursos/$slug" params={{ slug: c.slug }} className="group overflow-hidden rounded-3xl border bg-card transition hover:-translate-y-1 hover:shadow-lg">
+              <Link
+                key={c.id}
+                to="/cursos/$slug"
+                params={{ slug: c.slug }}
+                className="group overflow-hidden rounded-3xl border bg-card transition hover:-translate-y-1 hover:shadow-lg"
+              >
                 <div className="aspect-video overflow-hidden">
                   {c.capa_url ? (
-                    <img src={c.capa_url} alt={c.titulo} loading="lazy" className="h-full w-full object-cover" />
+                    <img
+                      src={c.capa_url}
+                      alt={c.titulo}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="dot-grid flex h-full items-center justify-center">
-                      <span className="wordmark rounded-2xl bg-ink px-4 py-2 text-xl text-lime">Lemon</span>
+                      <span className="wordmark rounded-2xl bg-ink px-4 py-2 text-xl text-lime">
+                        Lemon
+                      </span>
                     </div>
                   )}
                 </div>
                 <div className="p-5">
                   <h3 className="text-xl font-semibold group-hover:text-forest">{c.titulo}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.descricao_curta}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    {c.descricao_curta}
+                  </p>
                   <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{c.nAulas} aulas · {formatDuration(c.duracao)}</span>
-                    <span className="font-semibold">{c.preco_centavos ? formatBRL(c.preco_centavos) : "Gratuito"}</span>
+                    <span className="text-muted-foreground">
+                      {c.nAulas} aulas · {formatDuration(c.duracao)}
+                    </span>
+                    <span className="font-semibold">
+                      {c.preco_centavos ? formatBRL(c.preco_centavos) : "Gratuito"}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -98,7 +134,9 @@ function Index() {
         )}
       </section>
       <footer className="bg-ink py-10 text-cream">
-        <div className="mx-auto max-w-6xl px-4 text-sm opacity-80">© {new Date().getFullYear()} Postos Lemon</div>
+        <div className="mx-auto max-w-6xl px-4 text-sm opacity-80">
+          © {new Date().getFullYear()} Postos Lemon
+        </div>
       </footer>
     </div>
   );

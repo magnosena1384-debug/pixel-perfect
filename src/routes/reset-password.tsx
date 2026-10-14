@@ -35,8 +35,15 @@ function ResetPage() {
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
         <Logo />
         <h1 className="text-3xl font-bold uppercase">Nova senha</h1>
-        <Input type="password" placeholder="Nova senha" value={pw} onChange={(e) => setPw(e.target.value)} />
-        <Button type="submit" className="w-full rounded-full font-semibold" size="lg">Salvar</Button>
+        <Input
+          type="password"
+          placeholder="Nova senha"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+        />
+        <Button type="submit" className="w-full rounded-full font-semibold" size="lg">
+          Salvar
+        </Button>
       </form>
     </div>
   );
