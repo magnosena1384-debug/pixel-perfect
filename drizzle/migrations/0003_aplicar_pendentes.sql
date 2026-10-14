@@ -1,0 +1,1 @@
+comment on table public.lessons is 'Aulas dos cursos';

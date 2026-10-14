@@ -88,6 +88,67 @@ export type Database = {
           },
         ]
       }
+      gestao_acessos: {
+        Row: {
+          modulos: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Insert: {
+          modulos?: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Update: {
+          modulos?: string[]
+          unidade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_acessos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gestao_itens: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao?: string
+          dados?: Json
+          id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_itens_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_assets: {
         Row: {
           id: string
@@ -153,6 +214,67 @@ export type Database = {
             foreignKeyName: "lesson_progress_lesson_id_fkey"
             columns: ["lesson_id"]
             isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_questions: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          pergunta: string
+          resposta: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          pergunta: string
+          resposta?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          pergunta?: string
+          resposta?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_transcripts: {
+        Row: {
+          atualizado_em: string
+          lesson_id: string
+          texto: string
+        }
+        Insert: {
+          atualizado_em?: string
+          lesson_id: string
+          texto?: string
+        }
+        Update: {
+          atualizado_em?: string
+          lesson_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_transcripts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
             referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
@@ -252,6 +374,24 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades: {
+        Row: {
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -291,6 +431,10 @@ export type Database = {
         Returns: boolean
       }
       lesson_course_id: { Args: { _lesson_id: string }; Returns: string }
+      pode_gestao: {
+        Args: { _modulo: string; _unidade_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
