@@ -41,6 +41,13 @@ function AdminLayout() {
           >
             Acessos
           </Link>
+          <Link
+            to="/admin/webposto"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            webPosto
+          </Link>
         </nav>
         <Outlet />
       </div>
