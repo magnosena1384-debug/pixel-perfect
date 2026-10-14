@@ -27,6 +27,7 @@ import { Route as GestaoVendasRouteImport } from './routes/gestao.vendas'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAcessosRouteImport } from './routes/_authenticated/admin.acessos'
 import { Route as AuthenticatedAdminAlunosRouteImport } from './routes/_authenticated/admin.alunos'
+import { Route as AuthenticatedAdminWebpostoRouteImport } from './routes/_authenticated/admin.webposto'
 import { Route as AuthenticatedAulaLessonIdRouteImport } from './routes/_authenticated/aula.$lessonId'
 import { Route as AuthenticatedAdminCursosIdRouteImport } from './routes/_authenticated/admin.cursos.$id'
 
@@ -121,6 +122,12 @@ const AuthenticatedAdminAlunosRoute =
     path: '/alunos',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminWebpostoRoute =
+  AuthenticatedAdminWebpostoRouteImport.update({
+    id: '/webposto',
+    path: '/webposto',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAulaLessonIdRoute =
   AuthenticatedAulaLessonIdRouteImport.update({
     id: '/aula/$lessonId',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/gestao/': typeof GestaoIndexRoute
   '/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
+  '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
   '/gestao': typeof GestaoIndexRoute
   '/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
+  '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
@@ -193,6 +202,7 @@ export interface FileRoutesById {
   '/gestao/': typeof GestaoIndexRoute
   '/_authenticated/admin/acessos': typeof AuthenticatedAdminAcessosRoute
   '/_authenticated/admin/alunos': typeof AuthenticatedAdminAlunosRoute
+  '/_authenticated/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/_authenticated/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/gestao/'
     | '/admin/acessos'
     | '/admin/alunos'
+    | '/admin/webposto'
     | '/aula/$lessonId'
     | '/admin/'
     | '/admin/cursos/$id'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/gestao'
     | '/admin/acessos'
     | '/admin/alunos'
+    | '/admin/webposto'
     | '/aula/$lessonId'
     | '/admin'
     | '/admin/cursos/$id'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
     | '/gestao/'
     | '/_authenticated/admin/acessos'
     | '/_authenticated/admin/alunos'
+    | '/_authenticated/admin/webposto'
     | '/_authenticated/aula/$lessonId'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/cursos/$id'
@@ -399,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAlunosRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/webposto': {
+      id: '/_authenticated/admin/webposto'
+      path: '/webposto'
+      fullPath: '/admin/webposto'
+      preLoaderRoute: typeof AuthenticatedAdminWebpostoRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/aula/$lessonId': {
       id: '/_authenticated/aula/$lessonId'
       path: '/aula/$lessonId'
@@ -419,6 +439,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAcessosRoute: typeof AuthenticatedAdminAcessosRoute
   AuthenticatedAdminAlunosRoute: typeof AuthenticatedAdminAlunosRoute
+  AuthenticatedAdminWebpostoRoute: typeof AuthenticatedAdminWebpostoRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminCursosIdRoute: typeof AuthenticatedAdminCursosIdRoute
 }
@@ -426,6 +447,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAcessosRoute: AuthenticatedAdminAcessosRoute,
   AuthenticatedAdminAlunosRoute: AuthenticatedAdminAlunosRoute,
+  AuthenticatedAdminWebpostoRoute: AuthenticatedAdminWebpostoRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminCursosIdRoute: AuthenticatedAdminCursosIdRoute,
 }
