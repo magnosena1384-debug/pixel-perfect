@@ -379,16 +379,19 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          webposto_empresa: number | null
         }
         Insert: {
           id?: string
           nome: string
           ordem?: number
+          webposto_empresa?: number | null
         }
         Update: {
           id?: string
           nome?: string
           ordem?: number
+          webposto_empresa?: number | null
         }
         Relationships: []
       }
@@ -409,6 +412,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webposto_importacoes: {
+        Row: {
+          criado_em: string
+          data_final: string
+          data_inicial: string
+          endpoint: string
+          erro: string | null
+          feito_por: string | null
+          id: string
+          quantidade: number
+          sem_unidade: number
+        }
+        Insert: {
+          criado_em?: string
+          data_final: string
+          data_inicial: string
+          endpoint: string
+          erro?: string | null
+          feito_por?: string | null
+          id?: string
+          quantidade?: number
+          sem_unidade?: number
+        }
+        Update: {
+          criado_em?: string
+          data_final?: string
+          data_inicial?: string
+          endpoint?: string
+          erro?: string | null
+          feito_por?: string | null
+          id?: string
+          quantidade?: number
+          sem_unidade?: number
+        }
+        Relationships: []
+      }
+      webposto_registros: {
+        Row: {
+          codigo: string
+          dados: Json
+          data_ref: string | null
+          empresa_codigo: number | null
+          endpoint: string
+          importado_em: string
+          unidade_id: string | null
+        }
+        Insert: {
+          codigo: string
+          dados: Json
+          data_ref?: string | null
+          empresa_codigo?: number | null
+          endpoint: string
+          importado_em?: string
+          unidade_id?: string | null
+        }
+        Update: {
+          codigo?: string
+          dados?: Json
+          data_ref?: string | null
+          empresa_codigo?: number | null
+          endpoint?: string
+          importado_em?: string
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webposto_registros_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
