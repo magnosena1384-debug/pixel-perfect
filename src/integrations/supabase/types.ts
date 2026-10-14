@@ -104,7 +104,15 @@ export type Database = {
           unidade_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gestao_acessos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gestao_itens: {
         Row: {
@@ -131,7 +139,15 @@ export type Database = {
           id?: string
           unidade_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gestao_itens_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lesson_assets: {
         Row: {
@@ -399,10 +415,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      pode_gestao: {
-        Args: { _modulo: string; _unidade_id: string; _user_id: string }
-        Returns: boolean
-      }
       can_access_lesson: {
         Args: { _lesson_id: string; _user_id: string }
         Returns: boolean
@@ -419,6 +431,10 @@ export type Database = {
         Returns: boolean
       }
       lesson_course_id: { Args: { _lesson_id: string }; Returns: string }
+      pode_gestao: {
+        Args: { _modulo: string; _unidade_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
