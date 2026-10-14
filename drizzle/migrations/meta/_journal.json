@@ -36,6 +36,13 @@
       "when": 1792000000000,
       "tag": "0004_webposto",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792050000000,
+      "tag": "0005_storage_buckets",
+      "breakpoints": true
     }
   ]
 }
