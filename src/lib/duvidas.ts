@@ -1,11 +1,10 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Lovable AI Gateway (compatível com a API de chat da OpenAI). A chave é criada pelo
-// Lovable Cloud quando o Lovable AI está ativo no projeto.
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODELO_PADRAO = "google/gemini-3-flash-preview";
+// Respostas geradas pelo Claude (API da Anthropic). A chave fica no segredo ANTHROPIC_API_KEY.
+const MODELO = "claude-opus-5-5";
 const LIMITE_DIARIO = 20;
 
 const SISTEMA = `Você é o tutor da plataforma de treinamento dos Postos Lemon (postos de combustível).
@@ -14,7 +13,8 @@ Use apenas o conteúdo da aula fornecido abaixo. Se a resposta não estiver no c
 com franqueza e oriente o aluno a confirmar com o gerente ou supervisor do posto.
 Em assuntos de segurança (incêndio, vazamento, abastecimento, eletricidade), nunca invente
 procedimentos: repita só o que a aula diz e reforce que, em emergência, o aluno deve seguir o
-plano de emergência do posto e acionar os bombeiros (193).`;
+plano de emergência do posto e acionar os bombeiros (193).
+Escreva em texto simples, sem Markdown (sem asteriscos, títulos ou tabelas); use "- " para listas.`;
 
 export const perguntarSobreAula = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -72,29 +72,46 @@ export const perguntarSobreAula = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const chave = process.env["LOVABLE_API_KEY"];
-    if (!chave) throw new Error("IA não configurada: ative o Lovable AI no projeto.");
+    if (!process.env["ANTHROPIC_API_KEY"])
+      throw new Error("IA não configurada: cadastre o segredo ANTHROPIC_API_KEY.");
+    const client = new Anthropic();
 
-    const res = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${chave}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: process.env["LOVABLE_AI_MODEL"] || MODELO_PADRAO,
-        messages: [
-          { role: "system", content: `${SISTEMA}\n\n--- CONTEÚDO DA AULA ---\n${contexto}` },
-          { role: "user", content: data.pergunta },
+    let resposta: string | undefined;
+    try {
+      const msg = await client.beta.messages.create({
+        model: MODELO,
+        max_tokens: 4000,
+        output_config: { effort: "medium" },
+        // Se o modelo recusar por política, a própria API tenta o modelo reserva padrão.
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        // O conteúdo da aula vem antes da pergunta para ser reaproveitado em cache.
+        system: [
+          {
+            type: "text",
+            text: `${SISTEMA}\n\n--- CONTEÚDO DA AULA ---\n${contexto}`,
+            cache_control: { type: "ephemeral" },
+          },
         ],
-      }),
-    });
-    if (res.status === 429)
-      throw new Error("Muitas dúvidas ao mesmo tempo. Tente de novo em instantes.");
-    if (res.status === 402) throw new Error("Créditos de IA esgotados. Avise o administrador.");
-    if (!res.ok) {
-      console.error("[duvidas] gateway", res.status, await res.text().catch(() => ""));
-      throw new Error("Não foi possível gerar a resposta agora.");
+        messages: [{ role: "user", content: data.pergunta }],
+      });
+      if (msg.stop_reason === "refusal")
+        throw new Error("A IA não pôde responder essa dúvida. Fale com seu supervisor.");
+      resposta = msg.content
+        .flatMap((b) => (b.type === "text" ? [b.text] : []))
+        .join("\n")
+        .trim();
+    } catch (e) {
+      if (e instanceof Anthropic.RateLimitError)
+        throw new Error("Muitas dúvidas ao mesmo tempo. Tente de novo em instantes.");
+      if (e instanceof Anthropic.AuthenticationError)
+        throw new Error("Chave da IA inválida. Avise o administrador.");
+      if (e instanceof Anthropic.APIError) {
+        console.error("[duvidas] Anthropic", e.status, e.message);
+        throw new Error("Não foi possível gerar a resposta agora.");
+      }
+      throw e;
     }
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const resposta = json.choices?.[0]?.message?.content?.trim();
     if (!resposta) throw new Error("A IA não retornou resposta. Tente reformular a dúvida.");
 
     const { data: salva, error } = await supabase

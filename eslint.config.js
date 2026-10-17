@@ -7,8 +7,15 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // Arquivos gerados pelo Lovable/Supabase/TanStack: não editar à mão.
-    ignores: ["dist", ".output", ".vinxi", "src/routeTree.gen.ts", "src/integrations/**"],
+    // Arquivos gerados (rotas do TanStack e tipos/clientes do Supabase).
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      ".vercel",
+      "src/routeTree.gen.ts",
+      "src/integrations/**",
+    ],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

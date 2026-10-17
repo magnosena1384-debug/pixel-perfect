@@ -23,7 +23,7 @@ function WebPosto() {
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           Importa vendas, operação e financeiro do webPosto (Quality Automação). A chave da API é
           gerada no webPosto em Administração → Integrações (depois que a Quality libera o contrato
-          "API Integração") e deve ser cadastrada no Lovable como segredo{" "}
+          "API Integração") e deve ser cadastrada na Vercel como variável de ambiente{" "}
           <code className="rounded bg-muted px-1">WEBPOSTO_CHAVE</code>.
         </p>
       </div>
