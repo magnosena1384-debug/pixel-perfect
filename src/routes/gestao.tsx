@@ -13,6 +13,7 @@ export const Route = createFileRoute("/gestao")({
 const abas = [
   { to: "/gestao", label: "Notificações", exact: true },
   { to: "/gestao/vendas", label: "Vendas" },
+  { to: "/gestao/dashboard", label: "Dashboard" },
   { to: "/gestao/rotinas", label: "Rotinas administrativas" },
   { to: "/gestao/pedidos", label: "Pedidos" },
   { to: "/gestao/regulacao", label: "Regulação" },

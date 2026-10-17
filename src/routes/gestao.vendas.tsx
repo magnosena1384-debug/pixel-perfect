@@ -8,6 +8,7 @@ import { formatBRL } from "@/lib/auth";
 import {
   formatData,
   hoje,
+  horaAtual,
   PAGAMENTOS,
   PRODUTOS,
   reaisParaCentavos,
@@ -22,6 +23,9 @@ export const Route = createFileRoute("/gestao/vendas")({
 
 const novo = () => ({
   data: hoje(),
+  hora: horaAtual(),
+  unidade: "",
+  colaborador: "",
   produto: PRODUTOS[0]!,
   litros: "",
   valor: "",
@@ -44,6 +48,9 @@ function Vendas() {
     const venda: Venda = {
       id: uid(),
       data: form.data,
+      hora: form.hora,
+      unidade: form.unidade.trim(),
+      colaborador: form.colaborador.trim(),
       produto: form.produto,
       litros: form.litros ? Number(form.litros.replace(",", ".")) : null,
       valor_centavos,
@@ -51,13 +58,19 @@ function Vendas() {
       obs: form.obs,
     };
     salvar((l) => [venda, ...l]);
-    setForm({ ...novo(), data: form.data });
+    // Mantém data, unidade e colaborador para agilizar lançamentos em sequência.
+    setForm({ ...novo(), data: form.data, unidade: form.unidade, colaborador: form.colaborador });
     toast.success("Venda registrada");
   }
 
+  const unidades = [...new Set(vendas.map((v) => v.unidade).filter((x): x is string => !!x))];
+  const colaboradores = [
+    ...new Set(vendas.map((v) => v.colaborador).filter((x): x is string => !!x)),
+  ];
+
   const doMes = vendas
     .filter((v) => v.data.startsWith(mes))
-    .sort((a, b) => b.data.localeCompare(a.data));
+    .sort((a, b) => b.data.localeCompare(a.data) || (b.hora ?? "").localeCompare(a.hora ?? ""));
   const total = doMes.reduce((s, v) => s + v.valor_centavos, 0);
   const litros = doMes.reduce((s, v) => s + (v.litros ?? 0), 0);
   const totalHoje = vendas
@@ -99,6 +112,9 @@ function Vendas() {
           <Campo label="Data">
             <Input type="date" value={form.data} onChange={set("data")} required />
           </Campo>
+          <Campo label="Hora">
+            <Input type="time" value={form.hora} onChange={set("hora")} required />
+          </Campo>
           <Campo label="Produto" className="lg:col-span-2">
             <Seletor opcoes={PRODUTOS} value={form.produto} onChange={set("produto")} />
           </Campo>
@@ -122,7 +138,34 @@ function Vendas() {
           <Campo label="Pagamento">
             <Seletor opcoes={PAGAMENTOS} value={form.pagamento} onChange={set("pagamento")} />
           </Campo>
-          <Campo label="Observação" className="sm:col-span-2 lg:col-span-5">
+          <Campo label="Unidade">
+            <Input
+              list="unidades"
+              placeholder="Ex.: Posto Centro"
+              value={form.unidade}
+              onChange={set("unidade")}
+              required
+            />
+            <datalist id="unidades">
+              {unidades.map((u) => (
+                <option key={u} value={u} />
+              ))}
+            </datalist>
+          </Campo>
+          <Campo label="Colaborador">
+            <Input
+              list="colaboradores"
+              value={form.colaborador}
+              onChange={set("colaborador")}
+              required
+            />
+            <datalist id="colaboradores">
+              {colaboradores.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </Campo>
+          <Campo label="Observação" className="sm:col-span-2">
             <Input value={form.obs} onChange={set("obs")} />
           </Campo>
           <div className="flex items-end">
@@ -181,7 +224,10 @@ function Vendas() {
                       {v.litros ? ` · ${v.litros.toLocaleString("pt-BR")} L` : ""}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatData(v.data)} · {v.pagamento}
+                      {formatData(v.data)}
+                      {v.hora ? ` ${v.hora}` : ""} · {v.pagamento}
+                      {v.unidade ? ` · ${v.unidade}` : ""}
+                      {v.colaborador ? ` · ${v.colaborador}` : ""}
                       {v.obs ? ` · ${v.obs}` : ""}
                     </p>
                   </div>

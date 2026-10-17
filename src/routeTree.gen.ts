@@ -19,6 +19,7 @@ import { Route as AuthenticatedMeusCursosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as CursosSlugRouteImport } from './routes/cursos.$slug'
 import { Route as GestaoIndexRouteImport } from './routes/gestao.index'
+import { Route as GestaoDashboardRouteImport } from './routes/gestao.dashboard'
 import { Route as GestaoManutencaoRouteImport } from './routes/gestao.manutencao'
 import { Route as GestaoPedidosRouteImport } from './routes/gestao.pedidos'
 import { Route as GestaoRegulacaoRouteImport } from './routes/gestao.regulacao'
@@ -77,6 +78,11 @@ const GestaoIndexRoute = GestaoIndexRouteImport.update({
   path: '/',
   getParentRoute: () => GestaoRoute,
 } as any)
+const GestaoDashboardRoute = GestaoDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => GestaoRoute,
+} as any)
 const GestaoManutencaoRoute = GestaoManutencaoRouteImport.update({
   id: '/manutencao',
   path: '/manutencao',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/meus-cursos': typeof AuthenticatedMeusCursosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/gestao/dashboard': typeof GestaoDashboardRoute
   '/gestao/manutencao': typeof GestaoManutencaoRoute
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/meus-cursos': typeof AuthenticatedMeusCursosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/gestao/dashboard': typeof GestaoDashboardRoute
   '/gestao/manutencao': typeof GestaoManutencaoRoute
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/_authenticated/meus-cursos': typeof AuthenticatedMeusCursosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/gestao/dashboard': typeof GestaoDashboardRoute
   '/gestao/manutencao': typeof GestaoManutencaoRoute
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/meus-cursos'
     | '/perfil'
     | '/cursos/$slug'
+    | '/gestao/dashboard'
     | '/gestao/manutencao'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/meus-cursos'
     | '/perfil'
     | '/cursos/$slug'
+    | '/gestao/dashboard'
     | '/gestao/manutencao'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/_authenticated/meus-cursos'
     | '/_authenticated/perfil'
     | '/cursos/$slug'
+    | '/gestao/dashboard'
     | '/gestao/manutencao'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GestaoIndexRouteImport
       parentRoute: typeof GestaoRoute
     }
+    '/gestao/dashboard': {
+      id: '/gestao/dashboard'
+      path: '/dashboard'
+      fullPath: '/gestao/dashboard'
+      preLoaderRoute: typeof GestaoDashboardRouteImport
+      parentRoute: typeof GestaoRoute
+    }
     '/gestao/manutencao': {
       id: '/gestao/manutencao'
       path: '/manutencao'
@@ -407,6 +426,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface GestaoRouteChildren {
+  GestaoDashboardRoute: typeof GestaoDashboardRoute
   GestaoManutencaoRoute: typeof GestaoManutencaoRoute
   GestaoPedidosRoute: typeof GestaoPedidosRoute
   GestaoRegulacaoRoute: typeof GestaoRegulacaoRoute
@@ -416,6 +436,7 @@ interface GestaoRouteChildren {
 }
 
 const GestaoRouteChildren: GestaoRouteChildren = {
+  GestaoDashboardRoute: GestaoDashboardRoute,
   GestaoManutencaoRoute: GestaoManutencaoRoute,
   GestaoPedidosRoute: GestaoPedidosRoute,
   GestaoRegulacaoRoute: GestaoRegulacaoRoute,

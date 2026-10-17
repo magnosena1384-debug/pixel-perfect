@@ -5,6 +5,10 @@ import { useCallback, useSyncExternalStore } from "react";
 export type Venda = {
   id: string;
   data: string;
+  // Campos opcionais: vendas registradas antes do dashboard não os têm.
+  hora?: string;
+  unidade?: string;
+  colaborador?: string;
   produto: string;
   litros: number | null;
   valor_centavos: number;
@@ -72,6 +76,14 @@ export const PRODUTOS = [
   "Conveniência",
   "Outros",
 ];
+
+export const COMBUSTIVEIS = PRODUTOS.slice(0, 6);
+
+export type Tipo = "combustivel" | "produtos";
+
+export function tipoProduto(produto: string): Tipo {
+  return COMBUSTIVEIS.includes(produto) ? "combustivel" : "produtos";
+}
 
 export const PAGAMENTOS = ["Dinheiro", "PIX", "Débito", "Crédito", "Frota / faturado"];
 
@@ -210,6 +222,56 @@ export function formatData(data: string | null | undefined) {
 export function reaisParaCentavos(v: string) {
   const n = Number(v.replace(/\./g, "").replace(",", "."));
   return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+export function horaAtual() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// ---------- Indicadores de vendas ----------
+
+// Cada lançamento conta como um atendimento; ticket médio = total / nº de lançamentos.
+export type Resumo = { vendas: number; total: number; litros: number; ticket: number };
+
+export function resumir(vendas: Venda[]): Resumo {
+  const total = vendas.reduce((s, v) => s + v.valor_centavos, 0);
+  const litros = vendas.reduce((s, v) => s + (v.litros ?? 0), 0);
+  return {
+    vendas: vendas.length,
+    total,
+    litros,
+    ticket: vendas.length ? Math.round(total / vendas.length) : 0,
+  };
+}
+
+export type Grupo = { nome: string; geral: Resumo; combustivel: Resumo; produtos: Resumo };
+
+export function agruparVendas(vendas: Venda[], chave: (v: Venda) => string): Grupo[] {
+  const grupos = new Map<string, Venda[]>();
+  for (const v of vendas) {
+    const k = chave(v);
+    grupos.set(k, [...(grupos.get(k) ?? []), v]);
+  }
+  return [...grupos]
+    .map(([nome, vs]) => ({
+      nome,
+      geral: resumir(vs),
+      combustivel: resumir(vs.filter((v) => tipoProduto(v.produto) === "combustivel")),
+      produtos: resumir(vs.filter((v) => tipoProduto(v.produto) === "produtos")),
+    }))
+    .sort((a, b) => b.geral.total - a.geral.total);
+}
+
+// Total em centavos por hora do dia (0–23); vendas sem hora ficam de fora.
+export function vendasPorHora(vendas: Venda[]) {
+  const horas = Array.from({ length: 24 }, (_, h) => ({ hora: h, combustivel: 0, produtos: 0 }));
+  for (const v of vendas) {
+    const h = v.hora ? Number(v.hora.slice(0, 2)) : NaN;
+    if (!(h >= 0 && h < 24)) continue;
+    horas[h]![tipoProduto(v.produto)] += v.valor_centavos;
+  }
+  return horas;
 }
 
 // ---------- Situação e alertas ----------
