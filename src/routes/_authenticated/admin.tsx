@@ -18,7 +18,7 @@ function AdminLayout() {
     <div className="min-h-screen bg-muted">
       <SiteHeader />
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <nav className="mb-8 flex gap-2">
+        <nav className="mb-8 flex flex-wrap gap-2">
           <Link
             to="/admin"
             activeOptions={{ exact: true }}
@@ -26,6 +26,13 @@ function AdminLayout() {
             activeProps={{ className: "bg-ink text-cream" }}
           >
             Painel
+          </Link>
+          <Link
+            to="/admin/vendas"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Vendas
           </Link>
           <Link
             to="/admin/alunos"
