@@ -34,5 +34,3 @@ dist-ssr
 # Vercel
 .vercel
 
-# Variáveis de ambiente locais (use .env.example como modelo)
-.env
