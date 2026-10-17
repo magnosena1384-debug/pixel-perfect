@@ -24,7 +24,6 @@ export const Route = createFileRoute("/gestao/vendas")({
 const novo = () => ({
   data: hoje(),
   hora: horaAtual(),
-  unidade: "",
   colaborador: "",
   produto: PRODUTOS[0]!,
   litros: "",
@@ -49,7 +48,6 @@ function Vendas() {
       id: uid(),
       data: form.data,
       hora: form.hora,
-      unidade: form.unidade.trim(),
       colaborador: form.colaborador.trim(),
       produto: form.produto,
       litros: form.litros ? Number(form.litros.replace(",", ".")) : null,
@@ -58,12 +56,11 @@ function Vendas() {
       obs: form.obs,
     };
     salvar((l) => [venda, ...l]);
-    // Mantém data, unidade e colaborador para agilizar lançamentos em sequência.
-    setForm({ ...novo(), data: form.data, unidade: form.unidade, colaborador: form.colaborador });
+    // Mantém data e colaborador para agilizar lançamentos em sequência.
+    setForm({ ...novo(), data: form.data, colaborador: form.colaborador });
     toast.success("Venda registrada");
   }
 
-  const unidades = [...new Set(vendas.map((v) => v.unidade).filter((x): x is string => !!x))];
   const colaboradores = [
     ...new Set(vendas.map((v) => v.colaborador).filter((x): x is string => !!x)),
   ];
@@ -138,20 +135,6 @@ function Vendas() {
           <Campo label="Pagamento">
             <Seletor opcoes={PAGAMENTOS} value={form.pagamento} onChange={set("pagamento")} />
           </Campo>
-          <Campo label="Unidade">
-            <Input
-              list="unidades"
-              placeholder="Ex.: Posto Centro"
-              value={form.unidade}
-              onChange={set("unidade")}
-              required
-            />
-            <datalist id="unidades">
-              {unidades.map((u) => (
-                <option key={u} value={u} />
-              ))}
-            </datalist>
-          </Campo>
           <Campo label="Colaborador">
             <Input
               list="colaboradores"
@@ -165,7 +148,7 @@ function Vendas() {
               ))}
             </datalist>
           </Campo>
-          <Campo label="Observação" className="sm:col-span-2">
+          <Campo label="Observação" className="sm:col-span-2 lg:col-span-3">
             <Input value={form.obs} onChange={set("obs")} />
           </Campo>
           <div className="flex items-end">
@@ -226,7 +209,6 @@ function Vendas() {
                     <p className="text-sm text-muted-foreground">
                       {formatData(v.data)}
                       {v.hora ? ` ${v.hora}` : ""} · {v.pagamento}
-                      {v.unidade ? ` · ${v.unidade}` : ""}
                       {v.colaborador ? ` · ${v.colaborador}` : ""}
                       {v.obs ? ` · ${v.obs}` : ""}
                     </p>

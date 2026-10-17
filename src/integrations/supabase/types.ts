@@ -88,6 +88,67 @@ export type Database = {
           },
         ]
       }
+      gestao_acessos: {
+        Row: {
+          modulos: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Insert: {
+          modulos?: string[]
+          unidade_id: string
+          user_id: string
+        }
+        Update: {
+          modulos?: string[]
+          unidade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_acessos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gestao_itens: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao: string
+          dados: Json
+          id: string
+          unidade_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          colecao?: string
+          dados?: Json
+          id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gestao_itens_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_assets: {
         Row: {
           id: string
@@ -153,6 +214,67 @@ export type Database = {
             foreignKeyName: "lesson_progress_lesson_id_fkey"
             columns: ["lesson_id"]
             isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_questions: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          pergunta: string
+          resposta: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          pergunta: string
+          resposta?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          pergunta?: string
+          resposta?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_transcripts: {
+        Row: {
+          atualizado_em: string
+          lesson_id: string
+          texto: string
+        }
+        Insert: {
+          atualizado_em?: string
+          lesson_id: string
+          texto?: string
+        }
+        Update: {
+          atualizado_em?: string
+          lesson_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_transcripts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
             referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
@@ -252,6 +374,27 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades: {
+        Row: {
+          id: string
+          nome: string
+          ordem: number
+          webposto_empresa: number | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ordem?: number
+          webposto_empresa?: number | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ordem?: number
+          webposto_empresa?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -269,6 +412,80 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webposto_importacoes: {
+        Row: {
+          criado_em: string
+          data_final: string
+          data_inicial: string
+          endpoint: string
+          erro: string | null
+          feito_por: string | null
+          id: string
+          quantidade: number
+          sem_unidade: number
+        }
+        Insert: {
+          criado_em?: string
+          data_final: string
+          data_inicial: string
+          endpoint: string
+          erro?: string | null
+          feito_por?: string | null
+          id?: string
+          quantidade?: number
+          sem_unidade?: number
+        }
+        Update: {
+          criado_em?: string
+          data_final?: string
+          data_inicial?: string
+          endpoint?: string
+          erro?: string | null
+          feito_por?: string | null
+          id?: string
+          quantidade?: number
+          sem_unidade?: number
+        }
+        Relationships: []
+      }
+      webposto_registros: {
+        Row: {
+          codigo: string
+          dados: Json
+          data_ref: string | null
+          empresa_codigo: number | null
+          endpoint: string
+          importado_em: string
+          unidade_id: string | null
+        }
+        Insert: {
+          codigo: string
+          dados: Json
+          data_ref?: string | null
+          empresa_codigo?: number | null
+          endpoint: string
+          importado_em?: string
+          unidade_id?: string | null
+        }
+        Update: {
+          codigo?: string
+          dados?: Json
+          data_ref?: string | null
+          empresa_codigo?: number | null
+          endpoint?: string
+          importado_em?: string
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webposto_registros_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -291,6 +508,10 @@ export type Database = {
         Returns: boolean
       }
       lesson_course_id: { Args: { _lesson_id: string }; Returns: string }
+      pode_gestao: {
+        Args: { _modulo: string; _unidade_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

@@ -6,7 +6,17 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  {
+    // Arquivos gerados (rotas do TanStack e tipos/clientes do Supabase).
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      ".vercel",
+      "src/routeTree.gen.ts",
+      "src/integrations/**",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

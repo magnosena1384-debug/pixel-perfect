@@ -1,13 +1,16 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
-// Dados da área de gestão ficam no localStorage enquanto o backend não está disponível.
+// Dados da área de gestão: ficam na tabela gestao_itens, separados por unidade.
 
 export type Venda = {
   id: string;
   data: string;
   // Campos opcionais: vendas registradas antes do dashboard não os têm.
   hora?: string;
-  unidade?: string;
   colaborador?: string;
   produto: string;
   litros: number | null;
@@ -187,8 +190,12 @@ export function manutencaoPadrao(): ItemManutencao[] {
 
 // ---------- Datas ----------
 
+let sequencia = 0;
+
+// Ids crescentes (tempo + sequência): a ordem alfabética dos ids é a ordem de criação.
 export function uid() {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  sequencia = (sequencia + 1) % 1296;
+  return `${Date.now().toString(36)}${sequencia.toString(36).padStart(2, "0")}${Math.random().toString(36).slice(2, 6)}`;
 }
 
 function iso(d: Date) {
@@ -247,8 +254,8 @@ export function resumir(vendas: Venda[]): Resumo {
 
 export type Grupo = { nome: string; geral: Resumo; combustivel: Resumo; produtos: Resumo };
 
-export function agruparVendas(vendas: Venda[], chave: (v: Venda) => string): Grupo[] {
-  const grupos = new Map<string, Venda[]>();
+export function agruparVendas<V extends Venda>(vendas: V[], chave: (v: V) => string): Grupo[] {
+  const grupos = new Map<string, V[]>();
   for (const v of vendas) {
     const k = chave(v);
     grupos.set(k, [...(grupos.get(k) ?? []), v]);
@@ -368,12 +375,54 @@ export function calcularAlertas(
     );
 }
 
-// ---------- Armazenamento local ----------
+// ---------- Unidades e acessos ----------
 
-const listeners = new Set<() => void>();
-const cache = new Map<string, { raw: string | null; value: unknown }>();
+export const MODULOS = [
+  { id: "vendas", label: "Vendas", rota: "/gestao/vendas" },
+  { id: "rotinas", label: "Rotinas administrativas", rota: "/gestao/rotinas" },
+  { id: "pedidos", label: "Pedidos", rota: "/gestao/pedidos" },
+  { id: "documentos", label: "Regulação", rota: "/gestao/regulacao" },
+  { id: "manutencao", label: "Manutenção e inspeção", rota: "/gestao/manutencao" },
+] as const;
 
-function readRaw(key: string) {
+export type Modulo = (typeof MODULOS)[number]["id"];
+export type Unidade = { id: string; nome: string; ordem: number };
+
+const TODOS_MODULOS = new Set<Modulo>(MODULOS.map((m) => m.id));
+
+export function useMeusAcessos() {
+  return useQuery({
+    queryKey: ["gestao", "acessos"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user)
+        return {
+          isAdmin: false,
+          unidades: [] as Unidade[],
+          modulos: new Map<string, Set<Modulo>>(),
+        };
+      const [{ data: admin }, { data: unidades, error }, { data: acessos }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
+        supabase.from("unidades").select("id, nome, ordem").order("ordem"),
+        supabase.from("gestao_acessos").select("unidade_id, modulos").eq("user_id", user.id),
+      ]);
+      if (error) throw error;
+      const modulos = new Map<string, Set<Modulo>>();
+      for (const u of unidades ?? []) {
+        const meus = acessos?.find((a) => a.unidade_id === u.id)?.modulos ?? [];
+        modulos.set(u.id, admin ? TODOS_MODULOS : new Set(meus as Modulo[]));
+      }
+      return { isAdmin: !!admin, unidades: unidades ?? [], modulos };
+    },
+  });
+}
+
+const CHAVE_UNIDADE_ATUAL = "gestao:unidade-atual";
+const ouvintes = new Set<() => void>();
+
+function lerLocal(key: string) {
   try {
     return localStorage.getItem(key);
   } catch {
@@ -381,55 +430,156 @@ function readRaw(key: string) {
   }
 }
 
-function read<T>(key: string, seed: () => T[]): T[] {
-  const raw = readRaw(key);
-  const hit = cache.get(key);
-  if (hit && hit.raw === raw) return hit.value as T[];
-  let value: T[];
-  try {
-    value = raw ? (JSON.parse(raw) as T[]) : seed();
-  } catch {
-    value = seed();
-  }
-  cache.set(key, { raw, value });
-  return value;
+function assinar(cb: () => void) {
+  ouvintes.add(cb);
+  return () => ouvintes.delete(cb);
 }
 
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  const onStorage = (e: StorageEvent) => {
-    if (e.key?.startsWith("gestao:")) cb();
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
-const vazio = () => [];
-
-export function useColecao<T>(nome: string, seed: () => T[] = vazio) {
-  const key = `gestao:${nome}`;
-  const lista = useSyncExternalStore(
-    subscribe,
-    () => read<T>(key, seed),
-    () => read<T>(key, seed),
+export function useUnidadeAtual() {
+  const { data, isLoading } = useMeusAcessos();
+  const id = useSyncExternalStore(
+    assinar,
+    () => lerLocal(CHAVE_UNIDADE_ATUAL),
+    () => null,
   );
-  const salvar = useCallback(
-    (update: (atual: T[]) => T[]) => {
-      const next = update(read<T>(key, seed));
-      const raw = JSON.stringify(next);
-      try {
-        localStorage.setItem(key, raw);
-      } catch {
-        // Sem armazenamento disponível: mantém só em memória nesta sessão.
-      }
-      cache.set(key, { raw: readRaw(key), value: next });
-      listeners.forEach((l) => l());
+  const unidades = data?.unidades ?? [];
+  const unidade = unidades.find((u) => u.id === id) ?? unidades[0] ?? null;
+  const selecionar = useCallback((novo: string) => {
+    try {
+      localStorage.setItem(CHAVE_UNIDADE_ATUAL, novo);
+    } catch {
+      // sem armazenamento: a escolha vale só nesta aba
+    }
+    ouvintes.forEach((l) => l());
+  }, []);
+  const modulos = (unidade && data?.modulos.get(unidade.id)) || new Set<Modulo>();
+  return { unidade, unidades, modulos, selecionar, isAdmin: !!data?.isAdmin, isLoading };
+}
+
+// ---------- Dados da gestão (tabela gestao_itens) ----------
+
+/** O que gravar e o que apagar para levar a lista `antes` até `depois`. */
+export function diferencas<T extends { id: string }>(antes: T[], depois: T[]) {
+  const atuais = new Map(antes.map((i) => [i.id, JSON.stringify(i)]));
+  const ficam = new Set(depois.map((i) => i.id));
+  return {
+    gravar: depois.filter((i) => atuais.get(i.id) !== JSON.stringify(i)),
+    apagar: antes.filter((i) => !ficam.has(i.id)).map((i) => i.id),
+  };
+}
+
+// A lista inicial (ex.: itens de manutenção padrão) só é gravada no primeiro salvamento;
+// guardamos uma por unidade para os ids não mudarem a cada leitura.
+const sementes = new Map<string, unknown[]>();
+function semente<T>(chave: string, seed?: () => T[]) {
+  if (!seed) return [] as T[];
+  if (!sementes.has(chave)) sementes.set(chave, seed());
+  return sementes.get(chave) as T[];
+}
+
+export type VendaDaUnidade = Venda & { unidade: string };
+
+/** Vendas de todas as unidades em que o usuário tem acesso a Vendas, com o nome da unidade. */
+export function useVendasDasUnidades() {
+  const { data: acessos } = useMeusAcessos();
+  const permitidas = (acessos?.unidades ?? []).filter((u) =>
+    acessos?.modulos.get(u.id)?.has("vendas"),
+  );
+  return useQuery({
+    queryKey: ["gestao", "itens", "vendas-das-unidades", permitidas.map((u) => u.id)],
+    enabled: permitidas.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gestao_itens")
+        .select("id, unidade_id, dados")
+        .eq("colecao", "vendas")
+        .in(
+          "unidade_id",
+          permitidas.map((u) => u.id),
+        );
+      if (error) throw error;
+      const nomes = new Map(permitidas.map((u) => [u.id, u.nome]));
+      return (data ?? []).map(
+        (r) =>
+          ({
+            ...(r.dados as object),
+            id: r.id,
+            unidade: nomes.get(r.unidade_id) ?? "",
+          }) as VendaDaUnidade,
+      );
     },
-    [key, seed],
-  );
+  });
+}
+
+async function buscarItens<T>(unidade: string, colecao: Modulo) {
+  const { data, error } = await supabase
+    .from("gestao_itens")
+    .select("id, dados")
+    .eq("unidade_id", unidade)
+    .eq("colecao", colecao)
+    .order("id");
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ ...(r.dados as object), id: r.id }) as T);
+}
+
+export async function gravarDiferencas<T extends { id: string }>(
+  unidade: string,
+  colecao: Modulo,
+  antes: T[],
+  depois: T[],
+) {
+  const { gravar, apagar } = diferencas(antes, depois);
+  if (gravar.length) {
+    const { error } = await supabase.from("gestao_itens").upsert(
+      gravar.map((i) => ({
+        id: i.id,
+        unidade_id: unidade,
+        colecao,
+        dados: i as unknown as Json,
+        atualizado_em: new Date().toISOString(),
+      })),
+    );
+    if (error) throw error;
+  }
+  if (apagar.length) {
+    const { error } = await supabase
+      .from("gestao_itens")
+      .delete()
+      .eq("unidade_id", unidade)
+      .eq("colecao", colecao)
+      .in("id", apagar);
+    if (error) throw error;
+  }
+}
+
+export function useColecao<T extends { id: string }>(colecao: Modulo, seed?: () => T[]) {
+  const qc = useQueryClient();
+  const { unidade, modulos } = useUnidadeAtual();
+  const permitido = !!unidade && modulos.has(colecao);
+  const chave = ["gestao", "itens", unidade?.id, colecao];
+  const { data: salvos = [] } = useQuery({
+    queryKey: chave,
+    enabled: permitido,
+    queryFn: () => buscarItens<T>(unidade!.id, colecao),
+  });
+  const lista = !permitido
+    ? []
+    : salvos.length
+      ? salvos
+      : semente<T>(`${unidade.id}:${colecao}`, seed);
+
+  const salvar = async (update: (atual: T[]) => T[]) => {
+    if (!unidade || !permitido) return;
+    const novo = update(lista);
+    qc.setQueryData(chave, novo);
+    try {
+      await gravarDiferencas(unidade.id, colecao, salvos, novo);
+    } catch (e) {
+      toast.error(`Não foi possível salvar: ${e instanceof Error ? e.message : "erro"}`);
+    }
+    void qc.invalidateQueries({ queryKey: chave });
+    void qc.invalidateQueries({ queryKey: ["gestao", "alertas"] });
+  };
   return [lista, salvar] as const;
 }
 
@@ -438,4 +588,68 @@ export function useAlertas() {
   const [itens] = useColecao<ItemManutencao>("manutencao", manutencaoPadrao);
   const [rotinas] = useColecao<Rotina>("rotinas");
   return calcularAlertas(docs, itens, rotinas);
+}
+
+/** Quantidade de alertas por unidade, para o seletor de unidades. */
+export function useAlertasPorUnidade() {
+  const { data } = useMeusAcessos();
+  return useQuery({
+    queryKey: ["gestao", "alertas", data?.unidades.map((u) => u.id)],
+    enabled: !!data,
+    queryFn: async () => {
+      const { data: linhas, error } = await supabase
+        .from("gestao_itens")
+        .select("unidade_id, colecao, id, dados")
+        .in("colecao", ["documentos", "manutencao", "rotinas"]);
+      if (error) throw error;
+      const contagem = new Map<string, number>();
+      for (const u of data!.unidades) {
+        const pode = data!.modulos.get(u.id) ?? new Set<Modulo>();
+        const de = <T>(c: Modulo) =>
+          (linhas ?? [])
+            .filter((l) => l.unidade_id === u.id && l.colecao === c)
+            .map((l) => ({ ...(l.dados as object), id: l.id }) as T);
+        const itens = de<ItemManutencao>("manutencao");
+        contagem.set(
+          u.id,
+          calcularAlertas(
+            de<Documento>("documentos"),
+            itens.length || !pode.has("manutencao")
+              ? itens
+              : semente(`${u.id}:manutencao`, manutencaoPadrao),
+            de<Rotina>("rotinas"),
+          ).length,
+        );
+      }
+      return contagem;
+    },
+  });
+}
+
+// ---------- Dados antigos guardados no navegador ----------
+
+/** Coleções que ficaram no localStorage antes da gestão ir para o banco. */
+export function dadosDoNavegador() {
+  const achados: { colecao: Modulo; itens: { id: string }[] }[] = [];
+  for (const { id } of MODULOS) {
+    const raw = lerLocal(`gestao:u1:${id}`) ?? lerLocal(`gestao:${id}`);
+    if (!raw) continue;
+    try {
+      const itens = JSON.parse(raw) as { id: string }[];
+      if (Array.isArray(itens) && itens.length) achados.push({ colecao: id, itens });
+    } catch {
+      // ignora conteúdo inválido
+    }
+  }
+  return achados;
+}
+
+export function limparDadosDoNavegador() {
+  try {
+    for (const k of Object.keys(localStorage))
+      if (k.startsWith("gestao:") && k !== CHAVE_UNIDADE_ATUAL && k !== "gestao:ultimo-aviso")
+        localStorage.removeItem(k);
+  } catch {
+    // nada a limpar
+  }
 }

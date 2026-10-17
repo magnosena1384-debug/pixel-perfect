@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Lemon Operações design system — based on the Lemon visual identity manual. */
+/* Postos Lemon design system — based on the Lemon visual identity manual. */
 
 @theme inline {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;

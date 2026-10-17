@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +11,10 @@ import { translateAuthError } from "@/lib/auth";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar — Lemon Operações" },
-      { name: "description", content: "Acesse sua conta na plataforma Lemon Operações." },
-      { property: "og:title", content: "Entrar — Lemon Operações" },
-      { property: "og:description", content: "Acesse sua conta na plataforma Lemon Operações." },
+      { title: "Entrar — Postos Lemon" },
+      { name: "description", content: "Acesse sua conta na plataforma Postos Lemon." },
+      { property: "og:title", content: "Entrar — Postos Lemon" },
+      { property: "og:description", content: "Acesse sua conta na plataforma Postos Lemon." },
     ],
   }),
   component: AuthPage,
@@ -75,14 +74,18 @@ function AuthPage() {
   }
 
   async function google() {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
-    if (r.error) toast.error("Não foi possível entrar com Google.");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/auth" },
+    });
+    if (error) toast.error("Não foi possível entrar com Google.");
   }
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
       <div className="dot-grid relative hidden items-end p-10 md:flex">
         <div className="rounded-3xl bg-ink p-8 text-cream">
+          <p className="text-sm font-medium lowercase tracking-wide text-lime">postos</p>
           <p className="wordmark text-5xl text-lime">Lemon</p>
           <p className="mt-2 text-lg">Treinamento que acompanha sua rotina.</p>
         </div>
@@ -100,39 +103,100 @@ function AuthPage() {
               {mode === "signup" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="nome">Nome</Label>
-                  <Input id="nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+                  <Input
+                    id="nome"
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
                 </div>
               )}
               <div className="space-y-1.5">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               {mode !== "forgot" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="pw">Senha</Label>
-                  <Input id="pw" type="password" required minLength={mode === "signup" ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input
+                    id="pw"
+                    type="password"
+                    required
+                    minLength={mode === "signup" ? 8 : undefined}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
               )}
               {mode === "signup" && (
                 <label className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-1"
+                  />
                   Li e aceito os termos de uso e a política de privacidade.
                 </label>
               )}
-              <Button type="submit" disabled={busy} className="w-full rounded-full font-semibold" size="lg">
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-full font-semibold"
+                size="lg"
+              >
                 {mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Enviar link"}
               </Button>
               {mode !== "forgot" && (
-                <Button type="button" variant="outline" className="w-full rounded-full" size="lg" onClick={google}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-full"
+                  size="lg"
+                  onClick={google}
+                >
                   Continuar com Google
                 </Button>
               )}
             </form>
           )}
           <div className="mt-6 flex flex-col gap-2 text-sm">
-            {mode !== "login" && <button className="text-left text-forest hover:underline" onClick={() => { setMode("login"); setSent(null); }}>Já tenho conta</button>}
-            {mode !== "signup" && <button className="text-left text-forest hover:underline" onClick={() => { setMode("signup"); setSent(null); }}>Criar uma conta</button>}
-            {mode === "login" && <button className="text-left text-muted-foreground hover:underline" onClick={() => setMode("forgot")}>Esqueci minha senha</button>}
+            {mode !== "login" && (
+              <button
+                className="text-left text-forest hover:underline"
+                onClick={() => {
+                  setMode("login");
+                  setSent(null);
+                }}
+              >
+                Já tenho conta
+              </button>
+            )}
+            {mode !== "signup" && (
+              <button
+                className="text-left text-forest hover:underline"
+                onClick={() => {
+                  setMode("signup");
+                  setSent(null);
+                }}
+              >
+                Criar uma conta
+              </button>
+            )}
+            {mode === "login" && (
+              <button
+                className="text-left text-muted-foreground hover:underline"
+                onClick={() => setMode("forgot")}
+              >
+                Esqueci minha senha
+              </button>
+            )}
           </div>
         </div>
       </div>

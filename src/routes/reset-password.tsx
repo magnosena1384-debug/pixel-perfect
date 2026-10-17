@@ -10,9 +10,9 @@ import { Logo } from "@/components/SiteHeader";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Nova senha — Lemon Operações" },
+      { title: "Nova senha — Postos Lemon" },
       { name: "description", content: "Defina uma nova senha para sua conta." },
-      { property: "og:title", content: "Nova senha — Lemon Operações" },
+      { property: "og:title", content: "Nova senha — Postos Lemon" },
       { property: "og:description", content: "Defina uma nova senha para sua conta." },
     ],
   }),
@@ -35,8 +35,15 @@ function ResetPage() {
       <form onSubmit={submit} className="w-full max-w-sm space-y-4">
         <Logo />
         <h1 className="text-3xl font-bold uppercase">Nova senha</h1>
-        <Input type="password" placeholder="Nova senha" value={pw} onChange={(e) => setPw(e.target.value)} />
-        <Button type="submit" className="w-full rounded-full font-semibold" size="lg">Salvar</Button>
+        <Input
+          type="password"
+          placeholder="Nova senha"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+        />
+        <Button type="submit" className="w-full rounded-full font-semibold" size="lg">
+          Salvar
+        </Button>
       </form>
     </div>
   );

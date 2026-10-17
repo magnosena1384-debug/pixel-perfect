@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data } = await supabase.rpc("has_role", { _user_id: context.user.id, _role: "admin" });
     if (!data) throw redirect({ to: "/meus-cursos" });
   },
-  head: () => ({ meta: [{ title: "Admin — Lemon Operações" }] }),
+  head: () => ({ meta: [{ title: "Admin — Postos Lemon" }] }),
   component: AdminLayout,
 });
 
@@ -19,8 +19,35 @@ function AdminLayout() {
       <SiteHeader />
       <div className="mx-auto max-w-6xl px-4 py-8">
         <nav className="mb-8 flex gap-2">
-          <Link to="/admin" activeOptions={{ exact: true }} className={link} activeProps={{ className: "bg-ink text-cream" }}>Painel</Link>
-          <Link to="/admin/alunos" className={link} activeProps={{ className: "bg-ink text-cream" }}>Alunos</Link>
+          <Link
+            to="/admin"
+            activeOptions={{ exact: true }}
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Painel
+          </Link>
+          <Link
+            to="/admin/alunos"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Alunos
+          </Link>
+          <Link
+            to="/admin/acessos"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            Acessos
+          </Link>
+          <Link
+            to="/admin/webposto"
+            className={link}
+            activeProps={{ className: "bg-ink text-cream" }}
+          >
+            webPosto
+          </Link>
         </nav>
         <Outlet />
       </div>

@@ -5,6 +5,8 @@ import {
   calcularAlertas,
   diasAte,
   resumir,
+  diferencas,
+  uid,
   situacao,
   tipoProduto,
   vendasPorHora,
@@ -81,7 +83,6 @@ describe("gestão: indicadores de vendas", () => {
       valor_centavos: 10000,
       litros: 25,
       hora: "08:15",
-      unidade: "Centro",
       colaborador: "Ana",
     }),
     venda({
@@ -89,21 +90,18 @@ describe("gestão: indicadores de vendas", () => {
       valor_centavos: 30000,
       litros: 50,
       hora: "08:40",
-      unidade: "Centro",
       colaborador: "Bia",
     }),
     venda({
       produto: "Conveniência",
       valor_centavos: 1500,
       hora: "09:05",
-      unidade: "Centro",
       colaborador: "Ana",
     }),
     venda({
       produto: "Lubrificantes",
       valor_centavos: 4500,
       hora: "23:59",
-      unidade: "BR-101",
       colaborador: "Ana",
     }),
     venda({ produto: "Gasolina comum", valor_centavos: 20000, litros: 33 }),
@@ -135,5 +133,28 @@ describe("gestão: indicadores de vendas", () => {
     expect(horas[9]!.produtos).toBe(1500);
     expect(horas[23]!.produtos).toBe(4500);
     expect(horas.reduce((s, h) => s + h.combustivel + h.produtos, 0)).toBe(46000);
+  });
+});
+
+describe("gestão: gravação no banco", () => {
+  it("grava só o que mudou e apaga o que saiu da lista", () => {
+    const antes = [
+      { id: "a", v: 1 },
+      { id: "b", v: 1 },
+      { id: "c", v: 1 },
+    ];
+    const depois = [
+      { id: "a", v: 1 },
+      { id: "b", v: 2 },
+      { id: "d", v: 1 },
+    ];
+    const { gravar, apagar } = diferencas(antes, depois);
+    expect(gravar.map((i) => i.id)).toEqual(["b", "d"]);
+    expect(apagar).toEqual(["c"]);
+  });
+
+  it("ids novos ficam em ordem de criação", () => {
+    const ids = Array.from({ length: 50 }, () => uid());
+    expect([...ids].sort()).toEqual(ids);
   });
 });

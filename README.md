@@ -1,24 +1,57 @@
-# Pixel Perfect
+# Postos Lemon — Plataforma de treinamento e gestão
 
-Implement exactly the screenshot and nothing else
+Sistema da rede Postos Lemon com:
 
-This project was built with [Lovable](https://lovable.dev).
+- **Cursos em vídeo** para as equipes (catálogo, aulas, progresso, materiais e dúvidas respondidas por IA).
+- **Gestão do posto** por unidade (vendas, rotinas, pedidos, regulação, manutenção), com acesso
+  configurado por usuário.
+- **Integração com o webPosto** para importar vendas, operação e financeiro.
 
-## Build with Lovable
+Tecnologia: TanStack Start (React) + Supabase (banco, login e arquivos) + Claude (IA), hospedado na Vercel.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b6c7b111-29a1-47ad-a54f-fad9795f5d33).
+## Colocar no ar pela primeira vez
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+### 1. Banco de dados (Supabase)
 
-## Development
+1. Crie uma conta em [supabase.com](https://supabase.com) e um projeto novo (região São Paulo).
+2. No projeto, abra **SQL Editor → New query**, cole todo o conteúdo de
+   [`supabase/instalar-banco.sql`](supabase/instalar-banco.sql) e clique em **Run**. Rode uma vez só.
+   Isso cria as tabelas, as regras de acesso, as 10 unidades e as pastas de arquivos.
+3. Em **Authentication → URL Configuration**, coloque o endereço do site (da Vercel, passo 2) em
+   **Site URL** e adicione `https://SEU-SITE/**` em **Redirect URLs**.
+4. (Opcional) Login com Google: **Authentication → Sign In / Providers → Google**.
+5. Anote em **Project Settings → API** (ou no botão **Connect**) a *Project URL* e a *Publishable key*.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+### 2. Site (Vercel)
+
+1. Crie uma conta em [vercel.com](https://vercel.com) entrando com o GitHub.
+2. **Add New → Project** e importe o repositório `pixel-perfect`.
+3. Em **Environment Variables**, cadastre (veja [`.env.example`](.env.example)):
+
+   | Variável | Valor |
+   | --- | --- |
+   | `VITE_SUPABASE_URL` e `SUPABASE_URL` | Project URL do Supabase |
+   | `VITE_SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_PUBLISHABLE_KEY` | Publishable key do Supabase |
+   | `ANTHROPIC_API_KEY` | chave da API do Claude ([console.anthropic.com](https://console.anthropic.com)) |
+   | `WEBPOSTO_CHAVE` | chave de integração do webPosto (quando tiver) |
+
+4. Clique em **Deploy**. A cada novo commit na `main`, a Vercel publica sozinha.
+
+### 3. Primeiro acesso
+
+1. Abra o site e **crie sua conta primeiro**: a primeira conta cadastrada vira administradora.
+2. Em **Admin → Acessos**, libere a gestão para cada pessoa, por unidade.
+3. Em **Admin → Alunos**, libere os cursos.
+4. Em **Admin → webPosto**, informe o código de cada unidade no webPosto.
+
+## Desenvolvimento
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install
+cp .env.example .env   # preencha com os dados do Supabase
+bun run dev
 ```
+
+- Testes: `bun run test` · Lint: `bun run lint` · Tipos: `bunx tsc --noEmit`
+- Mudança no banco: nova migração em `drizzle/migrations/` + `bun run db:gerar-instalacao`.
+  Num banco já instalado, rode só o SQL da migração nova no SQL Editor.

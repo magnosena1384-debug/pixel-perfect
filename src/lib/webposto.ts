@@ -1,0 +1,197 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+// API de integração do webPosto (Quality Automação). A chave é gerada no webPosto em
+// Administração > Integrações e fica no segredo WEBPOSTO_CHAVE do servidor.
+const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO";
+const LIMITE = 2000;
+const MAX_PAGINAS = 200;
+
+/** Endpoints sugeridos por área. Os marcados como `confirmado` aparecem na documentação pública. */
+export const ENDPOINTS = [
+  { id: "VENDA", area: "Vendas", label: "Vendas (cupons)", confirmado: false },
+  { id: "VENDA_ITEM", area: "Vendas", label: "Itens vendidos", confirmado: true },
+  { id: "ABASTECIMENTO", area: "Operação", label: "Abastecimentos", confirmado: true },
+  { id: "CAIXA", area: "Operação", label: "Caixas / turnos", confirmado: false },
+  { id: "TITULO_RECEBER", area: "Financeiro", label: "Títulos a receber", confirmado: false },
+  { id: "TITULO_PAGAR", area: "Financeiro", label: "Títulos a pagar", confirmado: false },
+] as const;
+
+export type Registro = Record<string, unknown>;
+
+/** A API pode devolver uma lista direta ou um objeto com a lista dentro (ex.: `resultados`). */
+export function extrairLista(corpo: unknown): Registro[] {
+  if (Array.isArray(corpo)) return corpo as Registro[];
+  if (corpo && typeof corpo === "object") {
+    for (const v of Object.values(corpo)) if (Array.isArray(v)) return v as Registro[];
+  }
+  return [];
+}
+
+/** Identificador do registro: `codigo`, ou o primeiro campo terminado em "codigo" que não seja de outra entidade. */
+export function chaveRegistro(r: Registro, endpoint: string): string {
+  if (r["codigo"] != null) return String(r["codigo"]);
+  const proprio = endpoint.toLowerCase().replace(/_/g, "") + "codigo";
+  for (const [k, v] of Object.entries(r))
+    if (k.toLowerCase() === proprio && v != null) return String(v);
+  for (const [k, v] of Object.entries(r)) {
+    const kl = k.toLowerCase();
+    if (kl.endsWith("codigo") && kl !== "empresacodigo" && v != null && typeof v !== "object")
+      return String(v);
+  }
+  return JSON.stringify(r);
+}
+
+/** Primeira data do registro (campo começando com "data"), no formato AAAA-MM-DD. */
+export function dataRegistro(r: Registro): string | null {
+  for (const [k, v] of Object.entries(r)) {
+    if (k.toLowerCase().startsWith("data") && typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v))
+      return v.slice(0, 10);
+  }
+  return null;
+}
+
+export function empresaRegistro(r: Registro): number | null {
+  for (const [k, v] of Object.entries(r)) {
+    if (k.toLowerCase() === "empresacodigo" && v != null && Number.isFinite(Number(v)))
+      return Number(v);
+  }
+  return null;
+}
+
+/** Próximo `ultimoCodigo`: o que a API informar, senão o maior código numérico recebido. */
+export function proximoCodigo(corpo: unknown, lista: Registro[], endpoint: string, atual: number) {
+  if (corpo && typeof corpo === "object" && !Array.isArray(corpo)) {
+    const v = (corpo as Record<string, unknown>)["ultimoCodigo"];
+    if (v != null && Number.isFinite(Number(v))) return Number(v);
+  }
+  const numeros = lista.map((r) => Number(chaveRegistro(r, endpoint))).filter(Number.isFinite);
+  return numeros.length ? Math.max(atual, ...numeros) : atual;
+}
+
+async function chamar(endpoint: string, params: Record<string, string | number>) {
+  const chave = process.env["WEBPOSTO_CHAVE"];
+  if (!chave) throw new Error("Chave do webPosto não configurada (segredo WEBPOSTO_CHAVE).");
+  const url = new URL(`${BASE}/${endpoint}`);
+  url.searchParams.set("chave", chave);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
+  const res = await fetch(url, {
+    headers: { Authorization: `Key ${chave}`, Accept: "application/json" },
+  });
+  const texto = await res.text();
+  if (res.status === 401 || res.status === 403)
+    throw new Error(
+      "O webPosto recusou a chave. Confira a chave e se o contrato API Integração está liberado.",
+    );
+  if (!res.ok)
+    throw new Error(`webPosto ${endpoint} respondeu ${res.status}: ${texto.slice(0, 200)}`);
+  if (!texto.trim()) return [];
+  try {
+    return JSON.parse(texto) as unknown;
+  } catch {
+    throw new Error(`webPosto ${endpoint} não devolveu JSON: ${texto.slice(0, 200)}`);
+  }
+}
+
+async function exigirAdmin(context: { supabase: SupabaseClient<Database>; userId: string }) {
+  const { data } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!data) throw new Error("Somente administradores podem usar a integração do webPosto.");
+}
+
+export const listarEmpresasWebPosto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await exigirAdmin(context);
+    const lista = extrairLista(await chamar("EMPRESAS", {}));
+    return lista.map((e) => ({
+      codigo: empresaRegistro(e) ?? Number(chaveRegistro(e, "EMPRESA")),
+      nome: String(
+        ["fantasia", "nomeFantasia", "razao", "razaoSocial", "nome"]
+          .map((k) => e[k])
+          .find(Boolean) ?? JSON.stringify(e).slice(0, 80),
+      ),
+    }));
+  });
+
+export const importarWebPosto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      endpoint: z.string().regex(/^[A-Z_]+$/, "Endpoint inválido."),
+      dataInicial: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      dataFinal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    const { supabase } = context;
+    if (data.dataFinal < data.dataInicial) throw new Error("A data final é anterior à inicial.");
+
+    const { data: unidades } = await supabase.from("unidades").select("id, webposto_empresa");
+    const porEmpresa = new Map(
+      (unidades ?? [])
+        .filter((u) => u.webposto_empresa != null)
+        .map((u) => [u.webposto_empresa!, u.id]),
+    );
+
+    let ultimo = 0;
+    let quantidade = 0;
+    let semUnidade = 0;
+    let erro: string | null = null;
+    try {
+      for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+        const corpo = await chamar(data.endpoint, {
+          dataInicial: data.dataInicial,
+          dataFinal: data.dataFinal,
+          ultimoCodigo: ultimo,
+          limite: LIMITE,
+        });
+        const lista = extrairLista(corpo);
+        if (!lista.length) break;
+        const linhas = lista.map((r) => {
+          const empresa = empresaRegistro(r);
+          const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
+          if (!unidade) semUnidade++;
+          return {
+            endpoint: data.endpoint,
+            codigo: chaveRegistro(r, data.endpoint),
+            empresa_codigo: empresa,
+            unidade_id: unidade,
+            data_ref: dataRegistro(r),
+            dados: r as Json,
+            importado_em: new Date().toISOString(),
+          };
+        });
+        for (let i = 0; i < linhas.length; i += 500) {
+          const { error } = await supabase
+            .from("webposto_registros")
+            .upsert(linhas.slice(i, i + 500));
+          if (error) throw new Error(error.message);
+        }
+        quantidade += lista.length;
+        const proximo = proximoCodigo(corpo, lista, data.endpoint, ultimo);
+        if (lista.length < LIMITE || proximo === ultimo) break;
+        ultimo = proximo;
+      }
+    } catch (e) {
+      erro = e instanceof Error ? e.message : String(e);
+    }
+
+    await supabase.from("webposto_importacoes").insert({
+      endpoint: data.endpoint,
+      data_inicial: data.dataInicial,
+      data_final: data.dataFinal,
+      quantidade,
+      sem_unidade: semUnidade,
+      erro,
+    });
+    if (erro)
+      throw new Error(quantidade ? `${erro} (${quantidade} registros já importados)` : erro);
+    return { quantidade, semUnidade };
+  });

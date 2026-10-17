@@ -18,10 +18,10 @@ import {
   hoje,
   resumir,
   tipoProduto,
-  useColecao,
+  useVendasDasUnidades,
   vendasPorHora,
   type Grupo,
-  type Venda,
+  type VendaDaUnidade,
 } from "@/lib/gestao";
 
 export const Route = createFileRoute("/gestao/dashboard")({
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/gestao/dashboard")({
 });
 
 const TODOS = "Todos";
-const SEM_UNIDADE = "Sem unidade";
+const TODAS = "Todas";
 const SEM_COLABORADOR = "Sem colaborador";
 
 const tipos = {
@@ -75,21 +75,21 @@ function TooltipBRL({ config }: { config: ChartConfig }) {
 }
 
 function Dashboard() {
-  const [vendas] = useColecao<Venda>("vendas");
+  const { data: vendas = [], isLoading } = useVendasDasUnidades();
   const [de, setDe] = useState(`${hoje().slice(0, 7)}-01`);
   const [ate, setAte] = useState(hoje());
-  const [unidade, setUnidade] = useState(TODOS);
+  const [unidade, setUnidade] = useState(TODAS);
   const [colaborador, setColaborador] = useState(TODOS);
 
-  const unidadeDe = (v: Venda) => v.unidade || SEM_UNIDADE;
-  const colaboradorDe = (v: Venda) => v.colaborador || SEM_COLABORADOR;
+  const unidadeDe = (v: VendaDaUnidade) => v.unidade;
+  const colaboradorDe = (v: VendaDaUnidade) => v.colaborador || SEM_COLABORADOR;
 
   const noPeriodo = vendas.filter((v) => v.data >= de && v.data <= ate);
   const unidades = [...new Set(noPeriodo.map(unidadeDe))].sort();
   const colaboradores = [...new Set(noPeriodo.map(colaboradorDe))].sort();
   const filtradas = noPeriodo.filter(
     (v) =>
-      (unidade === TODOS || unidadeDe(v) === unidade) &&
+      (unidade === TODAS || unidadeDe(v) === unidade) &&
       (colaborador === TODOS || colaboradorDe(v) === colaborador),
   );
 
@@ -153,7 +153,7 @@ function Dashboard() {
           </Campo>
           <Campo label="Unidade">
             <Seletor
-              opcoes={[TODOS, ...unidades]}
+              opcoes={[TODAS, ...unidades]}
               value={unidade}
               onChange={(e) => setUnidade(e.target.value)}
             />
@@ -168,7 +168,9 @@ function Dashboard() {
         </div>
       </Painel>
 
-      {filtradas.length === 0 ? (
+      {isLoading ? (
+        <p className="text-muted-foreground">Carregando…</p>
+      ) : filtradas.length === 0 ? (
         <Painel>
           <Vazio>
             Nenhuma venda no período e filtros selecionados. Registre vendas na aba Vendas.
