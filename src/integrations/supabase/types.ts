@@ -508,6 +508,20 @@ export type Database = {
         Returns: boolean
       }
       lesson_course_id: { Args: { _lesson_id: string }; Returns: string }
+      painel_vendas_webposto: {
+        Args: { _ate: string; _de: string }
+        Returns: {
+          colaborador: string
+          hora: number | null
+          litros: number
+          nivel: string
+          produto: string | null
+          tipo: string | null
+          total: number
+          unidade_id: string
+          vendas: number
+        }[]
+      }
       pode_gestao: {
         Args: { _modulo: string; _unidade_id: string; _user_id: string }
         Returns: boolean

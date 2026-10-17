@@ -238,46 +238,95 @@ export function horaAtual() {
 
 // ---------- Indicadores de vendas ----------
 
-// Cada lançamento conta como um atendimento; ticket médio = total / nº de lançamentos.
+// As vendas (lançamentos manuais ou cupons do webPosto) viram "células" já somadas por
+// unidade, colaborador, hora e tipo/produto. `vendas` conta atendimentos (cupons); como cada
+// atendimento tem uma única unidade, colaborador e hora, células do mesmo nível podem ser
+// somadas sem contar o mesmo atendimento duas vezes. Ticket médio = total / atendimentos.
+// Níveis: "geral" (atendimento inteiro), "tipo" (combustível/produtos) e "produto".
+
+export const SEM_COLABORADOR = "Sem colaborador";
+
+export type Celula = {
+  nivel: "geral" | "tipo" | "produto";
+  unidade: string;
+  colaborador: string;
+  hora: number | null;
+  tipo: Tipo | null;
+  produto: string | null;
+  total: number; // centavos
+  litros: number;
+  vendas: number;
+};
+
 export type Resumo = { vendas: number; total: number; litros: number; ticket: number };
 
-export function resumir(vendas: Venda[]): Resumo {
-  const total = vendas.reduce((s, v) => s + v.valor_centavos, 0);
-  const litros = vendas.reduce((s, v) => s + (v.litros ?? 0), 0);
-  return {
-    vendas: vendas.length,
-    total,
-    litros,
-    ticket: vendas.length ? Math.round(total / vendas.length) : 0,
-  };
+export function resumir(celulas: Celula[]): Resumo {
+  const total = celulas.reduce((s, c) => s + c.total, 0);
+  const litros = celulas.reduce((s, c) => s + c.litros, 0);
+  const vendas = celulas.reduce((s, c) => s + c.vendas, 0);
+  return { vendas, total, litros, ticket: vendas ? Math.round(total / vendas) : 0 };
+}
+
+/** Resumo do atendimento inteiro ou só da parte de um tipo (combustível ou produtos). */
+export function resumo(celulas: Celula[], tipo?: Tipo) {
+  return resumir(
+    celulas.filter((c) => (tipo ? c.nivel === "tipo" && c.tipo === tipo : c.nivel === "geral")),
+  );
+}
+
+/** Cada lançamento manual é um atendimento com um único produto. */
+export function celulasDeLancamentos(vendas: (Venda & { unidade: string })[]): Celula[] {
+  return vendas.flatMap((v) => {
+    const h = v.hora ? Number(v.hora.slice(0, 2)) : NaN;
+    const base = {
+      unidade: v.unidade,
+      colaborador: v.colaborador || SEM_COLABORADOR,
+      hora: h >= 0 && h < 24 ? h : null,
+      total: v.valor_centavos,
+      litros: v.litros ?? 0,
+      vendas: 1,
+    };
+    const tipo = tipoProduto(v.produto);
+    return [
+      { ...base, nivel: "geral" as const, tipo: null, produto: null },
+      { ...base, nivel: "tipo" as const, tipo, produto: null },
+      { ...base, nivel: "produto" as const, tipo, produto: v.produto },
+    ];
+  });
 }
 
 export type Grupo = { nome: string; geral: Resumo; combustivel: Resumo; produtos: Resumo };
 
-export function agruparVendas<V extends Venda>(vendas: V[], chave: (v: V) => string): Grupo[] {
-  const grupos = new Map<string, V[]>();
-  for (const v of vendas) {
-    const k = chave(v);
-    grupos.set(k, [...(grupos.get(k) ?? []), v]);
-  }
+export function agruparCelulas(celulas: Celula[], chave: "unidade" | "colaborador"): Grupo[] {
+  const grupos = new Map<string, Celula[]>();
+  for (const c of celulas) grupos.set(c[chave], [...(grupos.get(c[chave]) ?? []), c]);
   return [...grupos]
-    .map(([nome, vs]) => ({
+    .map(([nome, cs]) => ({
       nome,
-      geral: resumir(vs),
-      combustivel: resumir(vs.filter((v) => tipoProduto(v.produto) === "combustivel")),
-      produtos: resumir(vs.filter((v) => tipoProduto(v.produto) === "produtos")),
+      geral: resumo(cs),
+      combustivel: resumo(cs, "combustivel"),
+      produtos: resumo(cs, "produtos"),
     }))
     .sort((a, b) => b.geral.total - a.geral.total);
 }
 
-// Total em centavos por hora do dia (0–23); vendas sem hora ficam de fora.
-export function vendasPorHora(vendas: Venda[]) {
+/** Resumo por produto de um tipo (ex.: cada combustível), do maior faturamento para o menor. */
+export function porProduto(celulas: Celula[], tipo: Tipo) {
+  const grupos = new Map<string, Celula[]>();
+  for (const c of celulas)
+    if (c.nivel === "produto" && c.tipo === tipo && c.produto)
+      grupos.set(c.produto, [...(grupos.get(c.produto) ?? []), c]);
+  return [...grupos]
+    .map(([nome, cs]) => ({ nome, resumo: resumir(cs) }))
+    .sort((a, b) => b.resumo.total - a.resumo.total);
+}
+
+// Total em centavos por hora do dia (0–23); atendimentos sem hora ficam de fora.
+export function vendasPorHora(celulas: Celula[]) {
   const horas = Array.from({ length: 24 }, (_, h) => ({ hora: h, combustivel: 0, produtos: 0 }));
-  for (const v of vendas) {
-    const h = v.hora ? Number(v.hora.slice(0, 2)) : NaN;
-    if (!(h >= 0 && h < 24)) continue;
-    horas[h]![tipoProduto(v.produto)] += v.valor_centavos;
-  }
+  for (const c of celulas)
+    if (c.nivel === "tipo" && c.tipo && c.hora != null && c.hora >= 0 && c.hora < 24)
+      horas[c.hora]![c.tipo] += c.total;
   return horas;
 }
 
@@ -507,6 +556,45 @@ export function useVendasDasUnidades() {
             unidade: nomes.get(r.unidade_id) ?? "",
           }) as VendaDaUnidade,
       );
+    },
+  });
+}
+
+/** Vendas importadas do webPosto (cupons), já somadas no banco por painel_vendas_webposto. */
+export function usePainelWebPosto(de: string, ate: string) {
+  const { data: acessos } = useMeusAcessos();
+  return useQuery({
+    queryKey: ["gestao", "webposto-painel", de, ate],
+    enabled: !!acessos,
+    queryFn: async () => {
+      const nomes = new Map(acessos!.unidades.map((u) => [u.id, u.nome]));
+      const linhas = [];
+      // A API do banco devolve no máximo 1000 linhas por vez.
+      for (let desde = 0; ; desde += 1000) {
+        const { data, error } = await supabase
+          .rpc("painel_vendas_webposto", { _de: de, _ate: ate })
+          .order("unidade_id")
+          .order("colaborador")
+          .order("hora")
+          .order("nivel")
+          .order("tipo")
+          .order("produto")
+          .range(desde, desde + 999);
+        if (error) throw error;
+        linhas.push(...data);
+        if (data.length < 1000) break;
+      }
+      return linhas.map((l): Celula => ({
+        nivel: l.nivel as Celula["nivel"],
+        unidade: nomes.get(l.unidade_id) ?? "",
+        colaborador: l.colaborador,
+        hora: l.hora,
+        tipo: l.tipo as Tipo | null,
+        produto: l.produto,
+        total: Math.round(Number(l.total) * 100),
+        litros: Number(l.litros),
+        vendas: Number(l.vendas),
+      }));
     },
   });
 }

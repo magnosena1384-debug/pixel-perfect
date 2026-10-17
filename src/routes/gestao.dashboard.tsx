@@ -13,15 +13,15 @@ import {
 import { Campo, Painel, Seletor, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
 import {
-  agruparVendas,
-  COMBUSTIVEIS,
+  agruparCelulas,
+  celulasDeLancamentos,
   hoje,
-  resumir,
-  tipoProduto,
+  porProduto,
+  resumo,
+  usePainelWebPosto,
   useVendasDasUnidades,
   vendasPorHora,
   type Grupo,
-  type VendaDaUnidade,
 } from "@/lib/gestao";
 
 export const Route = createFileRoute("/gestao/dashboard")({
@@ -30,7 +30,8 @@ export const Route = createFileRoute("/gestao/dashboard")({
 
 const TODOS = "Todos";
 const TODAS = "Todas";
-const SEM_COLABORADOR = "Sem colaborador";
+const WEBPOSTO = "webPosto";
+const MANUAL = "Lançamentos manuais";
 
 const tipos = {
   combustivel: { label: "Combustível", color: "var(--chart-2)" },
@@ -75,42 +76,46 @@ function TooltipBRL({ config }: { config: ChartConfig }) {
 }
 
 function Dashboard() {
-  const { data: vendas = [], isLoading } = useVendasDasUnidades();
   const [de, setDe] = useState(`${hoje().slice(0, 7)}-01`);
   const [ate, setAte] = useState(hoje());
+  const [fonte, setFonte] = useState<string | null>(null);
   const [unidade, setUnidade] = useState(TODAS);
   const [colaborador, setColaborador] = useState(TODOS);
 
-  const unidadeDe = (v: VendaDaUnidade) => v.unidade;
-  const colaboradorDe = (v: VendaDaUnidade) => v.colaborador || SEM_COLABORADOR;
+  const manuais = useVendasDasUnidades();
+  const webposto = usePainelWebPosto(de, ate);
+  // Sem escolha do usuário, mostra o webPosto quando há cupons importados no período.
+  const escolhida = fonte ?? (webposto.data?.length ? WEBPOSTO : MANUAL);
+  const isLoading = escolhida === WEBPOSTO ? webposto.isLoading : manuais.isLoading;
+  const erro = escolhida === WEBPOSTO ? webposto.error : manuais.error;
 
-  const noPeriodo = vendas.filter((v) => v.data >= de && v.data <= ate);
-  const unidades = [...new Set(noPeriodo.map(unidadeDe))].sort();
-  const colaboradores = [...new Set(noPeriodo.map(colaboradorDe))].sort();
+  const noPeriodo =
+    escolhida === WEBPOSTO
+      ? (webposto.data ?? [])
+      : celulasDeLancamentos((manuais.data ?? []).filter((v) => v.data >= de && v.data <= ate));
+  const unidades = [...new Set(noPeriodo.map((c) => c.unidade))].sort();
+  const colaboradores = [...new Set(noPeriodo.map((c) => c.colaborador))].sort();
   const filtradas = noPeriodo.filter(
-    (v) =>
-      (unidade === TODAS || unidadeDe(v) === unidade) &&
-      (colaborador === TODOS || colaboradorDe(v) === colaborador),
+    (c) =>
+      (unidade === TODAS || c.unidade === unidade) &&
+      (colaborador === TODOS || c.colaborador === colaborador),
   );
 
-  const combustivel = resumir(filtradas.filter((v) => tipoProduto(v.produto) === "combustivel"));
-  const produtos = resumir(filtradas.filter((v) => tipoProduto(v.produto) === "produtos"));
-  const geral = resumir(filtradas);
+  const geral = resumo(filtradas);
+  const combustivel = resumo(filtradas, "combustivel");
+  const produtos = resumo(filtradas, "produtos");
 
   const horas = vendasPorHora(filtradas);
-  const semHora = filtradas.filter((v) => !v.hora).length;
+  const semHora = resumo(filtradas.filter((c) => c.hora == null)).vendas;
   // Mostra só a faixa de horas com movimento, para o gráfico não ficar vazio nas pontas.
   const comVenda = horas.filter((h) => h.combustivel + h.produtos > 0).map((h) => h.hora);
   const faixaHoras = comVenda.length
     ? horas.slice(Math.min(...comVenda), Math.max(...comVenda) + 1)
     : [];
 
-  const porUnidade = agruparVendas(filtradas, unidadeDe);
-  const porColaborador = agruparVendas(filtradas, colaboradorDe);
-  const porCombustivel = agruparVendas(
-    filtradas.filter((v) => tipoProduto(v.produto) === "combustivel"),
-    (v) => v.produto,
-  ).sort((a, b) => COMBUSTIVEIS.indexOf(a.nome) - COMBUSTIVEIS.indexOf(b.nome));
+  const porUnidade = agruparCelulas(filtradas, "unidade");
+  const porColaborador = agruparCelulas(filtradas, "colaborador");
+  const porCombustivel = porProduto(filtradas, "combustivel");
 
   const cards = [
     {
@@ -144,7 +149,17 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <Painel>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Campo label="Fonte">
+            <Seletor
+              opcoes={[WEBPOSTO, MANUAL]}
+              value={escolhida}
+              onChange={(e) => {
+                setFonte(e.target.value);
+                setColaborador(TODOS);
+              }}
+            />
+          </Campo>
           <Campo label="De">
             <Input type="date" value={de} max={ate} onChange={(e) => setDe(e.target.value)} />
           </Campo>
@@ -170,10 +185,16 @@ function Dashboard() {
 
       {isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
+      ) : erro ? (
+        <Painel>
+          <Vazio>Não foi possível carregar as vendas: {erro.message}</Vazio>
+        </Painel>
       ) : filtradas.length === 0 ? (
         <Painel>
           <Vazio>
-            Nenhuma venda no período e filtros selecionados. Registre vendas na aba Vendas.
+            {escolhida === WEBPOSTO
+              ? "Nenhum cupom do webPosto no período e filtros selecionados. O administrador importa as vendas em Admin → webPosto."
+              : "Nenhuma venda no período e filtros selecionados. Registre vendas na aba Vendas."}
           </Vazio>
         </Painel>
       ) : (
@@ -242,7 +263,7 @@ function Dashboard() {
               <div className="grid gap-8 lg:grid-cols-2">
                 <ChartContainer config={porTipoConfig} className="aspect-auto h-64 w-full">
                   <BarChart
-                    data={porCombustivel.map((g) => ({ nome: g.nome, total: g.geral.total }))}
+                    data={porCombustivel.map((g) => ({ nome: g.nome, total: g.resumo.total }))}
                     layout="vertical"
                     margin={{ left: 8, right: 16 }}
                   >
@@ -252,7 +273,7 @@ function Dashboard() {
                       type="category"
                       tickLine={false}
                       axisLine={false}
-                      width={120}
+                      width={160}
                     />
                     <XAxis
                       type="number"
@@ -268,10 +289,10 @@ function Dashboard() {
                   colunas={["Combustível", "Litros", "Faturamento", "R$/L", "Ticket médio"]}
                   linhas={porCombustivel.map((g) => [
                     g.nome,
-                    formatLitros(g.geral.litros),
-                    formatBRL(g.geral.total),
-                    g.geral.litros ? formatBRL(Math.round(g.geral.total / g.geral.litros)) : "—",
-                    formatBRL(g.geral.ticket),
+                    formatLitros(g.resumo.litros),
+                    formatBRL(g.resumo.total),
+                    g.resumo.litros ? formatBRL(Math.round(g.resumo.total / g.resumo.litros)) : "—",
+                    formatBRL(g.resumo.ticket),
                   ])}
                 />
               </div>

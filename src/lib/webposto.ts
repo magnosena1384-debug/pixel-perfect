@@ -6,18 +6,19 @@ import type { Database, Json } from "@/integrations/supabase/types";
 
 // API de integração do webPosto (Quality Automação). A chave é gerada no webPosto em
 // Administração > Integrações e fica no segredo WEBPOSTO_CHAVE do servidor.
-const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO";
+// Caminhos conforme o Swagger público: web.qualityautomacao.com.br/v3/api-docs/integracao
+const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO/V1";
 const LIMITE = 2000;
 const MAX_PAGINAS = 200;
 
-/** Endpoints sugeridos por área. Os marcados como `confirmado` aparecem na documentação pública. */
+/** Endpoints sugeridos por área. VENDAS e FUNCIONARIOS alimentam o dashboard da gestão. */
 export const ENDPOINTS = [
-  { id: "VENDA", area: "Vendas", label: "Vendas (cupons)", confirmado: false },
-  { id: "VENDA_ITEM", area: "Vendas", label: "Itens vendidos", confirmado: true },
-  { id: "ABASTECIMENTO", area: "Operação", label: "Abastecimentos", confirmado: true },
-  { id: "CAIXA", area: "Operação", label: "Caixas / turnos", confirmado: false },
-  { id: "TITULO_RECEBER", area: "Financeiro", label: "Títulos a receber", confirmado: false },
-  { id: "TITULO_PAGAR", area: "Financeiro", label: "Títulos a pagar", confirmado: false },
+  { id: "VENDAS", area: "Vendas", label: "Vendas (cupons com itens)" },
+  { id: "FUNCIONARIOS", area: "Vendas", label: "Funcionários (nomes no dashboard)" },
+  { id: "ABASTECIMENTOS", area: "Operação", label: "Abastecimentos" },
+  { id: "CAIXAS", area: "Operação", label: "Caixas / turnos" },
+  { id: "TITULOS_RECEBER", area: "Financeiro", label: "Títulos a receber" },
+  { id: "TITULOS_PAGAR", area: "Financeiro", label: "Títulos a pagar" },
 ] as const;
 
 export type Registro = Record<string, unknown>;

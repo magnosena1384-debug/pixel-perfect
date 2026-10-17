@@ -146,7 +146,7 @@ function Importar() {
   const importar = useServerFn(importarWebPosto);
   const [inicio, setInicio] = useState(addDias(hoje(), -1));
   const [fim, setFim] = useState(hoje());
-  const [escolhidos, setEscolhidos] = useState<string[]>(["VENDA_ITEM", "ABASTECIMENTO"]);
+  const [escolhidos, setEscolhidos] = useState<string[]>(["VENDAS", "FUNCIONARIOS"]);
   const [outro, setOutro] = useState("");
   const [rodando, setRodando] = useState<string | null>(null);
 
@@ -230,14 +230,6 @@ function Importar() {
                     />
                     {e.label}
                     <code className="text-xs text-muted-foreground">{e.id}</code>
-                    {!e.confirmado && (
-                      <span
-                        className="rounded-full bg-amber-200 px-2 text-[10px] font-semibold text-black"
-                        title="Nome do endpoint não confirmado na documentação. Confira no Swagger do webPosto."
-                      >
-                        confirmar
-                      </span>
-                    )}
                   </label>
                 </li>
               ))}
@@ -249,7 +241,7 @@ function Importar() {
         <Label htmlFor="wp-outro">Outros endpoints (opcional)</Label>
         <Input
           id="wp-outro"
-          placeholder="Ex.: PRODUTO, CLIENTE"
+          placeholder="Ex.: PRODUTOS, CLIENTES (nome do Swagger, sem /V1)"
           value={outro}
           onChange={(e) => setOutro(e.target.value)}
         />

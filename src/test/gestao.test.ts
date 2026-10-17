@@ -1,19 +1,22 @@
-import { describe, expect, it } from "vitest";
 import {
   addDias,
-  agruparVendas,
+  agruparCelulas,
   calcularAlertas,
+  celulasDeLancamentos,
   diasAte,
-  resumir,
   diferencas,
-  uid,
+  porProduto,
+  resumo,
+  SEM_COLABORADOR,
   situacao,
   tipoProduto,
+  uid,
   vendasPorHora,
+  type Celula,
   type Documento,
   type ItemManutencao,
   type Rotina,
-  type Venda,
+  type VendaDaUnidade,
 } from "@/lib/gestao";
 
 const base = "2026-10-10";
@@ -68,16 +71,17 @@ describe("gestão: vencimentos", () => {
 });
 
 describe("gestão: indicadores de vendas", () => {
-  const venda = (p: Partial<Venda> & { produto: string; valor_centavos: number }): Venda => ({
+  const venda = (p: Partial<VendaDaUnidade> & { produto: string; valor_centavos: number }) => ({
     id: Math.random().toString(),
     data: base,
     litros: null,
     pagamento: "PIX",
     obs: "",
+    unidade: "Centro",
     ...p,
   });
 
-  const vendas = [
+  const lancamentos = celulasDeLancamentos([
     venda({
       produto: "Etanol",
       valor_centavos: 10000,
@@ -92,42 +96,75 @@ describe("gestão: indicadores de vendas", () => {
       hora: "08:40",
       colaborador: "Bia",
     }),
-    venda({
-      produto: "Conveniência",
-      valor_centavos: 1500,
-      hora: "09:05",
-      colaborador: "Ana",
-    }),
+    venda({ produto: "Conveniência", valor_centavos: 1500, hora: "09:05", colaborador: "Ana" }),
     venda({
       produto: "Lubrificantes",
       valor_centavos: 4500,
       hora: "23:59",
       colaborador: "Ana",
+      unidade: "BR-101",
     }),
     venda({ produto: "Gasolina comum", valor_centavos: 20000, litros: 33 }),
-  ];
+  ]);
 
   it("separa combustível de produtos", () => {
     expect(tipoProduto("GNV")).toBe("combustivel");
     expect(tipoProduto("Conveniência")).toBe("produtos");
   });
 
-  it("calcula total, litros e ticket médio", () => {
-    expect(resumir(vendas)).toEqual({ vendas: 5, total: 66000, litros: 108, ticket: 13200 });
-    expect(resumir([]).ticket).toBe(0);
+  it("calcula total, litros e ticket médio de lançamentos manuais", () => {
+    expect(resumo(lancamentos)).toEqual({ vendas: 5, total: 66000, litros: 108, ticket: 13200 });
+    expect(resumo(lancamentos, "combustivel").ticket).toBe(20000);
+    expect(resumo(lancamentos, "produtos")).toMatchObject({ vendas: 2, ticket: 3000 });
+    expect(resumo([]).ticket).toBe(0);
   });
 
-  it("agrupa com ticket por tipo e ordena pelo faturamento", () => {
-    const grupos = agruparVendas(vendas, (v) => v.colaborador ?? "Sem colaborador");
-    expect(grupos.map((g) => g.nome)).toEqual(["Bia", "Sem colaborador", "Ana"]);
+  it("agrupa por colaborador e unidade, ordenando pelo faturamento", () => {
+    const grupos = agruparCelulas(lancamentos, "colaborador");
+    expect(grupos.map((g) => g.nome)).toEqual(["Bia", SEM_COLABORADOR, "Ana"]);
     const ana = grupos.find((g) => g.nome === "Ana")!;
     expect(ana.combustivel.ticket).toBe(10000);
     expect(ana.produtos.ticket).toBe(3000);
     expect(ana.geral.ticket).toBe(5333);
+    expect(agruparCelulas(lancamentos, "unidade").map((g) => g.nome)).toEqual(["Centro", "BR-101"]);
+  });
+
+  it("conta o cupom misto uma vez no geral e uma vez em cada tipo", () => {
+    // Formato devolvido pelo banco: um cupom de R$ 150 com gasolina (R$ 120) e água (R$ 30).
+    const cel = (
+      nivel: Celula["nivel"],
+      tipo: Celula["tipo"],
+      produto: string | null,
+      total: number,
+      litros = 0,
+    ): Celula => ({
+      nivel,
+      tipo,
+      produto,
+      total,
+      litros,
+      vendas: 1,
+      unidade: "Centro",
+      colaborador: "Ana",
+      hora: 7,
+    });
+    const cupom = [
+      cel("geral", null, null, 15000, 20),
+      cel("tipo", "combustivel", null, 12000, 20),
+      cel("tipo", "produtos", null, 3000),
+      cel("produto", "combustivel", "GASOLINA COMUM", 12000, 20),
+      cel("produto", "produtos", "AGUA 500ML", 3000),
+    ];
+    expect(resumo(cupom)).toMatchObject({ vendas: 1, ticket: 15000 });
+    expect(resumo(cupom, "combustivel").ticket).toBe(12000);
+    expect(porProduto(cupom, "combustivel")).toEqual([
+      { nome: "GASOLINA COMUM", resumo: { vendas: 1, total: 12000, litros: 20, ticket: 12000 } },
+    ]);
+    expect(vendasPorHora(cupom)[7]).toEqual({ hora: 7, combustivel: 12000, produtos: 3000 });
   });
 
   it("soma por hora e ignora vendas sem hora", () => {
-    const horas = vendasPorHora(vendas);
+    const horas = vendasPorHora(lancamentos);
     expect(horas).toHaveLength(24);
     expect(horas[8]).toEqual({ hora: 8, combustivel: 40000, produtos: 0 });
     expect(horas[9]!.produtos).toBe(1500);
