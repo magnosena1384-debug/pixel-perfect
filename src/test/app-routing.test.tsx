@@ -22,4 +22,12 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).toBe("/_authenticated/admin/cursos/$id");
   });
+
+  it("matches the sales dashboard for /admin/vendas", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    const matches = router.matchRoutes("/admin/vendas");
+
+    expect(matches.at(-1)?.routeId).toBe("/_authenticated/admin/vendas");
+  });
 });
