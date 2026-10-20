@@ -11,8 +11,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Campo, Cartao, Painel, Tabela, Vazio } from "@/components/gestao/ui";
-import { addDias, formatData, hoje } from "@/lib/gestao";
-import { useDadosRh, useUnidadesCom } from "@/lib/rh/dados";
+import { addDias, formatData, hoje, useUnidadesCom } from "@/lib/gestao";
+import { useDadosRh } from "@/lib/rh/dados";
 import { diasQueContam, mesAMes, formatarPct, resumoRh, setores } from "@/lib/rh/indicadores";
 import { minParaHoras } from "@/lib/rh/planilha";
 import { cn } from "@/lib/utils";

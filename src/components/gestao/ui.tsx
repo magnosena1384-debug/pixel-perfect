@@ -27,6 +27,23 @@ export function Painel({
   );
 }
 
+const SITUACOES_BEM = {
+  em_uso: ["Em uso", "bg-primary text-primary-foreground"],
+  com_defeito: ["Com defeito", "bg-amber-400 text-black"],
+  em_transito: ["Em trânsito", "bg-secondary text-secondary-foreground"],
+  baixado: ["Baixado", "bg-muted text-muted-foreground"],
+} as const;
+
+/** Pílula com a situação de um bem do patrimônio. */
+export function PilulaSituacao({ situacao }: { situacao: keyof typeof SITUACOES_BEM }) {
+  const [texto, cor] = SITUACOES_BEM[situacao] ?? SITUACOES_BEM.em_uso;
+  return (
+    <span className={cn("whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold", cor)}>
+      {texto}
+    </span>
+  );
+}
+
 /** Cartão de indicador: rótulo pequeno, número grande e uma linha de detalhe opcional. */
 export function Cartao({
   rotulo,
@@ -105,7 +122,10 @@ export function Seletor({
   opcoes,
   className,
   ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { opcoes: string[] }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & {
+  /** Texto (valor = rótulo) ou par valor/rótulo quando o que se grava não é o que se lê. */
+  opcoes: readonly (string | { valor: string; rotulo: string })[];
+}) {
   return (
     <select
       {...props}
@@ -114,11 +134,14 @@ export function Seletor({
         className,
       )}
     >
-      {opcoes.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
+      {opcoes.map((o) => {
+        const { valor, rotulo } = typeof o === "string" ? { valor: o, rotulo: o } : o;
+        return (
+          <option key={valor} value={valor}>
+            {rotulo}
+          </option>
+        );
+      })}
     </select>
   );
 }

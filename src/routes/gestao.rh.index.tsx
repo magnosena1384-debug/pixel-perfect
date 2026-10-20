@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { Campo, Cartao, Painel, Seletor, Tabela, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
-import { formatData, hoje } from "@/lib/gestao";
-import { useDadosRh, useUnidadesCom, useVendasRh } from "@/lib/rh/dados";
+import { formatData, hoje, useUnidadesCom } from "@/lib/gestao";
+import { useDadosRh, useVendasRh } from "@/lib/rh/dados";
 import {
   casarVendas,
   horasPorSetor,

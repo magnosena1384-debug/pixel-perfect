@@ -1,152 +1,186 @@
-# Combinado — RH (painel do QuarkRH)
+# Combinado — Patrimônio
 
-Rodada 1 de 2. O Patrimônio é a rodada 2 e tem combinado próprio.
+Rodada 2. O combinado do RH (rodada 1) está em `docs/sia/combinados/rh.md`.
 
 ## 1. Quem usa e o que precisa fazer
 
-- **RH e diretoria**: veem todas as unidades. Sobem os relatórios do QuarkRH, fecham o mês,
-  comparam os postos e abrem a ficha de qualquer colaborador.
-- **Gerente de posto**: vê só a equipe da própria unidade. Acompanha no dia a dia quem faltou ou
-  atrasou, e as médias de cada pessoa por mês.
-- O acesso segue a tela **Admin → Acessos** que já existe, com dois módulos novos por unidade:
-  - **RH**: ver o painel de RH daquela unidade.
-  - **RH – importar**: subir os relatórios do QuarkRH daquela unidade.
-  - O admin tem os dois em todas as unidades.
+- **Administrativo / financeiro**: cadastra cada bem (equipamento, móvel, veículo…), imprime as
+  etiquetas, transfere bens entre as empresas do grupo, dá baixa e acompanha o valor atual
+  depois da depreciação.
+- **Gerente de posto**: confere o inventário da própria empresa lendo as etiquetas com a câmera
+  do celular, marca o que está com defeito e confirma o recebimento de bens transferidos para lá.
+- O acesso segue a tela **Admin → Acessos**, com dois módulos novos por empresa:
+  - **Patrimônio**: ver os bens da empresa, fazer o inventário e confirmar recebimento de
+    transferência.
+  - **Patrimônio – gerenciar**: cadastrar, editar, imprimir etiquetas, dar baixa e enviar
+    transferências. Quem gerencia também vê.
+  - O admin tem os dois em todas as empresas.
 
 ## 2. Deu certo quando
 
-O RH sobe os três relatórios do QuarkRH de um posto, e o painel mostra, para aquele posto e para
-cada colaborador, as horas trabalhadas, as faltas sem justificativa, os atrasos e a pontualidade,
-com os mesmos números que o QuarkRH mostra no período.
+O administrativo cadastra um equipamento, imprime a etiqueta com o tombamento e cola no bem; o
+gerente lê essa etiqueta com a câmera do celular no inventário e o bem aparece como encontrado;
+o bem transferido para outra empresa só passa a ser dela quando ela confirma; e o resumo mostra o
+valor atual de cada empresa depois da depreciação.
 
 ## 3. Não vamos fazer agora
 
-- **Advertências e suspensões**: não aparecem no painel. Nenhum relatório exportado traz esses
-  dados.
-- **Custo médio por colaborador** (salário e horas extras em R$): não aparece. Nenhum relatório
-  exportado traz salário.
-- **Ligação automática com o QuarkRH**: o painel só se atualiza quando alguém sobe a planilha.
-- **Lançar ocorrências pelo painel**: não há botão para registrar falta, atestado ou advertência.
-  O painel só lê o que vem do QuarkRH.
-- **Alertas**: ninguém recebe aviso quando alguém falta ou atrasa. É preciso abrir o painel.
-- **Patrimônio** (etiquetas, inventário, tombamento, depreciação): a aba ainda não existe.
+- **Foto e nota fiscal do bem**: não há onde anexar arquivo no cadastro.
+- **Ligação com a aba Manutenção**: o histórico de inspeção dos equipamentos continua separado do
+  patrimônio.
+- **Depreciação fiscal separada da contábil**: há uma depreciação só, em linha reta.
+- **Exportar para a contabilidade (Excel ou PDF)**: as telas mostram os números, sem gerar
+  arquivo.
+- **Importar uma planilha de bens já existentes**: o cadastro inicial é feito bem a bem na tela.
+- **Valor residual**: todo bem deprecia até zero.
 
 ## 4. O que o sistema faz
 
-### Importar (quem tem "RH – importar")
+Uma aba **Patrimônio** na Gestão, para quem tem o módulo em ao menos uma empresa.
 
-1. Na aba **RH → Importar**, a pessoa escolhe a **unidade** e o arquivo Excel exportado do QuarkRH
-   (o QuarkRH já é filtrado por posto antes de exportar).
-2. O painel reconhece sozinho qual dos três relatórios é, pelas colunas:
-   - **Frequência Analítico**: uma seção por colaborador (o nome numa linha, depois os dias), com
-     as colunas Dia, Jornada, Ent./Sai. (2 ou 3 pares), Diurna, Noturna, Extras Normais, H.N.,
-     Extras 100%, Descontos e Observações.
-   - **Irregularidades – Completo**: uma linha por colaborador e tipo, com Data Inicial,
-     Data Final, Nome, CPF, Cargo, Setor, Vínculo, Irregularidade e as Datas em que ocorreu.
-   - **Banco de Horas – Sintético**: Colaborador, Data de Admissão, Setor, Crédito, Débito e
-     Saldo, com a data do saldo no cabeçalho.
-3. Antes de gravar, mostra uma **prévia**: qual relatório é, o período, quantos colaboradores e
-   dias ou ocorrências vieram, e as linhas que não deu para ler (com o motivo).
-4. Ao confirmar, grava. Subir de novo o mesmo relatório da mesma unidade **substitui** os dados
-   daquele período, sem duplicar. Os dias fora do período do arquivo continuam como estavam.
+### Bens
 
-### Painel (quem tem "RH")
+- Lista dos bens das empresas que a pessoa pode ver, com filtros por empresa, setor, categoria e
+  situação, e busca por tombamento, nome, marca, modelo ou nº de série.
+- Cada linha: tombamento, nome, empresa e setor, situação, valor atual.
 
-- **Filtros**: período (mês ou de/até), unidade (só as que a pessoa pode ver), setor e colaborador.
-- **Cartões** do período filtrado:
-  - **Horas trabalhadas**: Diurna + Noturna + Extras Normais + Extras 100%, somadas.
-  - **Média de horas por colaborador**: horas trabalhadas ÷ colaboradores com ponto no período.
-  - **Faltas sem justificativa**: as datas marcadas como FALTA nas Irregularidades.
-  - **Atestados**: dias do ponto com "atestado" nas Observações.
-  - **Atrasos**: quantidade de datas marcadas como ATRASO nas Irregularidades, e os **minutos**:
-    a coluna Descontos do ponto nesses dias. Para o QuarkRH, ATRASO é o dia com desconto parcial,
-    seja por chegar tarde ou por sair cedo sem compensar; quem entrou 08:18 e compensou no fim do
-    dia não é marcado.
-  - **Pontualidade**: % dos dias trabalhados (dias com batida) que não estão marcados como ATRASO.
-  - **Horas extras** e **saldo do banco de horas**.
-- **Horas por setor**: horas trabalhadas de cada setor (Pista, Operacional…), com a média por
-  colaborador do setor.
-- **Comparar postos**: uma linha por unidade com os números dos cartões lado a lado.
-- **Por colaborador**: uma linha por pessoa com os mesmos números, mais o **ticket médio de vendas**
-  dela no webPosto no período (só quando os cupons do webPosto foram importados).
-- **Ficha do colaborador**: clicando na pessoa, as médias **mês a mês** (horas, faltas, atrasos,
-  minutos de atraso, pontualidade) e a lista de dias com falta, atraso, atestado, férias ou abono.
+### Cadastrar e editar bem (quem gerencia)
 
-### Como as peças se juntam
+- Campos: nome/descrição, categoria, marca, modelo, nº de série (opcional, recomendado), empresa,
+  setor, data de compra, valor de compra, vida útil em anos.
+- **Categorias** e vida útil sugerida (pode ser trocada em cada bem): Bombas e equipamentos de
+  pista 10 anos; Máquinas e equipamentos 10; Móveis e utensílios 10; Informática 5; Veículos 5;
+  Ferramentas 5; Outros 10.
+- O **tombamento** é gerado pelo sistema: número sequencial com 6 dígitos (ex.: `000123`), único no
+  grupo inteiro, que nunca se repete nem muda — nem quando o bem troca de empresa.
+- Se o nº de série digitado já existe em outro bem, o sistema avisa e mostra qual é, antes de
+  gravar.
+- A empresa só é escolhida no cadastro. Depois, o bem muda de empresa **só por transferência**;
+  editar troca o setor e os outros dados.
 
-- O colaborador é identificado pelo **CPF** quando ele aparece (Irregularidades). A Frequência e o
-  Banco de Horas só trazem o nome; nesses, a pessoa é achada pelo **nome na mesma unidade**,
-  ignorando acentos, maiúsculas e espaços sobrando.
-- O **setor** vem das Irregularidades ou do Banco de Horas. Quem não aparece em nenhum dos dois fica
-  em "Sem setor".
-- O **ticket médio de vendas** junta a pessoa com o funcionário do webPosto pelo CPF; sem CPF, pelo
-  nome. É o total dos cupons dela ÷ número de cupons, no período.
+### Ficha do bem
+
+- Os dados, a situação, o **valor atual** e a **depreciação acumulada** até hoje.
+- O **histórico**: cadastro, mudanças de setor, transferências (quem enviou, quem recebeu, quando),
+  inventários em que foi encontrado ou não, etiquetas reimpressas e baixa.
+- Botões (quem gerencia): editar, imprimir etiqueta, transferir, dar baixa.
+
+### Etiquetas (quem gerencia)
+
+- Escolher um ou vários bens e imprimir pelo navegador em:
+  - **Folha A4 Pimaco 6180**: 30 etiquetas por folha, 25,4 × 66,7 mm.
+  - **Térmica 50 × 30 mm**: uma etiqueta por bem.
+- Cada etiqueta tem: QR code com o número do tombamento, o número escrito, o nome do bem e o nome
+  da empresa.
+- **Etiquetas para reimprimir**: lista dos bens marcados no inventário como "etiqueta perdida",
+  para imprimir de uma vez; ao imprimir, saem da lista e a reimpressão entra no histórico.
+
+### Inventário (quem tem Patrimônio na empresa)
+
+1. Abre um inventário da empresa (um aberto por empresa de cada vez).
+2. Lê as etiquetas: pela **câmera do celular** (QR code), por **leitor de código USB** ou
+   **digitando** o número. Cada leitura mostra o bem e marca como encontrado, com bip ou vibração.
+3. Pode marcar o bem lido como **com defeito**.
+4. **Bem sem etiqueta**: mostra os bens da empresa ainda não lidos neste inventário, filtráveis por
+   setor e busca; ao escolher um, ele conta como encontrado e vai para "Etiquetas para reimprimir".
+5. **Fechar inventário**: relatório com encontrados, **não encontrados**, com defeito e lidos de
+   outra empresa. Bem não encontrado não sofre baixa automática.
+
+Regras da leitura:
+- Ler o mesmo bem duas vezes conta uma vez.
+- Ler um bem de outra empresa (ou em trânsito) mostra um aviso com a empresa dele e não transfere.
+- Ler um número que não existe ou de um bem baixado mostra o aviso e não conta.
+
+### Transferências
+
+- **Enviar** (quem gerencia na empresa de origem): escolhe o bem e a empresa de destino do grupo;
+  o bem fica **em trânsito** e aparece para a empresa de destino em "A receber".
+- **Receber** (quem tem Patrimônio no destino): confirma o recebimento; só então o bem passa a ser
+  da empresa de destino.
+- **Cancelar** (quem gerencia na origem): enquanto estiver em trânsito, o bem volta para a origem.
+- Bem em trânsito não pode ser editado, transferido de novo nem baixado.
+
+### Baixa (quem gerencia)
+
+- Motivo (venda, descarte, furto/perda, cadastro duplicado), data e observação.
+- O bem baixado para de depreciar na data da baixa, sai do inventário e das etiquetas, e continua
+  na lista com o filtro "Baixados".
+
+### Depreciação
+
+- Linha reta, mês a mês: depreciação mensal = valor de compra ÷ (vida útil em anos × 12).
+- Conta os **meses completos** desde a data de compra até hoje (ou até a data da baixa).
+- Valor atual = valor de compra − depreciação acumulada, nunca abaixo de zero.
+
+### Resumo
+
+- Por empresa e por categoria: quantidade de bens, valor de compra, depreciação acumulada e valor
+  atual (sem os baixados). Mostra só as empresas que a pessoa pode ver.
 
 ## 5. O que fica guardado, e quem vê
 
-| Informação | Quem cria | Quem lê | Quem apaga |
+| Informação | Quem cria / altera | Quem lê | Quem apaga |
 | --- | --- | --- | --- |
-| Dias de ponto (jornada, batidas, horas, descontos, observação) | quem tem "RH – importar" na unidade, pela importação | quem tem "RH" na unidade | a reimportação do mesmo período substitui |
-| Irregularidades (tipo e data, com nome, CPF, cargo, setor) | idem | idem | idem |
-| Banco de horas (crédito, débito, saldo, data do saldo) | idem | idem | a reimportação substitui o da unidade |
-| Registro de cada importação (quem, quando, arquivo, período, quantidades) | o sistema | quem tem "RH" na unidade | ninguém |
+| Bem (dados, empresa, setor, situação) | Patrimônio – gerenciar na empresa do bem | Patrimônio na empresa do bem | ninguém: bem sai por baixa |
+| Sequência do tombamento | o sistema | — | ninguém |
+| Transferência (origem, destino, quem enviou/recebeu, datas, situação) | envio: gerenciar na origem; recebimento: Patrimônio no destino; cancelamento: gerenciar na origem | Patrimônio na origem ou no destino | ninguém |
+| Inventário e suas leituras | Patrimônio na empresa | Patrimônio na empresa | ninguém |
+| Histórico do bem (cadastro, mudanças de setor, etiquetas, baixa) | o sistema, a cada ação | quem vê o bem | ninguém |
 
-- **Cada unidade só é vista por quem tem acesso a ela.** O gerente do Posto A não vê ninguém do
-  Posto B, nem chamando o banco direto.
-- O **CPF** aparece na ficha do colaborador para quem tem "RH" naquela unidade, e em nenhum outro
-  lugar.
-- O arquivo Excel não é guardado: só os dados lidos dele.
+- **Cada empresa só vê os seus bens.** O gerente do Posto A não vê bens do Posto B, nem chamando
+  o banco direto. Bem em trânsito é visto pelas duas empresas da transferência.
+- Bem transferido: o histórico anterior continua visível para a nova empresa.
 
 ## 6. Estados
 
-- **Deu certo**: depois de confirmar a importação, uma mensagem diz o que entrou ("Frequência de
-  01/10 a 19/10: 13 colaboradores, 247 dias") e o painel já mostra os números.
-- **Vazio**: unidade sem nada importado no período mostra "Nenhum dado de RH neste período" e, para
-  quem pode importar, o atalho para Importar.
-- **Erro no arquivo**: arquivo que não é um dos três relatórios mostra "Este arquivo não parece um
-  relatório do QuarkRH (Frequência, Irregularidades ou Banco de Horas)" e não grava nada. Linhas
-  que não deu para ler aparecem na prévia; o resto pode ser gravado.
-- **Sem permissão**: sem "RH" na unidade, a aba RH não aparece; abrindo o endereço direto, aparece
-  "Você não tem acesso ao RH nesta unidade". Sem "RH – importar", o botão Importar não aparece.
-- **Carregando**: o painel mostra "Carregando…" enquanto busca os dados.
+- **Deu certo**: ao gravar um bem, "Bem 000123 cadastrado"; ao fechar inventário, o relatório; ao
+  receber, "Bem 000123 agora é de <empresa>".
+- **Vazio**: empresa sem bens mostra "Nenhum bem cadastrado nesta empresa" e, para quem gerencia,
+  o botão Cadastrar. Inventário sem leituras mostra "Aponte a câmera para uma etiqueta ou digite o
+  número".
+- **Erro**: falha ao gravar mostra a mensagem e mantém o que foi digitado; câmera negada ou sem
+  câmera mostra "Não foi possível usar a câmera. Digite o número ou use o leitor." e a digitação
+  continua funcionando.
+- **Sem permissão**: sem Patrimônio em nenhuma empresa, a aba não aparece; abrindo o endereço,
+  "Você não tem acesso ao Patrimônio nesta empresa". Sem "gerenciar", os botões de cadastrar,
+  editar, etiquetas, transferir e baixa não aparecem.
+- **Carregando**: "Carregando…" enquanto busca; botões que gravam ficam desabilitados até terminar.
 
 ## 7. Provas
 
 Cada linha vira teste.
 
-1. A Frequência de exemplo é lida com 13 colaboradores e 247 dias, aceitando seções com 2 ou 3
-   pares de batidas.
-2. Horas trabalhadas de um dia = Diurna + Noturna + Extras Normais + Extras 100% (ex.: feriado com só
-   04:09 de Extras 100% conta 04:09).
-3. A soma de cada coluna (Diurna, Noturna, Extras Normais, Extras 100%, Descontos) de um
-   colaborador bate com a linha "Somatório" dele no próprio relatório.
-4. As Irregularidades de exemplo viram uma ocorrência por data (ex.: 2 FALTAS de um colaborador = 2
-   datas), com CPF, cargo e setor.
-5. As faltas de um colaborador nas Irregularidades caem nos dias sem batida e sem observação do ponto.
-6. Minutos de atraso: um colaborador com ATRASO em dois dias, com Descontos 00:53 e 01:31 no ponto,
-   soma 144 minutos; um dia de FALTA (Descontos 08:00) não entra nessa conta.
-7. Pontualidade = dias trabalhados sem ATRASO ÷ dias trabalhados.
-8. Dia com "Atestado" na observação conta como atestado; "Férias", "Feriado" e "Abonada" não contam
-   como falta nem como atestado.
-9. O Banco de Horas de exemplo é lido com 13 colaboradores, com saldo negativo ("-01:12") aceito.
-10. Um arquivo qualquer (que não é dos três) é recusado sem gravar nada.
-11. Importar duas vezes a mesma Frequência da mesma unidade não duplica dias.
-12. O gerente com "RH" só no Posto A não lê nenhum dado do Posto B, nem chamando o banco direto.
-13. Quem não tem "RH – importar" não consegue gravar dados de RH, nem chamando o banco direto.
-14. O nome com acento ou espaço diferente entre a Frequência e as Irregularidades vira a mesma pessoa.
+1. Dois bens cadastrados em empresas diferentes recebem tombamentos seguidos e diferentes
+   (ex.: `000001` e `000002`), mesmo cadastrados ao mesmo tempo.
+2. O tombamento não muda quando o bem é transferido.
+3. Depreciação: bem de R$ 12.000,00 com vida útil de 10 anos, comprado em 15/01/2026, vale
+   R$ 11.200,00 em 14/10/2026 (8 meses completos) e R$ 11.100,00 em 15/10/2026 (9 meses).
+4. O valor atual nunca fica abaixo de zero (bem de 5 anos comprado há 7 anos vale R$ 0,00).
+5. Bem baixado para de depreciar na data da baixa e não entra no resumo.
+6. Nº de série repetido é avisado antes de gravar.
+7. Inventário: ler o mesmo bem duas vezes conta uma vez.
+8. Inventário: ler bem de outra empresa avisa e não conta como encontrado nem transfere.
+9. Fechar inventário lista como não encontrados os bens da empresa que não foram lidos, sem
+   dar baixa neles.
+10. "Bem sem etiqueta" só oferece bens da empresa ainda não lidos e manda o escolhido para
+    "Etiquetas para reimprimir".
+11. Transferência: enquanto em trânsito, o bem continua da origem; depois de recebido, é do destino;
+    cancelada, volta para a origem.
+12. Quem só tem Patrimônio (sem gerenciar) não cadastra, não edita, não envia transferência e não
+    dá baixa, nem chamando o banco direto.
+13. O gerente do Posto A não lê bens, inventários nem transferências do Posto B, nem chamando o
+    banco direto; um bem em trânsito de A para B é visto pelos dois.
+14. Só a empresa de destino confirma o recebimento.
+15. A etiqueta A4 coloca 30 etiquetas por folha no tamanho 25,4 × 66,7 mm, e a térmica uma por
+    página de 50 × 30 mm, cada uma com o QR do tombamento, o número, o nome do bem e a empresa.
+16. O número lido do QR (ou digitado com ou sem zeros à esquerda, ex.: `123`) encontra o bem
+    `000123`.
 
 ## 8. De onde veio
 
-- `docs/contexto/quarkrh/RelatorioFrequenciaAnalitico.xls`: colunas, seções por colaborador, 2 ou 3
-  pares de batidas, observações usadas (Férias, Feriado, Abonada, Banco de Horas), 13 colaboradores e
-  247 dias, período 01/10 a 19/10/2026.
-- `docs/contexto/quarkrh/Relatório de Irregularidades - Completo (1).xls`: colunas, tipos de
-  irregularidade (FALTA, ATRASO, HORA_EXTRA, INTRAJORNADA, JORNADA_MAXIMA, ADIANTAMENTO) e o formato
-  das datas.
-- `docs/contexto/quarkrh/Relatório Sintético - Banco de Horas 2º SEMESTRE 2026.xls`: colunas, setor
-  (Pista, Operacional), saldo com sinal e a data do saldo no cabeçalho.
-
-Nenhum desses arquivos traz posto, advertência, suspensão, atestado no período ou salário.
+Nenhum dado de fora entrou. A pasta `docs/contexto/` só tem os relatórios do QuarkRH, que são do RH.
+A vida útil por categoria, o tamanho das etiquetas (Pimaco 6180 por padrão, térmica 50 × 30 mm) e
+as regras vieram desta conversa.
 
 ## 9. Escolhas
 

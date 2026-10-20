@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useMeusAcessos, type Permissao } from "@/lib/gestao";
 import type { VendaFuncionario } from "./indicadores";
 import {
   diaParaBanco,
@@ -13,13 +12,6 @@ import {
 export type DiaPontoDaUnidade = DiaPonto & { unidadeId: string };
 export type IrregularidadeDaUnidade = Irregularidade & { unidadeId: string };
 export type BancoHorasDaUnidade = BancoHoras & { unidadeId: string; referencia: string };
-
-/** Unidades em que o usuário tem a permissão pedida, na ordem do cadastro. */
-export function useUnidadesCom(permissao: Permissao) {
-  const { data, isLoading } = useMeusAcessos();
-  const unidades = (data?.unidades ?? []).filter((u) => data?.modulos.get(u.id)?.has(permissao));
-  return { unidades, isLoading };
-}
 
 /** Lê todas as páginas: o banco devolve no máximo 1000 linhas por vez. */
 async function todasAsPaginas<T>(

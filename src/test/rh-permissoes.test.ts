@@ -11,6 +11,8 @@ describe("RH: permissões por unidade", () => {
       "manutencao",
       "rh",
       "rh-importar",
+      "patrimonio",
+      "patrimonio-gerenciar",
     ]);
   });
 
@@ -25,5 +27,18 @@ describe("RH: permissões por unidade", () => {
   it("ignora o que não é permissão conhecida e não dá RH a quem só tem vendas", () => {
     const p = permissoesDe(false, ["vendas", "qualquer"]);
     expect([...p]).toEqual(["vendas"]);
+  });
+});
+
+describe("Patrimônio: permissões por empresa", () => {
+  it("quem gerencia também vê o patrimônio", () => {
+    expect([...permissoesDe(false, ["patrimonio-gerenciar"])]).toEqual([
+      "patrimonio",
+      "patrimonio-gerenciar",
+    ]);
+  });
+
+  it("quem só vê não ganha gerenciar", () => {
+    expect(permissoesDe(false, ["patrimonio"]).has("patrimonio-gerenciar")).toBe(false);
   });
 });

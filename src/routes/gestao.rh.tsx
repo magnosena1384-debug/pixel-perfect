@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Painel } from "@/components/gestao/ui";
-import { useUnidadesCom } from "@/lib/rh/dados";
+import { useUnidadesCom } from "@/lib/gestao";
 
 export const Route = createFileRoute("/gestao/rh")({
   component: RhLayout,

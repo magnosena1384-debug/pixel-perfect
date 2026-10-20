@@ -1,3 +1,5 @@
+import { normalizarTexto } from "@/lib/utils";
+
 // Leitura dos relatórios exportados em Excel pelo QuarkRH. Recebe as linhas da planilha (como
 // devolvidas por linhasDoArquivo) e devolve registros prontos para gravar. Sem acesso a arquivo
 // nem a banco: tudo aqui é puro, para ser provado com linhas inventadas.
@@ -91,14 +93,8 @@ const nadaLido = (problemas: Problema[]) =>
     ? `Nenhuma linha deste arquivo pôde ser lida (${problemas[0]!.motivo}${problemas.length > 1 ? ` e mais ${problemas.length - 1}` : ""}).`
     : NAO_RECONHECIDO;
 
-export function normalizarNome(nome: string) {
-  return nome
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // tira os acentos separados pelo NFD
-    .toUpperCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
+/** Chave da pessoa entre os relatórios: o nome sem acento, em maiúsculas e sem espaço sobrando. */
+export const normalizarNome = normalizarTexto;
 
 /** "94:22" → 5662; "-01:12" → -72; vazio ou "--:--" → 0. */
 export function horasParaMin(valor: unknown) {

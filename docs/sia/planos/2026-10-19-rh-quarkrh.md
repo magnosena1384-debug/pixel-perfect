@@ -10,7 +10,7 @@ linhas do período das unidades permitidas e calcula tudo com funções puras em
 
 **Escolhas:** TanStack Start, Supabase postos-lemon (ligação ligada, Uso: ativo), Vitest, Vercel.
 
-**Combinado:** docs/sia/combinado.md
+**Combinado:** docs/sia/combinados/rh.md
 
 **Cara:** docs/sia/visual.md
 

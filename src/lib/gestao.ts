@@ -438,14 +438,16 @@ export type Modulo = (typeof MODULOS)[number]["id"];
 export type Unidade = { id: string; nome: string; ordem: number };
 
 // O que se libera por unidade em Admin → Acessos: os módulos da gestão (que são também as
-// coleções de gestao_itens) e as permissões do RH, que têm tabelas próprias.
+// coleções de gestao_itens) e as permissões do RH e do Patrimônio, que têm tabelas próprias.
 export const PERMISSOES = [
   ...MODULOS.map(({ id, label }) => ({ id, label })),
   { id: "rh", label: "RH" },
   { id: "rh-importar", label: "RH – importar" },
+  { id: "patrimonio", label: "Patrimônio" },
+  { id: "patrimonio-gerenciar", label: "Patrimônio – gerenciar" },
 ] as const;
 
-export type Permissao = Modulo | "rh" | "rh-importar";
+export type Permissao = Modulo | "rh" | "rh-importar" | "patrimonio" | "patrimonio-gerenciar";
 
 const IDS_PERMISSOES = PERMISSOES.map((p) => p.id as Permissao);
 
@@ -454,6 +456,7 @@ export function permissoesDe(isAdmin: boolean, guardadas: string[]): Set<Permiss
   const minhas = new Set(guardadas);
   // Quem importa o RH também precisa ver o que importou.
   if (minhas.has("rh-importar")) minhas.add("rh");
+  if (minhas.has("patrimonio-gerenciar")) minhas.add("patrimonio");
   return new Set(IDS_PERMISSOES.filter((p) => minhas.has(p)));
 }
 
@@ -484,6 +487,13 @@ export function useMeusAcessos() {
       return { isAdmin: !!admin, unidades: unidades ?? [], modulos };
     },
   });
+}
+
+/** Unidades em que o usuário tem a permissão pedida, na ordem do cadastro. */
+export function useUnidadesCom(permissao: Permissao) {
+  const { data, isLoading } = useMeusAcessos();
+  const unidades = (data?.unidades ?? []).filter((u) => data?.modulos.get(u.id)?.has(permissao));
+  return { unidades, isLoading };
 }
 
 const CHAVE_UNIDADE_ATUAL = "gestao:unidade-atual";

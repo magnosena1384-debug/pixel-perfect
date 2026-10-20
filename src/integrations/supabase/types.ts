@@ -350,6 +350,102 @@ export type Database = {
           },
         ]
       }
+      patrimonio_bens: {
+        Row: {
+          baixa_data: string | null
+          baixa_motivo: string | null
+          baixa_obs: string | null
+          categoria: string
+          criado_em: string
+          criado_por: string | null
+          data_compra: string
+          id: string
+          marca: string
+          modelo: string
+          nome: string
+          numero_serie: string | null
+          reimprimir_etiqueta: boolean
+          setor: string
+          situacao: string
+          tombamento: number
+          unidade_id: string
+          valor_compra_centavos: number
+          vida_util_anos: number
+        }
+        Insert: {
+          baixa_data?: string | null
+          baixa_motivo?: string | null
+          baixa_obs?: string | null
+          categoria: string
+          criado_em?: string
+          criado_por?: string | null
+          data_compra: string
+          id?: string
+          marca?: string
+          modelo?: string
+          nome: string
+          numero_serie?: string | null
+          reimprimir_etiqueta?: boolean
+          setor?: string
+          situacao?: string
+          tombamento?: number
+          unidade_id: string
+          valor_compra_centavos: number
+          vida_util_anos: number
+        }
+        Update: {
+          baixa_data?: string | null
+          baixa_motivo?: string | null
+          baixa_obs?: string | null
+          categoria?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_compra?: string
+          id?: string
+          marca?: string
+          modelo?: string
+          nome?: string
+          numero_serie?: string | null
+          reimprimir_etiqueta?: boolean
+          setor?: string
+          situacao?: string
+          tombamento?: number
+          unidade_id?: string
+          valor_compra_centavos?: number
+          vida_util_anos?: number
+        }
+        Relationships: []
+      }
+      patrimonio_historico: {
+        Row: {
+          bem_id: string
+          detalhe: string
+          evento: string
+          id: number
+          quando: string
+          quem: string | null
+          quem_nome: string
+        }
+        Insert: {
+          bem_id: string
+          detalhe?: string
+          evento: string
+          id?: number
+          quando?: string
+          quem?: string | null
+          quem_nome?: string
+        }
+        Update: {
+          bem_id?: string
+          detalhe?: string
+          evento?: string
+          id?: number
+          quando?: string
+          quem?: string | null
+          quem_nome?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -731,6 +827,19 @@ export type Database = {
           total: number
           unidade_id: string
         }[]
+      }
+      patrimonio_cadastrar: {
+        Args: { _dados: Json; _unidade: string }
+        Returns: Json
+      }
+      patrimonio_editar: {
+        Args: { _dados: Json; _id: string }
+        Returns: undefined
+      }
+      patrimonio_nome_usuario: { Args: never; Returns: string }
+      patrimonio_pode_gerenciar: {
+        Args: { _unidade: string }
+        Returns: boolean
       }
       pode_gestao: {
         Args: { _modulo: string; _unidade_id: string; _user_id: string }

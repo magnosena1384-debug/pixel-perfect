@@ -21,6 +21,7 @@ import { Route as CursosSlugRouteImport } from './routes/cursos.$slug'
 import { Route as GestaoIndexRouteImport } from './routes/gestao.index'
 import { Route as GestaoDashboardRouteImport } from './routes/gestao.dashboard'
 import { Route as GestaoManutencaoRouteImport } from './routes/gestao.manutencao'
+import { Route as GestaoPatrimonioRouteImport } from './routes/gestao.patrimonio'
 import { Route as GestaoPedidosRouteImport } from './routes/gestao.pedidos'
 import { Route as GestaoRegulacaoRouteImport } from './routes/gestao.regulacao'
 import { Route as GestaoRhRouteImport } from './routes/gestao.rh'
@@ -31,9 +32,12 @@ import { Route as AuthenticatedAdminAcessosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminAlunosRouteImport } from './routes/_authenticated/admin.alunos'
 import { Route as AuthenticatedAdminWebpostoRouteImport } from './routes/_authenticated/admin.webposto'
 import { Route as AuthenticatedAulaLessonIdRouteImport } from './routes/_authenticated/aula.$lessonId'
+import { Route as GestaoPatrimonioIndexRouteImport } from './routes/gestao.patrimonio.index'
+import { Route as GestaoPatrimonioNovoRouteImport } from './routes/gestao.patrimonio.novo'
 import { Route as GestaoRhIndexRouteImport } from './routes/gestao.rh.index'
 import { Route as GestaoRhImportarRouteImport } from './routes/gestao.rh.importar'
 import { Route as AuthenticatedAdminCursosIdRouteImport } from './routes/_authenticated/admin.cursos.$id'
+import { Route as GestaoPatrimonioBemIdRouteImport } from './routes/gestao.patrimonio.bem.$id'
 import { Route as GestaoRhColaboradorUnidadeColaboradorRouteImport } from './routes/gestao.rh.colaborador.$unidade.$colaborador'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +99,11 @@ const GestaoManutencaoRoute = GestaoManutencaoRouteImport.update({
   path: '/manutencao',
   getParentRoute: () => GestaoRoute,
 } as any)
+const GestaoPatrimonioRoute = GestaoPatrimonioRouteImport.update({
+  id: '/patrimonio',
+  path: '/patrimonio',
+  getParentRoute: () => GestaoRoute,
+} as any)
 const GestaoPedidosRoute = GestaoPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
@@ -149,6 +158,16 @@ const AuthenticatedAulaLessonIdRoute =
     path: '/aula/$lessonId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const GestaoPatrimonioIndexRoute = GestaoPatrimonioIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GestaoPatrimonioRoute,
+} as any)
+const GestaoPatrimonioNovoRoute = GestaoPatrimonioNovoRouteImport.update({
+  id: '/novo',
+  path: '/novo',
+  getParentRoute: () => GestaoPatrimonioRoute,
+} as any)
 const GestaoRhIndexRoute = GestaoRhIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -165,6 +184,11 @@ const AuthenticatedAdminCursosIdRoute =
     path: '/cursos/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const GestaoPatrimonioBemIdRoute = GestaoPatrimonioBemIdRouteImport.update({
+  id: '/bem/$id',
+  path: '/bem/$id',
+  getParentRoute: () => GestaoPatrimonioRoute,
+} as any)
 const GestaoRhColaboradorUnidadeColaboradorRoute =
   GestaoRhColaboradorUnidadeColaboradorRouteImport.update({
     id: '/colaborador/$unidade/$colaborador',
@@ -183,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/cursos/$slug': typeof CursosSlugRoute
   '/gestao/dashboard': typeof GestaoDashboardRoute
   '/gestao/manutencao': typeof GestaoManutencaoRoute
+  '/gestao/patrimonio': typeof GestaoPatrimonioRouteWithChildren
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
   '/gestao/rh': typeof GestaoRhRouteWithChildren
@@ -193,10 +218,13 @@ export interface FileRoutesByFullPath {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/gestao/patrimonio/': typeof GestaoPatrimonioIndexRoute
   '/gestao/rh/': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/patrimonio/bem/$id': typeof GestaoPatrimonioBemIdRoute
   '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRoutesByTo {
@@ -217,10 +245,13 @@ export interface FileRoutesByTo {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/gestao/patrimonio': typeof GestaoPatrimonioIndexRoute
   '/gestao/rh': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/patrimonio/bem/$id': typeof GestaoPatrimonioBemIdRoute
   '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRoutesById {
@@ -236,6 +267,7 @@ export interface FileRoutesById {
   '/cursos/$slug': typeof CursosSlugRoute
   '/gestao/dashboard': typeof GestaoDashboardRoute
   '/gestao/manutencao': typeof GestaoManutencaoRoute
+  '/gestao/patrimonio': typeof GestaoPatrimonioRouteWithChildren
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
   '/gestao/rh': typeof GestaoRhRouteWithChildren
@@ -246,10 +278,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/_authenticated/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/_authenticated/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/gestao/patrimonio/': typeof GestaoPatrimonioIndexRoute
   '/gestao/rh/': typeof GestaoRhIndexRoute
   '/_authenticated/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/patrimonio/bem/$id': typeof GestaoPatrimonioBemIdRoute
   '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRouteTypes {
@@ -265,6 +300,7 @@ export interface FileRouteTypes {
     | '/cursos/$slug'
     | '/gestao/dashboard'
     | '/gestao/manutencao'
+    | '/gestao/patrimonio'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
     | '/gestao/rh'
@@ -275,10 +311,13 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/admin/'
+    | '/gestao/patrimonio/'
     | '/gestao/rh/'
     | '/admin/cursos/$id'
+    | '/gestao/patrimonio/bem/$id'
     | '/gestao/rh/colaborador/$unidade/$colaborador'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -299,10 +338,13 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/admin'
+    | '/gestao/patrimonio'
     | '/gestao/rh'
     | '/admin/cursos/$id'
+    | '/gestao/patrimonio/bem/$id'
     | '/gestao/rh/colaborador/$unidade/$colaborador'
   id:
     | '__root__'
@@ -317,6 +359,7 @@ export interface FileRouteTypes {
     | '/cursos/$slug'
     | '/gestao/dashboard'
     | '/gestao/manutencao'
+    | '/gestao/patrimonio'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
     | '/gestao/rh'
@@ -327,10 +370,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alunos'
     | '/_authenticated/admin/webposto'
     | '/_authenticated/aula/$lessonId'
+    | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/_authenticated/admin/'
+    | '/gestao/patrimonio/'
     | '/gestao/rh/'
     | '/_authenticated/admin/cursos/$id'
+    | '/gestao/patrimonio/bem/$id'
     | '/gestao/rh/colaborador/$unidade/$colaborador'
   fileRoutesById: FileRoutesById
 }
@@ -429,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GestaoManutencaoRouteImport
       parentRoute: typeof GestaoRoute
     }
+    '/gestao/patrimonio': {
+      id: '/gestao/patrimonio'
+      path: '/patrimonio'
+      fullPath: '/gestao/patrimonio'
+      preLoaderRoute: typeof GestaoPatrimonioRouteImport
+      parentRoute: typeof GestaoRoute
+    }
     '/gestao/pedidos': {
       id: '/gestao/pedidos'
       path: '/pedidos'
@@ -499,6 +552,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAulaLessonIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/gestao/patrimonio/': {
+      id: '/gestao/patrimonio/'
+      path: '/'
+      fullPath: '/gestao/patrimonio/'
+      preLoaderRoute: typeof GestaoPatrimonioIndexRouteImport
+      parentRoute: typeof GestaoPatrimonioRoute
+    }
+    '/gestao/patrimonio/novo': {
+      id: '/gestao/patrimonio/novo'
+      path: '/novo'
+      fullPath: '/gestao/patrimonio/novo'
+      preLoaderRoute: typeof GestaoPatrimonioNovoRouteImport
+      parentRoute: typeof GestaoPatrimonioRoute
+    }
     '/gestao/rh/': {
       id: '/gestao/rh/'
       path: '/'
@@ -519,6 +586,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/cursos/$id'
       preLoaderRoute: typeof AuthenticatedAdminCursosIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/gestao/patrimonio/bem/$id': {
+      id: '/gestao/patrimonio/bem/$id'
+      path: '/bem/$id'
+      fullPath: '/gestao/patrimonio/bem/$id'
+      preLoaderRoute: typeof GestaoPatrimonioBemIdRouteImport
+      parentRoute: typeof GestaoPatrimonioRoute
     }
     '/gestao/rh/colaborador/$unidade/$colaborador': {
       id: '/gestao/rh/colaborador/$unidade/$colaborador'
@@ -566,6 +640,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface GestaoPatrimonioRouteChildren {
+  GestaoPatrimonioNovoRoute: typeof GestaoPatrimonioNovoRoute
+  GestaoPatrimonioIndexRoute: typeof GestaoPatrimonioIndexRoute
+  GestaoPatrimonioBemIdRoute: typeof GestaoPatrimonioBemIdRoute
+}
+
+const GestaoPatrimonioRouteChildren: GestaoPatrimonioRouteChildren = {
+  GestaoPatrimonioNovoRoute: GestaoPatrimonioNovoRoute,
+  GestaoPatrimonioIndexRoute: GestaoPatrimonioIndexRoute,
+  GestaoPatrimonioBemIdRoute: GestaoPatrimonioBemIdRoute,
+}
+
+const GestaoPatrimonioRouteWithChildren =
+  GestaoPatrimonioRoute._addFileChildren(GestaoPatrimonioRouteChildren)
+
 interface GestaoRhRouteChildren {
   GestaoRhImportarRoute: typeof GestaoRhImportarRoute
   GestaoRhIndexRoute: typeof GestaoRhIndexRoute
@@ -586,6 +675,7 @@ const GestaoRhRouteWithChildren = GestaoRhRoute._addFileChildren(
 interface GestaoRouteChildren {
   GestaoDashboardRoute: typeof GestaoDashboardRoute
   GestaoManutencaoRoute: typeof GestaoManutencaoRoute
+  GestaoPatrimonioRoute: typeof GestaoPatrimonioRouteWithChildren
   GestaoPedidosRoute: typeof GestaoPedidosRoute
   GestaoRegulacaoRoute: typeof GestaoRegulacaoRoute
   GestaoRhRoute: typeof GestaoRhRouteWithChildren
@@ -597,6 +687,7 @@ interface GestaoRouteChildren {
 const GestaoRouteChildren: GestaoRouteChildren = {
   GestaoDashboardRoute: GestaoDashboardRoute,
   GestaoManutencaoRoute: GestaoManutencaoRoute,
+  GestaoPatrimonioRoute: GestaoPatrimonioRouteWithChildren,
   GestaoPedidosRoute: GestaoPedidosRoute,
   GestaoRegulacaoRoute: GestaoRegulacaoRoute,
   GestaoRhRoute: GestaoRhRouteWithChildren,
