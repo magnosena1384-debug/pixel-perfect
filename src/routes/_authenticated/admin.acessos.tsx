@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { MODULOS, type Modulo, type Unidade } from "@/lib/gestao";
+import { PERMISSOES, type Permissao, type Unidade } from "@/lib/gestao";
 
 export const Route = createFileRoute("/_authenticated/admin/acessos")({
   component: Acessos,
 });
 
-const TODOS = MODULOS.map((m) => m.id);
+const TODOS = PERMISSOES.map((m) => m.id as Permissao);
 
 function useDados() {
   return useQuery({
@@ -195,7 +195,7 @@ function AcessoUsuario({
               <thead>
                 <tr className="text-left text-xs text-muted-foreground">
                   <th className="py-2 pr-3 font-medium">Unidade</th>
-                  {MODULOS.map((m) => (
+                  {PERMISSOES.map((m) => (
                     <th key={m.id} className="px-2 py-2 text-center font-medium">
                       {m.label}
                     </th>
@@ -210,7 +210,7 @@ function AcessoUsuario({
                   return (
                     <tr key={u.id} className="border-t">
                       <td className="py-2 pr-3 font-medium">{u.nome}</td>
-                      {MODULOS.map((m) => (
+                      {PERMISSOES.map((m) => (
                         <td key={m.id} className="px-2 py-2 text-center">
                           <Checkbox
                             aria-label={`${m.label} em ${u.nome}`}
@@ -221,7 +221,7 @@ function AcessoUsuario({
                               else novo.delete(m.id);
                               void definir(
                                 u.id,
-                                TODOS.filter((x: Modulo) => novo.has(x)),
+                                TODOS.filter((x) => novo.has(x)),
                               );
                             }}
                           />

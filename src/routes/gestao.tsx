@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useUnidadesCom } from "@/lib/rh/dados";
 import { Button } from "@/components/ui/button";
 import { Painel } from "@/components/gestao/ui";
 import {
@@ -52,6 +53,7 @@ function GestaoLayout() {
     });
   }, [alertas.length, vencidos]);
 
+  const { unidades: unidadesRh } = useUnidadesCom("rh");
   const abas = MODULOS.filter((m) => modulos.has(m.id));
   const moduloDaRota = MODULOS.find((m) => pathname.startsWith(m.rota));
   const semAcessoAqui = moduloDaRota && !modulos.has(moduloDaRota.id);
@@ -112,6 +114,16 @@ function GestaoLayout() {
                   )}
                 </Fragment>
               ))}
+              {/* O RH reúne todas as unidades em que a pessoa tem acesso, não só a selecionada. */}
+              {unidadesRh.length > 0 && (
+                <Link
+                  to="/gestao/rh"
+                  className={link}
+                  activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
+                >
+                  RH
+                </Link>
+              )}
             </nav>
             <ImportarDoNavegador />
             {semAcessoAqui ? (

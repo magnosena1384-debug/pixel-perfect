@@ -10,7 +10,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { Campo, Painel, Seletor, Vazio } from "@/components/gestao/ui";
+import { Campo, Cartao, Painel, Seletor, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
 import {
   agruparCelulas,
@@ -201,11 +201,13 @@ function Dashboard() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {cards.map((c) => (
-              <div key={c.label} className={`rounded-3xl p-6 ${c.cls}`}>
-                <p className="eyebrow opacity-70">{c.label}</p>
-                <p className="mt-2 text-3xl font-bold tabular-nums">{c.valor}</p>
-                <p className="mt-1 text-sm opacity-70">{c.sub}</p>
-              </div>
+              <Cartao
+                key={c.label}
+                rotulo={c.label}
+                valor={c.valor}
+                detalhe={c.sub}
+                className={c.cls}
+              />
             ))}
           </div>
 

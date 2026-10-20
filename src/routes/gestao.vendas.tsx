@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Campo, Painel, Seletor, Vazio } from "@/components/gestao/ui";
+import { Campo, Cartao, Painel, Seletor, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
 import {
   formatData,
@@ -88,20 +88,16 @@ function Vendas() {
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl bg-primary p-6">
-          <p className="eyebrow opacity-70">Hoje</p>
-          <p className="mt-2 text-3xl font-bold">{formatBRL(totalHoje)}</p>
-        </div>
-        <div className="rounded-3xl bg-secondary p-6 text-secondary-foreground">
-          <p className="eyebrow opacity-70">Total do mês</p>
-          <p className="mt-2 text-3xl font-bold">{formatBRL(total)}</p>
-        </div>
-        <div className="rounded-3xl bg-card p-6">
-          <p className="eyebrow opacity-70">Litros no mês</p>
-          <p className="mt-2 text-3xl font-bold">
-            {litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} L
-          </p>
-        </div>
+        <Cartao rotulo="Hoje" valor={formatBRL(totalHoje)} className="bg-primary" />
+        <Cartao
+          rotulo="Total do mês"
+          valor={formatBRL(total)}
+          className="bg-secondary text-secondary-foreground"
+        />
+        <Cartao
+          rotulo="Litros no mês"
+          valor={`${litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} L`}
+        />
       </div>
 
       <Painel titulo="Registrar venda">

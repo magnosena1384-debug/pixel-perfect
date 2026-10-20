@@ -34,3 +34,13 @@ dist-ssr
 # Vercel
 .vercel
 
+
+# Material de contexto (planilhas, relatórios) fica só na máquina
+docs/contexto/*
+!docs/contexto/README.md
+graphify-out/
+
+# Segredos ficam só na máquina
+.env
+.env.*
+!.env.example

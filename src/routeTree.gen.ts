@@ -23,6 +23,7 @@ import { Route as GestaoDashboardRouteImport } from './routes/gestao.dashboard'
 import { Route as GestaoManutencaoRouteImport } from './routes/gestao.manutencao'
 import { Route as GestaoPedidosRouteImport } from './routes/gestao.pedidos'
 import { Route as GestaoRegulacaoRouteImport } from './routes/gestao.regulacao'
+import { Route as GestaoRhRouteImport } from './routes/gestao.rh'
 import { Route as GestaoRotinasRouteImport } from './routes/gestao.rotinas'
 import { Route as GestaoVendasRouteImport } from './routes/gestao.vendas'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -30,6 +31,8 @@ import { Route as AuthenticatedAdminAcessosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminAlunosRouteImport } from './routes/_authenticated/admin.alunos'
 import { Route as AuthenticatedAdminWebpostoRouteImport } from './routes/_authenticated/admin.webposto'
 import { Route as AuthenticatedAulaLessonIdRouteImport } from './routes/_authenticated/aula.$lessonId'
+import { Route as GestaoRhIndexRouteImport } from './routes/gestao.rh.index'
+import { Route as GestaoRhImportarRouteImport } from './routes/gestao.rh.importar'
 import { Route as AuthenticatedAdminCursosIdRouteImport } from './routes/_authenticated/admin.cursos.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -101,6 +104,11 @@ const GestaoRegulacaoRoute = GestaoRegulacaoRouteImport.update({
   path: '/regulacao',
   getParentRoute: () => GestaoRoute,
 } as any)
+const GestaoRhRoute = GestaoRhRouteImport.update({
+  id: '/rh',
+  path: '/rh',
+  getParentRoute: () => GestaoRoute,
+} as any)
 const GestaoRotinasRoute = GestaoRotinasRouteImport.update({
   id: '/rotinas',
   path: '/rotinas',
@@ -140,6 +148,16 @@ const AuthenticatedAulaLessonIdRoute =
     path: '/aula/$lessonId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const GestaoRhIndexRoute = GestaoRhIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GestaoRhRoute,
+} as any)
+const GestaoRhImportarRoute = GestaoRhImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => GestaoRhRoute,
+} as any)
 const AuthenticatedAdminCursosIdRoute =
   AuthenticatedAdminCursosIdRouteImport.update({
     id: '/cursos/$id',
@@ -160,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/gestao/manutencao': typeof GestaoManutencaoRoute
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
+  '/gestao/rh': typeof GestaoRhRouteWithChildren
   '/gestao/rotinas': typeof GestaoRotinasRoute
   '/gestao/vendas': typeof GestaoVendasRoute
   '/gestao/': typeof GestaoIndexRoute
@@ -167,7 +186,9 @@ export interface FileRoutesByFullPath {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/gestao/rh/': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
 }
 export interface FileRoutesByTo {
@@ -188,7 +209,9 @@ export interface FileRoutesByTo {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/gestao/rh': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
 }
 export interface FileRoutesById {
@@ -206,6 +229,7 @@ export interface FileRoutesById {
   '/gestao/manutencao': typeof GestaoManutencaoRoute
   '/gestao/pedidos': typeof GestaoPedidosRoute
   '/gestao/regulacao': typeof GestaoRegulacaoRoute
+  '/gestao/rh': typeof GestaoRhRouteWithChildren
   '/gestao/rotinas': typeof GestaoRotinasRoute
   '/gestao/vendas': typeof GestaoVendasRoute
   '/gestao/': typeof GestaoIndexRoute
@@ -213,7 +237,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/_authenticated/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/_authenticated/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/gestao/rh/': typeof GestaoRhIndexRoute
   '/_authenticated/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
 }
 export interface FileRouteTypes {
@@ -231,6 +257,7 @@ export interface FileRouteTypes {
     | '/gestao/manutencao'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
+    | '/gestao/rh'
     | '/gestao/rotinas'
     | '/gestao/vendas'
     | '/gestao/'
@@ -238,7 +265,9 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/rh/importar'
     | '/admin/'
+    | '/gestao/rh/'
     | '/admin/cursos/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -259,7 +288,9 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/rh/importar'
     | '/admin'
+    | '/gestao/rh'
     | '/admin/cursos/$id'
   id:
     | '__root__'
@@ -276,6 +307,7 @@ export interface FileRouteTypes {
     | '/gestao/manutencao'
     | '/gestao/pedidos'
     | '/gestao/regulacao'
+    | '/gestao/rh'
     | '/gestao/rotinas'
     | '/gestao/vendas'
     | '/gestao/'
@@ -283,7 +315,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alunos'
     | '/_authenticated/admin/webposto'
     | '/_authenticated/aula/$lessonId'
+    | '/gestao/rh/importar'
     | '/_authenticated/admin/'
+    | '/gestao/rh/'
     | '/_authenticated/admin/cursos/$id'
   fileRoutesById: FileRoutesById
 }
@@ -396,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GestaoRegulacaoRouteImport
       parentRoute: typeof GestaoRoute
     }
+    '/gestao/rh': {
+      id: '/gestao/rh'
+      path: '/rh'
+      fullPath: '/gestao/rh'
+      preLoaderRoute: typeof GestaoRhRouteImport
+      parentRoute: typeof GestaoRoute
+    }
     '/gestao/rotinas': {
       id: '/gestao/rotinas'
       path: '/rotinas'
@@ -445,6 +486,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAulaLessonIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/gestao/rh/': {
+      id: '/gestao/rh/'
+      path: '/'
+      fullPath: '/gestao/rh/'
+      preLoaderRoute: typeof GestaoRhIndexRouteImport
+      parentRoute: typeof GestaoRhRoute
+    }
+    '/gestao/rh/importar': {
+      id: '/gestao/rh/importar'
+      path: '/importar'
+      fullPath: '/gestao/rh/importar'
+      preLoaderRoute: typeof GestaoRhImportarRouteImport
+      parentRoute: typeof GestaoRhRoute
+    }
     '/_authenticated/admin/cursos/$id': {
       id: '/_authenticated/admin/cursos/$id'
       path: '/cursos/$id'
@@ -491,11 +546,26 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface GestaoRhRouteChildren {
+  GestaoRhImportarRoute: typeof GestaoRhImportarRoute
+  GestaoRhIndexRoute: typeof GestaoRhIndexRoute
+}
+
+const GestaoRhRouteChildren: GestaoRhRouteChildren = {
+  GestaoRhImportarRoute: GestaoRhImportarRoute,
+  GestaoRhIndexRoute: GestaoRhIndexRoute,
+}
+
+const GestaoRhRouteWithChildren = GestaoRhRoute._addFileChildren(
+  GestaoRhRouteChildren,
+)
+
 interface GestaoRouteChildren {
   GestaoDashboardRoute: typeof GestaoDashboardRoute
   GestaoManutencaoRoute: typeof GestaoManutencaoRoute
   GestaoPedidosRoute: typeof GestaoPedidosRoute
   GestaoRegulacaoRoute: typeof GestaoRegulacaoRoute
+  GestaoRhRoute: typeof GestaoRhRouteWithChildren
   GestaoRotinasRoute: typeof GestaoRotinasRoute
   GestaoVendasRoute: typeof GestaoVendasRoute
   GestaoIndexRoute: typeof GestaoIndexRoute
@@ -506,6 +576,7 @@ const GestaoRouteChildren: GestaoRouteChildren = {
   GestaoManutencaoRoute: GestaoManutencaoRoute,
   GestaoPedidosRoute: GestaoPedidosRoute,
   GestaoRegulacaoRoute: GestaoRegulacaoRoute,
+  GestaoRhRoute: GestaoRhRouteWithChildren,
   GestaoRotinasRoute: GestaoRotinasRoute,
   GestaoVendasRoute: GestaoVendasRoute,
   GestaoIndexRoute: GestaoIndexRoute,

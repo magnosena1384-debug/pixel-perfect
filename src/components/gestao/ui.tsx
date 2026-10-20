@@ -27,6 +27,27 @@ export function Painel({
   );
 }
 
+/** Cartão de indicador: rótulo pequeno, número grande e uma linha de detalhe opcional. */
+export function Cartao({
+  rotulo,
+  valor,
+  detalhe,
+  className = "bg-card",
+}: {
+  rotulo: string;
+  valor: ReactNode;
+  detalhe?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-3xl p-6", className)}>
+      <p className="eyebrow opacity-70">{rotulo}</p>
+      <p className="mt-2 text-3xl font-bold tabular-nums">{valor}</p>
+      {detalhe && <p className="mt-1 text-sm opacity-70">{detalhe}</p>}
+    </div>
+  );
+}
+
 export function Campo({
   label,
   children,

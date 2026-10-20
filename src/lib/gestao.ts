@@ -437,7 +437,25 @@ export const MODULOS = [
 export type Modulo = (typeof MODULOS)[number]["id"];
 export type Unidade = { id: string; nome: string; ordem: number };
 
-const TODOS_MODULOS = new Set<Modulo>(MODULOS.map((m) => m.id));
+// O que se libera por unidade em Admin → Acessos: os módulos da gestão (que são também as
+// coleções de gestao_itens) e as permissões do RH, que têm tabelas próprias.
+export const PERMISSOES = [
+  ...MODULOS.map(({ id, label }) => ({ id, label })),
+  { id: "rh", label: "RH" },
+  { id: "rh-importar", label: "RH – importar" },
+] as const;
+
+export type Permissao = Modulo | "rh" | "rh-importar";
+
+const IDS_PERMISSOES = PERMISSOES.map((p) => p.id as Permissao);
+
+export function permissoesDe(isAdmin: boolean, guardadas: string[]): Set<Permissao> {
+  if (isAdmin) return new Set(IDS_PERMISSOES);
+  const minhas = new Set(guardadas);
+  // Quem importa o RH também precisa ver o que importou.
+  if (minhas.has("rh-importar")) minhas.add("rh");
+  return new Set(IDS_PERMISSOES.filter((p) => minhas.has(p)));
+}
 
 export function useMeusAcessos() {
   return useQuery({
@@ -450,7 +468,7 @@ export function useMeusAcessos() {
         return {
           isAdmin: false,
           unidades: [] as Unidade[],
-          modulos: new Map<string, Set<Modulo>>(),
+          modulos: new Map<string, Set<Permissao>>(),
         };
       const [{ data: admin }, { data: unidades, error }, { data: acessos }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }),
@@ -458,10 +476,10 @@ export function useMeusAcessos() {
         supabase.from("gestao_acessos").select("unidade_id, modulos").eq("user_id", user.id),
       ]);
       if (error) throw error;
-      const modulos = new Map<string, Set<Modulo>>();
+      const modulos = new Map<string, Set<Permissao>>();
       for (const u of unidades ?? []) {
         const meus = acessos?.find((a) => a.unidade_id === u.id)?.modulos ?? [];
-        modulos.set(u.id, admin ? TODOS_MODULOS : new Set(meus as Modulo[]));
+        modulos.set(u.id, permissoesDe(!!admin, meus));
       }
       return { isAdmin: !!admin, unidades: unidades ?? [], modulos };
     },
@@ -501,7 +519,7 @@ export function useUnidadeAtual() {
     }
     ouvintes.forEach((l) => l());
   }, []);
-  const modulos = (unidade && data?.modulos.get(unidade.id)) || new Set<Modulo>();
+  const modulos = (unidade && data?.modulos.get(unidade.id)) || new Set<Permissao>();
   return { unidade, unidades, modulos, selecionar, isAdmin: !!data?.isAdmin, isLoading };
 }
 
@@ -692,7 +710,7 @@ export function useAlertasPorUnidade() {
       if (error) throw error;
       const contagem = new Map<string, number>();
       for (const u of data!.unidades) {
-        const pode = data!.modulos.get(u.id) ?? new Set<Modulo>();
+        const pode = data!.modulos.get(u.id) ?? new Set<Permissao>();
         const de = <T>(c: Modulo) =>
           (linhas ?? [])
             .filter((l) => l.unidade_id === u.id && l.colecao === c)

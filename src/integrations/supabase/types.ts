@@ -413,6 +413,99 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_importacoes: {
+        Row: {
+          arquivo: string
+          criado_em: string
+          feito_por: string | null
+          id: string
+          periodo_ate: string | null
+          periodo_de: string | null
+          quantidade: number
+          relatorio: string
+          unidade_id: string
+        }
+        Insert: {
+          arquivo: string
+          criado_em?: string
+          feito_por?: string | null
+          id?: string
+          periodo_ate?: string | null
+          periodo_de?: string | null
+          quantidade?: number
+          relatorio: string
+          unidade_id: string
+        }
+        Update: {
+          arquivo?: string
+          criado_em?: string
+          feito_por?: string | null
+          id?: string
+          periodo_ate?: string | null
+          periodo_de?: string | null
+          quantidade?: number
+          relatorio?: string
+          unidade_id?: string
+        }
+        Relationships: []
+      }
+      rh_ponto_dias: {
+        Row: {
+          batidas: string[]
+          colaborador: string
+          data: string
+          descontos_min: number
+          diurna_min: number
+          extras100_min: number
+          extras_min: number
+          folga: boolean
+          hn_min: number
+          importacao_id: string | null
+          jornada: string
+          nome: string
+          noturna_min: number
+          observacao: string
+          trabalhou: boolean
+          unidade_id: string
+        }
+        Insert: {
+          batidas?: string[]
+          colaborador: string
+          data: string
+          descontos_min?: number
+          diurna_min?: number
+          extras100_min?: number
+          extras_min?: number
+          folga?: boolean
+          hn_min?: number
+          importacao_id?: string | null
+          jornada?: string
+          nome: string
+          noturna_min?: number
+          observacao?: string
+          trabalhou?: boolean
+          unidade_id: string
+        }
+        Update: {
+          batidas?: string[]
+          colaborador?: string
+          data?: string
+          descontos_min?: number
+          diurna_min?: number
+          extras100_min?: number
+          extras_min?: number
+          folga?: boolean
+          hn_min?: number
+          importacao_id?: string | null
+          jornada?: string
+          nome?: string
+          noturna_min?: number
+          observacao?: string
+          trabalhou?: boolean
+          unidade_id?: string
+        }
+        Relationships: []
+      }
       webposto_importacoes: {
         Row: {
           criado_em: string
@@ -521,6 +614,16 @@ export type Database = {
           unidade_id: string
           vendas: number
         }[]
+      }
+      rh_gravar_ponto: {
+        Args: {
+          _arquivo: string
+          _ate: string
+          _de: string
+          _dias: Json
+          _unidade: string
+        }
+        Returns: number
       }
       pode_gestao: {
         Args: { _modulo: string; _unidade_id: string; _user_id: string }
