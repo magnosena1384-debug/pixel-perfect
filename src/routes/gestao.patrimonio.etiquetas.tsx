@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toString as qrSvg } from "qrcode";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -10,9 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Campo, Painel, Seletor, Vazio } from "@/components/gestao/ui";
 import { useUnidadesCom } from "@/lib/gestao";
 import { registrarEtiquetasImpressas, useBens } from "@/lib/patrimonio/dados";
-import { FORMATOS, paginasDeEtiquetas, type Formato } from "@/lib/patrimonio/etiquetas";
+import {
+  FORMATOS,
+  paginasDeEtiquetas,
+  type Formato,
+  type Pagina,
+} from "@/lib/patrimonio/etiquetas";
 import { formatarTombamento } from "@/lib/patrimonio/regras";
-import { normalizarTexto } from "@/lib/utils";
+import { cn, normalizarTexto } from "@/lib/utils";
 
 export const Route = createFileRoute("/gestao/patrimonio/etiquetas")({
   validateSearch: z.object({ ids: z.string().optional() }),
@@ -30,6 +36,8 @@ function Etiquetas() {
   const [formato, setFormato] = useState<Formato>("termica-50x30");
   const [busca, setBusca] = useState("");
   const [imprimindo, setImprimindo] = useState(false);
+  // Depois de abrir a impressão, a pessoa confirma se saiu certo; só então registra.
+  const [conferindo, setConferindo] = useState(false);
 
   if (isLoading || bens.isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!unidades.length)
@@ -69,11 +77,19 @@ function Etiquetas() {
     setEscolhidos(novo);
   }
 
-  async function imprimir() {
+  function imprimir() {
+    // No celular, print() não espera a janela fechar: a confirmação fica num botão à parte.
+    window.print();
+    setConferindo(true);
+  }
+
+  async function registrar() {
     setImprimindo(true);
     try {
-      window.print(); // abre a janela de impressão do navegador e espera ela fechar
       await registrarEtiquetasImpressas(selecionados.map((b) => b.id));
+      toast.success(`${selecionados.length} etiqueta(s) registradas no histórico`);
+      setConferindo(false);
+      setEscolhidos(new Set());
       void qc.invalidateQueries({ queryKey: ["patrimonio"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao registrar a impressão.");
@@ -85,13 +101,18 @@ function Etiquetas() {
   const { pagina } = FORMATOS[formato];
   return (
     <div className="space-y-8">
-      {/* Na impressão, só as etiquetas aparecem, no tamanho exato do papel. */}
+      {/* Na impressão, só a área de etiquetas (fora do layout do site) existe, no tamanho exato
+          do papel: nada escondido ocupa espaço e empurra as etiquetas para outra página. */}
       <style>{`@media print {
         @page { size: ${pagina.largura}mm ${pagina.altura}mm; margin: 0; }
-        body * { visibility: hidden; }
-        #area-etiquetas, #area-etiquetas * { visibility: visible; }
-        #area-etiquetas { position: absolute; left: 0; top: 0; }
+        body > *:not(#area-impressao) { display: none !important; }
       }`}</style>
+      {createPortal(
+        <div id="area-impressao" className="hidden print:block">
+          <PaginasEtiquetas paginas={paginas} />
+        </div>,
+        document.body,
+      )}
 
       <div className="space-y-8 print:hidden">
         <Painel titulo="Etiquetas">
@@ -128,11 +149,32 @@ function Etiquetas() {
             <Button
               className="rounded-full"
               disabled={!selecionados.length || imprimindo}
-              onClick={() => void imprimir()}
+              onClick={imprimir}
             >
-              {imprimindo ? "Imprimindo…" : `Imprimir ${selecionados.length} etiqueta(s)`}
+              Imprimir {selecionados.length} etiqueta(s)
             </Button>
           </div>
+          {conferindo && (
+            <div className="mt-4 rounded-2xl border-2 border-primary p-4 text-sm" role="status">
+              <p className="font-semibold">As etiquetas saíram certas?</p>
+              <p className="mt-1 text-muted-foreground">
+                Ao confirmar, a impressão entra no histórico de cada bem e eles saem da lista de
+                reimpressão.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  className="rounded-full"
+                  disabled={imprimindo}
+                  onClick={() => void registrar()}
+                >
+                  {imprimindo ? "Registrando…" : "Sim, registrar"}
+                </Button>
+                <Button variant="ghost" onClick={() => setConferindo(false)}>
+                  Não, vou imprimir de novo
+                </Button>
+              </div>
+            </div>
+          )}
           <p className="mt-3 text-sm text-muted-foreground">
             Na janela de impressão, escolha a impressora certa, tamanho do papel{" "}
             {formato === "pimaco-6180" ? "Carta" : "50 × 30 mm"}, margens “Nenhuma” e escala 100%.
@@ -166,43 +208,52 @@ function Etiquetas() {
       </div>
 
       {paginas.length > 0 && (
-        <Painel titulo="Prévia" className="print:p-0">
-          <div id="area-etiquetas" className="space-y-4 print:space-y-0">
-            {paginas.map((p, i) => (
-              <div
-                key={i}
-                className="relative bg-white text-black shadow print:shadow-none"
-                style={{
-                  width: `${p.largura}mm`,
-                  height: `${p.altura}mm`,
-                  breakAfter: "page",
-                }}
-              >
-                {p.etiquetas.map((e) => (
-                  <div
-                    key={e.numero}
-                    className="absolute flex items-center gap-[1.5mm] overflow-hidden p-[1.5mm]"
-                    style={{
-                      left: `${e.x}mm`,
-                      top: `${e.y}mm`,
-                      width: `${e.largura}mm`,
-                      height: `${e.altura}mm`,
-                    }}
-                  >
-                    <Qr texto={e.qr} tamanho={`${e.altura - 3}mm`} />
-                    <div className="min-w-0 leading-tight">
-                      <p className="font-mono text-[11pt] font-bold">{e.numero}</p>
-                      <p className="line-clamp-2 text-[7pt]">{e.nome}</p>
-                      <p className="truncate text-[6pt]">{e.empresa}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+        <Painel titulo="Prévia" className="print:hidden">
+          <div className="space-y-4 overflow-x-auto">
+            <PaginasEtiquetas paginas={paginas} comSombra />
           </div>
         </Painel>
       )}
     </div>
+  );
+}
+
+/** As páginas de etiquetas em milímetros, para a prévia e para a impressão. */
+function PaginasEtiquetas({ paginas, comSombra }: { paginas: Pagina[]; comSombra?: boolean }) {
+  return (
+    <>
+      {paginas.map((p, i) => (
+        <div
+          key={i}
+          className={cn("relative bg-white text-black", comSombra && "shadow")}
+          style={{
+            width: `${p.largura}mm`,
+            height: `${p.altura}mm`,
+            breakAfter: "page",
+          }}
+        >
+          {p.etiquetas.map((e) => (
+            <div
+              key={e.numero}
+              className="absolute flex items-center gap-[1.5mm] overflow-hidden p-[1.5mm]"
+              style={{
+                left: `${e.x}mm`,
+                top: `${e.y}mm`,
+                width: `${e.largura}mm`,
+                height: `${e.altura}mm`,
+              }}
+            >
+              <Qr texto={e.qr} tamanho={`${e.altura - 3}mm`} />
+              <div className="min-w-0 leading-tight">
+                <p className="font-mono text-[11pt] font-bold">{e.numero}</p>
+                <p className="line-clamp-2 text-[7pt]">{e.nome}</p>
+                <p className="truncate text-[6pt]">{e.empresa}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </>
   );
 }
 

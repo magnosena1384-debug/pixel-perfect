@@ -954,6 +954,11 @@ export type Database = {
         Returns: { id: string; nome: string }[]
       }
       patrimonio_receber: { Args: { _transferencia: string }; Returns: undefined }
+      patrimonio_serie_repetida: {
+        Args: { _exceto: string; _serie: string }
+        Returns: Json
+      }
+      patrimonio_validar: { Args: { _dados: Json }; Returns: undefined }
       patrimonio_transferir: {
         Args: { _bem: string; _destino: string; _observacao: string }
         Returns: string
@@ -968,7 +973,7 @@ export type Database = {
       }
       patrimonio_editar: {
         Args: { _dados: Json; _id: string }
-        Returns: undefined
+        Returns: Json
       }
       patrimonio_etiquetas_impressas: {
         Args: { _ids: string[] }

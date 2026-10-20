@@ -148,7 +148,7 @@ Tombamento sempre em `font-mono tabular-nums` com os 6 dígitos (`000123`).
 
 ### Etiquetas (impressão)
 
-- Tela: escolher bens (ou "Etiquetas para reimprimir"), formato **Folha A4 – Pimaco 6180** ou
+- Tela: escolher bens (ou "Etiquetas para reimprimir"), formato **Folha Pimaco 6180 (Carta)** ou
   **Térmica 50 × 30 mm**, e "Imprimir" (abre a impressão do navegador).
 - Impressão: só preto no branco, sem cabeçalho nem menu do site (`@media print`), tamanho exato
   com `@page`. Em cada etiqueta: QR code à esquerda (altura da etiqueta menos a margem), à direita

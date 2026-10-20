@@ -93,3 +93,17 @@ export function resumoPatrimonio(bens: BemDoResumo[], hoje: string) {
     porCategoria: agrupar((b) => b.categoria),
   };
 }
+
+/**
+ * Valor em reais digitado → centavos. Aceita "1.500,50", "1500,50", "1500.50" e "R$ 12.000";
+ * com vírgula, os pontos são de milhar; sem vírgula, um ponto seguido de 1 ou 2 dígitos no fim
+ * é o decimal. Devolve null quando não é um valor.
+ */
+export function centavosDeTexto(texto: string): number | null {
+  let t = texto.replace(/R\$|\s/g, "");
+  if (!/^\d[\d.,]*$/.test(t)) return null;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  else if (!/^\d+\.\d{1,2}$/.test(t)) t = t.replace(/\./g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  return Math.round(Number(t) * 100);
+}

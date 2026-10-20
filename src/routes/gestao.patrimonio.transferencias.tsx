@@ -48,9 +48,8 @@ function Transferencias() {
   const minhas = (id: string) => unidades.some((u) => u.id === id);
   const todas = transferencias.data ?? [];
   const aReceber = todas.filter((t) => t.situacao === "em_transito" && minhas(t.destinoId));
-  const enviadas = todas.filter(
-    (t) => t.situacao === "em_transito" && minhas(t.origemId) && !minhas(t.destinoId),
-  );
+  // Quem tem a origem e também o destino (ex.: o admin) vê a transferência nas duas listas.
+  const enviadas = todas.filter((t) => t.situacao === "em_transito" && minhas(t.origemId));
   const historico = todas.filter((t) => t.situacao !== "em_transito").slice(0, 30);
 
   async function agir(t: Transferencia, fazer: () => Promise<unknown>, mensagem: string) {
@@ -112,7 +111,7 @@ function Transferencias() {
                     void agir(
                       t,
                       () => receberTransferencia(t.id),
-                      `${bem(t.bemId)?.nome ?? "Bem"} agora é de ${nome(t.destinoId)}`,
+                      `Bem ${bem(t.bemId) ? formatarTombamento(bem(t.bemId)!.tombamento) : ""} agora é de ${nome(t.destinoId)}`,
                     )
                   }
                 >

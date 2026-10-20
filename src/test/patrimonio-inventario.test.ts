@@ -25,9 +25,16 @@ describe("Patrimônio: resultado de cada leitura", () => {
       titulo: "000123 · Bomba 3",
     });
     expect(avisoDaLeitura({ status: "ja_lido", bem })).toMatchObject({ tom: "atencao" });
-    expect(avisoDaLeitura({ status: "outra_empresa", bem })).toMatchObject({
+    // Bem de outra empresa: o banco devolve só o número e a empresa, sem o nome.
+    expect(
+      avisoDaLeitura({
+        status: "outra_empresa",
+        bem: { tombamento: 45, empresa: "Posto Lemon II" },
+      }),
+    ).toEqual({
       tom: "atencao",
-      texto: expect.stringContaining("Posto Lemon II"),
+      titulo: "000045",
+      texto: "Este bem é de Posto Lemon II. Não conta neste inventário.",
     });
     expect(avisoDaLeitura({ status: "em_transito", bem })).toMatchObject({ tom: "atencao" });
     expect(avisoDaLeitura({ status: "baixado", bem })).toMatchObject({ tom: "erro" });

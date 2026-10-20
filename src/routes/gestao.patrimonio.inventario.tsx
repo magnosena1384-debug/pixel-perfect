@@ -67,11 +67,19 @@ function Inventario() {
   const [semEtiqueta, setSemEtiqueta] = useState(false);
   const [buscaSem, setBuscaSem] = useState("");
   const [relatorio, setRelatorio] = useState<RelatorioInventario | null>(null);
-  const lendo = useRef(false);
+  // Leituras em fila: com leitor USB ou digitação rápida, nenhuma é descartada.
+  const fila = useRef<Promise<void>>(Promise.resolve());
 
   if (isLoading || inventario.isLoading || bens.isLoading)
     return <p className="text-muted-foreground">Carregando…</p>;
   if (!empresa) return null;
+  const erro = inventario.error ?? bens.error;
+  if (erro)
+    return (
+      <Painel>
+        <Vazio>Não foi possível carregar o inventário: {erro.message}</Vazio>
+      </Painel>
+    );
 
   const inv = inventario.data;
   const bensDaEmpresa = (bens.data ?? []).filter((b) => b.unidadeId === empresa.id);
@@ -91,8 +99,12 @@ function Inventario() {
     }
   }
 
-  async function ler(texto: string) {
-    if (!inv || lendo.current) return;
+  function ler(texto: string) {
+    fila.current = fila.current.then(() => lerAgora(texto));
+  }
+
+  async function lerAgora(texto: string) {
+    if (!inv) return;
     const n = lerNumero(texto);
     setInvalido(n == null ? texto.trim() || " " : null);
     if (n == null) {
@@ -100,7 +112,6 @@ function Inventario() {
       avisarNoAparelho("erro");
       return;
     }
-    lendo.current = true;
     try {
       const r = await lerEtiqueta(inv.id, n);
       setUltima(r);
@@ -108,8 +119,6 @@ function Inventario() {
       atualizar();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao ler.");
-    } finally {
-      lendo.current = false;
     }
   }
 
@@ -194,7 +203,7 @@ function Inventario() {
       </div>
 
       {camera === "ligada" ? (
-        <LeitorCamera aoLer={(t) => void ler(t)} aoFalhar={() => setCamera("falhou")} />
+        <LeitorCamera aoLer={ler} aoFalhar={() => setCamera("falhou")} />
       ) : (
         <Button className="h-12 w-full rounded-full" onClick={() => setCamera("ligada")}>
           Ler etiqueta com a câmera
@@ -210,7 +219,7 @@ function Inventario() {
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void ler(numero);
+          ler(numero);
           setNumero("");
         }}
       >

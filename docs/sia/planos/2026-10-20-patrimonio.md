@@ -25,7 +25,7 @@ número lido) são funções puras em `src/lib/patrimonio/`.
   ou até a baixa; valor atual nunca abaixo de zero. Valores em centavos.
 - Vida útil sugerida: Bombas e equipamentos de pista 10; Máquinas e equipamentos 10; Móveis e
   utensílios 10; Informática 5; Veículos 5; Ferramentas 5; Outros 10.
-- Etiquetas: A4 Pimaco 6180 (3 colunas × 10 linhas, 25,4 × 66,7 mm) e térmica 50 × 30 mm. O QR
+- Etiquetas: Pimaco 6180 (Carta) (3 colunas × 10 linhas, 25,4 × 66,7 mm) e térmica 50 × 30 mm. O QR
   guarda só o número do tombamento.
 - A empresa do bem só muda por transferência recebida.
 - Banco ativo: cada migração desta lista é mostrada em uma frase e só sobe com o sim da pessoa.
@@ -91,7 +91,7 @@ número lido) são funções puras em `src/lib/patrimonio/`.
 - [ ] **Passo 4: Rodar e ver passar** — `npx vitest run` e o SQL. Esperado: PASS.
 - [ ] **Passo 5: Commit**
 
-### Parte 2: Etiquetas A4 e térmica
+### Parte 2: Etiquetas Pimaco 6180 (Carta) e térmica
 
 **Arquivos:**
 - Mudar: `package.json`, `bun.lock` — `qrcode` 1.5.4 (gera o QR em SVG, no navegador).
@@ -105,7 +105,7 @@ número lido) são funções puras em `src/lib/patrimonio/`.
 - Usa: `formatarTombamento`, `useBens`.
 - Entrega: `paginasDeEtiquetas(bens, "a4-6180" | "termica-50x30") -> Pagina[]` com posição em mm.
 
-- [ ] **Passo 1: Provas que falham** — prova 15: 31 bens em A4 → 2 páginas (30 + 1), cada
+- [ ] **Passo 1: Provas que falham** — prova 15: 31 bens na Pimaco 6180 → 2 páginas (30 + 1), cada
   etiqueta 66,7 × 25,4 mm nas posições da 6180; térmica → 1 bem por página de 50 × 30 mm; cada
   etiqueta traz QR = "000123", número, nome (cortado em 2 linhas) e empresa.
 - [ ] **Passo 2: Ver falhar** — `npx vitest run src/test/patrimonio-etiquetas.test.ts`: FAIL,

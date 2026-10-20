@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Cartao, Painel, PilulaSituacao, Seletor, Vazio } from "@/components/gestao/ui";
+import { AvisoSerieRepetida } from "@/components/patrimonio/AvisoSerieRepetida";
 import { FormularioBem } from "@/components/patrimonio/FormularioBem";
 import { formatBRL } from "@/lib/auth";
 import { formatData, hoje, useUnidadesCom } from "@/lib/gestao";
@@ -16,6 +17,7 @@ import {
   useBem,
   useEmpresasDoGrupo,
   type DadosBem,
+  type Repetido,
 } from "@/lib/patrimonio/dados";
 import { depreciacao, formatarTombamento } from "@/lib/patrimonio/regras";
 
@@ -48,6 +50,7 @@ function Ficha() {
   const [destino, setDestino] = useState("");
   const [observacao, setObservacao] = useState("");
   const [gravando, setGravando] = useState(false);
+  const [repetido, setRepetido] = useState<{ dados: DadosBem; bem: Repetido } | null>(null);
 
   if (consulta.isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (consulta.error)
@@ -73,6 +76,26 @@ function Ficha() {
   const podeGerenciar = gerencia.some((u) => u.id === bem.unidadeId);
   const editavel = podeGerenciar && bem.situacao !== "em_transito" && bem.situacao !== "baixado";
   const d = depreciacao(bem, hoje());
+
+  async function gravarEdicao(dados: DadosBem, confirmar = false) {
+    if (!bem) return;
+    setGravando(true);
+    try {
+      const r = await editarBem(bem.id, dados, confirmar);
+      if (r.repetido) {
+        setRepetido({ dados, bem: r.repetido });
+        return;
+      }
+      setRepetido(null);
+      toast.success("Bem atualizado");
+      setPainel(null);
+      void qc.invalidateQueries({ queryKey: ["patrimonio"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gravar.");
+    } finally {
+      setGravando(false);
+    }
+  }
 
   async function agir(fazer: () => Promise<unknown>, mensagem: string) {
     setGravando(true);
@@ -180,7 +203,18 @@ function Ficha() {
             comSituacao
             rotulo="Gravar"
             gravando={gravando}
-            aoGravar={(dados) => void agir(() => editarBem(bem.id, dados), "Bem atualizado")}
+            aoGravar={(dados) => void gravarEdicao(dados)}
+            antesDosCampos={
+              repetido && (
+                <AvisoSerieRepetida
+                  bem={repetido.bem}
+                  gravando={gravando}
+                  rotuloConfirmar="Gravar mesmo assim"
+                  aoConfirmar={() => void gravarEdicao(repetido.dados, true)}
+                  aoCorrigir={() => setRepetido(null)}
+                />
+              )
+            }
           />
           <Button variant="ghost" className="mt-2" onClick={() => setPainel(null)}>
             Cancelar

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Seletor } from "@/components/gestao/ui";
-import { reaisParaCentavos } from "@/lib/gestao";
+import { hoje } from "@/lib/gestao";
 import type { DadosBem } from "@/lib/patrimonio/dados";
-import { CATEGORIAS, vidaUtilSugerida } from "@/lib/patrimonio/regras";
+import { CATEGORIAS, centavosDeTexto, vidaUtilSugerida } from "@/lib/patrimonio/regras";
 
 const SITUACOES = { em_uso: "Em uso", com_defeito: "Com defeito" } as const;
 
@@ -42,8 +42,13 @@ export function FormularioBem({
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.value });
 
+  const [erroValor, setErroValor] = useState(false);
+
   function enviar(e: React.FormEvent) {
     e.preventDefault();
+    const valorCompra = centavosDeTexto(f.valor);
+    setErroValor(valorCompra == null);
+    if (valorCompra == null) return;
     aoGravar({
       nome: f.nome.trim(),
       categoria: f.categoria,
@@ -52,7 +57,7 @@ export function FormularioBem({
       modelo: f.modelo.trim(),
       numeroSerie: f.numeroSerie.trim(),
       dataCompra: f.dataCompra,
-      valorCompra: reaisParaCentavos(f.valor),
+      valorCompra,
       vidaUtilAnos: Number(f.vidaUtil),
       situacao: f.situacao as DadosBem["situacao"],
     });
@@ -95,7 +100,13 @@ export function FormularioBem({
           <Input value={f.numeroSerie} onChange={set("numeroSerie")} />
         </Campo>
         <Campo label="Data de compra">
-          <Input type="date" value={f.dataCompra} onChange={set("dataCompra")} required />
+          <Input
+            type="date"
+            value={f.dataCompra}
+            max={hoje()}
+            onChange={set("dataCompra")}
+            required
+          />
         </Campo>
         <Campo label="Valor de compra (R$)">
           <Input
@@ -105,11 +116,16 @@ export function FormularioBem({
             onChange={set("valor")}
             required
           />
+          {erroValor && (
+            <p className="text-sm text-destructive" role="alert">
+              Valor inválido. Use, por exemplo, 1.500,00.
+            </p>
+          )}
         </Campo>
         <Campo label="Vida útil (anos)">
           <Input
             type="number"
-            min={0}
+            min={1}
             max={100}
             value={f.vidaUtil}
             onChange={set("vidaUtil")}

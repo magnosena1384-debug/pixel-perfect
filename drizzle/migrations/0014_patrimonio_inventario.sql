@@ -2,13 +2,6 @@
 -- fica guardada (uma por bem). Quem tem 'patrimonio' na empresa abre, lê, marca defeito, usa
 -- "bem sem etiqueta" e fecha. Ninguém escreve direto nas tabelas.
 
-create or replace function public.patrimonio_pode_ver(_unidade uuid)
-returns boolean language sql stable security definer set search_path = public
-as $$
-  select public.pode_gestao(auth.uid(), _unidade, 'patrimonio')
-      or public.pode_gestao(auth.uid(), _unidade, 'patrimonio-gerenciar')
-$$;
-
 create table public.patrimonio_inventarios (
   id uuid primary key default gen_random_uuid(),
   unidade_id uuid not null references public.unidades(id),
@@ -54,11 +47,11 @@ begin
   if not public.patrimonio_pode_ver(_unidade) then
     raise exception 'Você não tem acesso ao Patrimônio nesta empresa.';
   end if;
+  -- Dois aparelhos abrindo ao mesmo tempo: o índice único segura e os dois pegam o mesmo.
+  insert into public.patrimonio_inventarios (unidade_id) values (_unidade)
+  on conflict (unidade_id) where fechado_em is null do nothing;
   select id into _id from public.patrimonio_inventarios
   where unidade_id = _unidade and fechado_em is null;
-  if _id is null then
-    insert into public.patrimonio_inventarios (unidade_id) values (_unidade) returning id into _id;
-  end if;
   return _id;
 end $$;
 
@@ -81,7 +74,8 @@ begin
 end $$;
 
 -- Lê uma etiqueta. Devolve {status, bem}: encontrado, ja_lido, outra_empresa, em_transito,
--- baixado ou nao_existe. Só "encontrado" conta para o inventário.
+-- baixado ou nao_existe. Só "encontrado" conta para o inventário. De outra empresa devolve só o
+-- número e a empresa: quem lê não descobre os bens dos outros postos varrendo os números.
 create or replace function public.patrimonio_ler(_inventario uuid, _tombamento bigint)
 returns jsonb
 language plpgsql security definer set search_path = public
@@ -98,22 +92,24 @@ begin
   if not found then
     return jsonb_build_object('status', 'nao_existe', 'numero', _tombamento);
   end if;
-  _info := jsonb_build_object('id', _bem.id, 'tombamento', _bem.tombamento, 'nome', _bem.nome, 'empresa', _bem.empresa);
-
-  if exists (select 1 from public.patrimonio_leituras
-             where inventario_id = _inventario and bem_id = _bem.id) then
-    _status := 'ja_lido';
-  elsif _bem.situacao = 'baixado' then
-    _status := 'baixado';
-  elsif _bem.unidade_id <> _inv.unidade_id then
-    _status := 'outra_empresa';
+  if _bem.unidade_id <> _inv.unidade_id then
     insert into public.patrimonio_leituras (inventario_id, bem_id, fora_da_empresa, aviso)
-    values (_inventario, _bem.id, true, format('%s · %s (%s)', lpad(_bem.tombamento::text, 6, '0'), _bem.nome, _bem.empresa));
+    values (_inventario, _bem.id, true, format('%s (%s)', lpad(_bem.tombamento::text, 6, '0'), _bem.empresa))
+    on conflict do nothing;
+    return jsonb_build_object('status', 'outra_empresa',
+      'bem', jsonb_build_object('tombamento', _bem.tombamento, 'empresa', _bem.empresa));
+  end if;
+
+  _info := jsonb_build_object('id', _bem.id, 'tombamento', _bem.tombamento, 'nome', _bem.nome, 'empresa', _bem.empresa);
+  if _bem.situacao = 'baixado' then
+    _status := 'baixado';
   elsif _bem.situacao = 'em_transito' then
     _status := 'em_transito';
   else
-    _status := 'encontrado';
-    insert into public.patrimonio_leituras (inventario_id, bem_id) values (_inventario, _bem.id);
+    -- Duas leituras ao mesmo tempo do mesmo bem: a chave segura e a segunda vira "já lido".
+    insert into public.patrimonio_leituras (inventario_id, bem_id) values (_inventario, _bem.id)
+    on conflict do nothing;
+    _status := case when found then 'encontrado' else 'ja_lido' end;
   end if;
   return jsonb_build_object('status', _status, 'bem', _info);
 end $$;
@@ -134,8 +130,10 @@ begin
   update public.patrimonio_bens
   set situacao = case when _defeito then 'com_defeito' else 'em_uso' end
   where id = _bem and unidade_id = _inv.unidade_id and situacao in ('em_uso', 'com_defeito');
-  insert into public.patrimonio_historico (bem_id, evento, detalhe)
-  values (_bem, 'edicao', case when _defeito then 'Marcado com defeito no inventário' else 'Voltou a uso no inventário' end);
+  if found then
+    insert into public.patrimonio_historico (bem_id, evento, detalhe)
+    values (_bem, 'edicao', case when _defeito then 'Marcado com defeito no inventário' else 'Voltou a uso no inventário' end);
+  end if;
 end $$;
 
 -- Bem achado sem etiqueta: conta como encontrado e vai para "Etiquetas para reimprimir".
@@ -190,22 +188,25 @@ begin
   set fechado_em = now(), fechado_por_nome = public.patrimonio_nome_usuario()
   where id = _inventario;
 
+  -- Mesma conta da tela (resumoInventario): só os bens que ainda deviam estar na empresa.
   return jsonb_build_object(
-    'encontrados', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and not fora_da_empresa),
+    'encontrados', (select count(*) from public.patrimonio_leituras l join public.patrimonio_bens b on b.id = l.bem_id
+                    where l.inventario_id = _inventario and not l.fora_da_empresa
+                      and b.unidade_id = _inv.unidade_id and b.situacao in ('em_uso', 'com_defeito')),
     'nao_encontrados', _nao_encontrados,
-    'com_defeito', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and com_defeito),
+    'com_defeito', (select count(*) from public.patrimonio_leituras l join public.patrimonio_bens b on b.id = l.bem_id
+                    where l.inventario_id = _inventario and l.com_defeito and not l.fora_da_empresa
+                      and b.unidade_id = _inv.unidade_id and b.situacao in ('em_uso', 'com_defeito')),
     'fora_da_empresa', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and fora_da_empresa)
   );
 end $$;
 
-revoke execute on function public.patrimonio_pode_ver(uuid) from public, anon;
 revoke execute on function public.patrimonio_abrir_inventario(uuid) from public, anon;
 revoke execute on function public.patrimonio_inventario_aberto(uuid) from public, anon;
 revoke execute on function public.patrimonio_ler(uuid, bigint) from public, anon;
 revoke execute on function public.patrimonio_marcar_defeito(uuid, uuid, boolean) from public, anon;
 revoke execute on function public.patrimonio_sem_etiqueta(uuid, uuid) from public, anon;
 revoke execute on function public.patrimonio_fechar_inventario(uuid) from public, anon;
-grant execute on function public.patrimonio_pode_ver(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_abrir_inventario(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_inventario_aberto(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_ler(uuid, bigint) to authenticated, service_role;

@@ -24,13 +24,18 @@ declare
   gerente_c uuid := gen_random_uuid();
   tr uuid;
   tomb_t bigint;
+  gestor_a uuid := gen_random_uuid(); -- gerenciar só na A
+  bem_a4 uuid;
+  inv_b uuid;
   dados jsonb := '{"nome":"Bomba 1","categoria":"Bombas e equipamentos de pista","setor":"Pista","numero_serie":"SN-TESTE-1","data_compra":"2026-01-15","valor_compra_centavos":1200000,"vida_util_anos":10}';
 begin
   insert into public.unidades (id, nome, ordem) values (ua, 'Teste Pat A', 900), (ub, 'Teste Pat B', 901);
   insert into auth.users (id, email, aud, role) values
     (gestor, 'gestor-pat@teste.invalid', 'authenticated', 'authenticated'),
-    (gerente_a, 'gerente-pat@teste.invalid', 'authenticated', 'authenticated');
+    (gerente_a, 'gerente-pat@teste.invalid', 'authenticated', 'authenticated'),
+    (gestor_a, 'gestor-a-pat@teste.invalid', 'authenticated', 'authenticated');
   insert into public.gestao_acessos (user_id, unidade_id, modulos) values
+    (gestor_a, ua, array['patrimonio-gerenciar']),
     (gestor, ua, array['patrimonio-gerenciar']),
     (gestor, ub, array['patrimonio-gerenciar']),
     (gerente_a, ua, array['patrimonio']);
@@ -49,6 +54,15 @@ begin
   r := public.patrimonio_cadastrar(ua, dados || '{"numero_serie":" sn-teste-1 "}');
   select count(*) into n from public.patrimonio_bens where unidade_id = ua;
   if r ? 'repetido' and n = 1 then ok := ok + 1; else falhas := falhas || format('p6: %s, %s bens na A', r, n); end if;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  r := public.patrimonio_cadastrar(ua, dados || '{"numero_serie":"SN-TESTE-2"}');
+  if r -> 'repetido' ->> 'empresa' = 'Teste Pat B' and not (r -> 'repetido' ? 'nome') and not (r -> 'repetido' ? 'id')
+  then ok := ok + 1; else falhas := falhas || format('p6/p13: aviso mostrou bem de outra empresa: %s', r); end if;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
 
   -- Prova 13: o gerente da A não lê bens da B nem o histórico deles.
   reset role;
@@ -89,7 +103,7 @@ begin
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.patrimonio_editar(bem_b, dados || jsonb_build_object('setor', 'Loja', 'unidade_id', ua));
+  perform public.patrimonio_editar(bem_b, dados || jsonb_build_object('setor', 'Loja', 'unidade_id', ua, 'nome', 'Cofre', 'numero_serie', 'SN-TESTE-2'));
   select count(*) into n from public.patrimonio_bens where id = bem_b and setor = 'Loja' and unidade_id = ub;
   if n = 1 then ok := ok + 1; else falhas := falhas || 'edição: setor não mudou ou empresa mudou'::text; end if;
   select count(*) into n from public.patrimonio_historico where bem_id = bem_b;
@@ -99,6 +113,10 @@ begin
   bem_a2 := (public.patrimonio_cadastrar(ua, dados || '{"nome":"Cofre A","numero_serie":"SN-TESTE-4"}') ->> 'id')::uuid;
   bem_a3 := (public.patrimonio_cadastrar(ua, dados || '{"nome":"Mesa A","numero_serie":"SN-TESTE-5"}') ->> 'id')::uuid;
   bem_a1 := (select id from public.patrimonio_bens where unidade_id = ua and tombamento = t1);
+  r := public.patrimonio_editar(bem_a3, dados || '{"nome":"Mesa A","numero_serie":"SN-TESTE-4"}');
+  select count(*) into n from public.patrimonio_bens where id = bem_a3 and numero_serie = 'SN-TESTE-5';
+  if r ? 'repetido' and n = 1 then ok := ok + 1; else falhas := falhas || format('p6: edição gravou série repetida: %s', r); end if;
+  bem_a4 := (public.patrimonio_cadastrar(ua, dados || '{"nome":"Cadeira A","numero_serie":"SN-TESTE-6"}') ->> 'id')::uuid;
 
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', gerente_a, 'role', 'authenticated')::text, true);
@@ -121,7 +139,9 @@ begin
   -- Prova 8: bem de outra empresa avisa, não conta e não muda de empresa.
   r := public.patrimonio_ler(inv, t2);
   select count(*) into n from public.patrimonio_leituras where inventario_id = inv and not fora_da_empresa;
-  if r ->> 'status' = 'outra_empresa' and r -> 'bem' ->> 'empresa' = 'Teste Pat B' and n = 1 then ok := ok + 1;
+  if r ->> 'status' = 'outra_empresa' and r -> 'bem' ->> 'empresa' = 'Teste Pat B' and n = 1
+     and not (r -> 'bem' ? 'nome') and not (r -> 'bem' ? 'id')
+     and not exists (select 1 from public.patrimonio_leituras where inventario_id = inv and aviso like '%Cofre%') then ok := ok + 1;
   else falhas := falhas || format('p8: %s, %s leituras', r, n); end if;
   r := public.patrimonio_ler(inv, 999999999);
   if r ->> 'status' = 'nao_existe' then ok := ok + 1; else falhas := falhas || format('número inexistente: %s', r); end if;
@@ -145,6 +165,14 @@ begin
   if n = 1 then ok := ok + 1; else falhas := falhas || 'p10: não marcou para reimprimir'::text; end if;
 
   -- Prova 9: fechar lista o não encontrado sem dar baixa.
+  perform public.patrimonio_ler(inv, (select tombamento from public.patrimonio_bens where id = bem_a4));
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.patrimonio_baixar(bem_a4, 'descarte', current_date, '');
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
   r := public.patrimonio_fechar_inventario(inv);
   if (r -> 'nao_encontrados') = jsonb_build_array(bem_a3) and (r ->> 'encontrados')::int = 2
      and (r ->> 'com_defeito')::int = 1 and (r ->> 'fora_da_empresa')::int = 1 then ok := ok + 1;
@@ -279,6 +307,29 @@ begin
   inv := public.patrimonio_abrir_inventario(ua);
   r := public.patrimonio_ler(inv, (select tombamento from public.patrimonio_bens where id = bem_a2));
   if r ->> 'status' = 'baixado' then ok := ok + 1; else falhas := falhas || format('baixado no inventário: %s', r); end if;
+
+  -- Prova 13: inventário, leituras e transferências de B não aparecem para o gerente da A.
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_b, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  inv_b := public.patrimonio_abrir_inventario(ub);
+  perform public.patrimonio_ler(inv_b, t2);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  tr := public.patrimonio_transferir(bem_b, uc, '');
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.patrimonio_inventarios where id = inv_b;
+  select count(*) + n into n from public.patrimonio_leituras where inventario_id = inv_b;
+  select count(*) + n into n from public.patrimonio_transferencias where id = tr;
+  if n = 0 then ok := ok + 1; else falhas := falhas || format('p13: gerente da A viu %s registros de B', n); end if;
+  begin
+    perform public.patrimonio_etiquetas_impressas(array[bem_a1]);
+    falhas := falhas || 'p12: quem só vê registrou etiqueta'::text;
+  exception when others then ok := ok + 1;
+  end;
 
   -- Quem tem Patrimônio vê o nome de todas as empresas do grupo (para escolher o destino).
   reset role;

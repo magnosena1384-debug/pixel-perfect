@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Painel, PilulaSituacao, Seletor, Tabela, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
 import { hoje, useUnidadesCom } from "@/lib/gestao";
 import { normalizarTexto } from "@/lib/utils";
-import { useBens } from "@/lib/patrimonio/dados";
+import { transferirBem, useBens, useEmpresasDoGrupo } from "@/lib/patrimonio/dados";
 import { CATEGORIAS, depreciacao, formatarTombamento } from "@/lib/patrimonio/regras";
 
 export const Route = createFileRoute("/gestao/patrimonio/")({
@@ -32,8 +35,15 @@ function Bens() {
   const [categoria, setCategoria] = useState(TODAS);
   const [situacao, setSituacao] = useState(TODAS);
   const [busca, setBusca] = useState("");
+  const qc = useQueryClient();
+  const empresas = useEmpresasDoGrupo();
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [destino, setDestino] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
-  const nomeDaEmpresa = (id: string) => unidades.find((u) => u.id === id)?.nome ?? "";
+  // Nome pelo cadastro do grupo: um bem a caminho de uma empresa da pessoa é de outra empresa.
+  const nomeDaEmpresa = (id: string) =>
+    empresas.data?.find((e) => e.id === id)?.nome ?? unidades.find((u) => u.id === id)?.nome ?? "";
   const todos = bens.data ?? [];
   const setores = [...new Set(todos.map((b) => b.setor).filter(Boolean))].sort();
   const termo = normalizarTexto(busca);
@@ -48,6 +58,46 @@ function Bens() {
           normalizarTexto(c).includes(termo),
         )),
   );
+
+  // Seleção só para quem gerencia a empresa do bem e enquanto ele está em uso ou com defeito.
+  const selecionavel = (b: (typeof todos)[number]) =>
+    gerencia.some((u) => u.id === b.unidadeId) &&
+    (b.situacao === "em_uso" || b.situacao === "com_defeito");
+  const escolhidos = todos.filter((b) => selecionados.has(b.id) && selecionavel(b));
+  const origens = new Set(escolhidos.map((b) => b.unidadeId));
+  const destinos = (empresas.data ?? []).filter((e) => !origens.has(e.id));
+  const destinoEscolhido = destinos.find((e) => e.id === destino) ?? destinos[0];
+
+  function alternar(id: string, marcado: boolean) {
+    const novo = new Set(selecionados);
+    if (marcado) novo.add(id);
+    else novo.delete(id);
+    setSelecionados(novo);
+  }
+
+  async function transferirSelecionados() {
+    if (!destinoEscolhido) return;
+    if (!confirm(`Enviar ${escolhidos.length} bem(ns) para ${destinoEscolhido.nome}?`)) return;
+    setEnviando(true);
+    let enviados = 0;
+    try {
+      for (const b of escolhidos) {
+        await transferirBem(b.id, destinoEscolhido.id, "");
+        enviados++;
+      }
+      toast.success(
+        `${enviados} bem(ns) enviados para ${destinoEscolhido.nome}; aguardando recebimento`,
+      );
+      setSelecionados(new Set());
+    } catch (e) {
+      toast.error(
+        `${enviados} enviado(s); parou num erro: ${e instanceof Error ? e.message : "falha ao enviar"}`,
+      );
+    } finally {
+      setEnviando(false);
+      void qc.invalidateQueries({ queryKey: ["patrimonio"] });
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -100,6 +150,43 @@ function Bens() {
         </div>
       </Painel>
 
+      {escolhidos.length > 0 && (
+        <Painel className="border-2 border-primary">
+          <div className="flex flex-wrap items-end gap-3">
+            <p className="font-semibold">{escolhidos.length} bem(ns) selecionado(s)</p>
+            <Button asChild variant="outline" className="rounded-full">
+              <Link
+                to="/gestao/patrimonio/etiquetas"
+                search={{ ids: escolhidos.map((b) => b.id).join(",") }}
+              >
+                Imprimir etiquetas
+              </Link>
+            </Button>
+            {destinoEscolhido && (
+              <>
+                <Campo label="Transferir para" className="w-64">
+                  <Seletor
+                    opcoes={destinos.map((e) => ({ valor: e.id, rotulo: e.nome }))}
+                    value={destinoEscolhido.id}
+                    onChange={(e) => setDestino(e.target.value)}
+                  />
+                </Campo>
+                <Button
+                  className="rounded-full"
+                  disabled={enviando}
+                  onClick={() => void transferirSelecionados()}
+                >
+                  {enviando ? "Enviando…" : "Transferir"}
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" onClick={() => setSelecionados(new Set())}>
+              Limpar seleção
+            </Button>
+          </div>
+        </Painel>
+      )}
+
       <Painel titulo="Bens">
         {bens.isLoading ? (
           <p className="text-muted-foreground">Carregando…</p>
@@ -121,8 +208,30 @@ function Bens() {
           <Vazio>Nenhum bem com esses filtros.</Vazio>
         ) : (
           <Tabela
-            colunas={["Tombamento", "Nome", "Empresa · setor", "Situação", "Valor atual"]}
+            colunas={[
+              ...(gerencia.length ? ["Selecionar"] : []),
+              "Tombamento",
+              "Nome",
+              "Empresa · setor",
+              "Situação",
+              "Valor atual",
+            ]}
             linhas={lista.map((b) => [
+              ...(gerencia.length
+                ? [
+                    selecionavel(b) ? (
+                      <Checkbox
+                        key="sel"
+                        aria-label={`Selecionar ${formatarTombamento(b.tombamento)}`}
+                        checked={selecionados.has(b.id)}
+                        onCheckedChange={(v) => alternar(b.id, !!v)}
+                        className="h-5 w-5"
+                      />
+                    ) : (
+                      ""
+                    ),
+                  ]
+                : []),
               <span key="t" className="font-mono">
                 {formatarTombamento(b.tombamento)}
               </span>,

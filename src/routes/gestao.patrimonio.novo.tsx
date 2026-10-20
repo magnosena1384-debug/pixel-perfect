@@ -1,9 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Campo, Painel, Seletor } from "@/components/gestao/ui";
+import { AvisoSerieRepetida } from "@/components/patrimonio/AvisoSerieRepetida";
 import { FormularioBem } from "@/components/patrimonio/FormularioBem";
 import { useUnidadesCom } from "@/lib/gestao";
 import { cadastrarBem, type DadosBem, type Repetido } from "@/lib/patrimonio/dados";
@@ -66,33 +66,13 @@ function Novo() {
               />
             </Campo>
             {repetido && (
-              <div className="rounded-2xl border-2 border-amber-400 p-4 text-sm">
-                <p className="font-semibold">
-                  Este nº de série já está no bem{" "}
-                  <Link
-                    to="/gestao/patrimonio/bem/$id"
-                    params={{ id: repetido.bem.id }}
-                    className="underline"
-                  >
-                    {formatarTombamento(repetido.bem.tombamento)} – {repetido.bem.nome}
-                  </Link>{" "}
-                  ({repetido.bem.empresa}). Nada foi gravado.
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-full"
-                    disabled={gravando}
-                    onClick={() => void gravar(repetido.dados, true)}
-                  >
-                    Cadastrar mesmo assim
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => setRepetido(null)}>
-                    Corrigir
-                  </Button>
-                </div>
-              </div>
+              <AvisoSerieRepetida
+                bem={repetido.bem}
+                gravando={gravando}
+                rotuloConfirmar="Cadastrar mesmo assim"
+                aoConfirmar={() => void gravar(repetido.dados, true)}
+                aoCorrigir={() => setRepetido(null)}
+              />
             )}
           </>
         }

@@ -4,7 +4,6 @@ import { Fragment, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
-
 import { Button } from "@/components/ui/button";
 import { Painel } from "@/components/gestao/ui";
 import {

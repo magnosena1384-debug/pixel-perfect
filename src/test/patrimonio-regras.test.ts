@@ -3,6 +3,7 @@ import {
   CATEGORIAS,
   depreciacao,
   formatarTombamento,
+  centavosDeTexto,
   mesesCompletos,
   resumoPatrimonio,
   vidaUtilSugerida,
@@ -112,5 +113,22 @@ describe("Patrimônio: resumo de valores", () => {
       ["Informática", 2],
       ["Móveis e utensílios", 1],
     ]);
+  });
+});
+
+describe("Patrimônio: valor em reais digitado", () => {
+  it("aceita vírgula ou ponto como decimal e ponto de milhar", () => {
+    expect(centavosDeTexto("1.500,50")).toBe(150_050);
+    expect(centavosDeTexto("1500,50")).toBe(150_050);
+    expect(centavosDeTexto("1500.50")).toBe(150_050);
+    expect(centavosDeTexto("1500")).toBe(150_000);
+    expect(centavosDeTexto("R$ 12.000,00")).toBe(1_200_000);
+    expect(centavosDeTexto("1.500.000")).toBe(150_000_000);
+  });
+
+  it("recusa o que não é valor", () => {
+    expect(centavosDeTexto("abc")).toBeNull();
+    expect(centavosDeTexto("")).toBeNull();
+    expect(centavosDeTexto("-5")).toBeNull();
   });
 });

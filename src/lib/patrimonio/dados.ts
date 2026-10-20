@@ -135,7 +135,8 @@ function paraBanco(d: DadosBem) {
   };
 }
 
-export type Repetido = { id: string; tombamento: number; nome: string; empresa: string };
+/** Bem com o mesmo nº de série. Se a pessoa não pode ver esse bem, vem só a empresa. */
+export type Repetido = { id?: string; tombamento?: number; nome?: string; empresa: string };
 
 /** Cadastra; se o nº de série já existe, devolve o bem repetido sem gravar (a menos de confirmar). */
 export async function cadastrarBem(unidadeId: string, dados: DadosBem, confirmarRepetido = false) {
@@ -147,12 +148,14 @@ export async function cadastrarBem(unidadeId: string, dados: DadosBem, confirmar
   return data as { id: string; tombamento: number } | { repetido: Repetido };
 }
 
-export async function editarBem(id: string, dados: DadosBem) {
-  const { error } = await supabase.rpc("patrimonio_editar", {
+/** Edita; se o nº de série já existe em outro bem, devolve o repetido sem gravar. */
+export async function editarBem(id: string, dados: DadosBem, confirmarRepetido = false) {
+  const { data, error } = await supabase.rpc("patrimonio_editar", {
     _id: id,
-    _dados: paraBanco(dados) as Json,
+    _dados: { ...paraBanco(dados), confirmar_serie_repetida: confirmarRepetido } as Json,
   });
   if (error) throw error;
+  return data as { repetido?: Repetido };
 }
 
 /** Registra no histórico que as etiquetas foram impressas e tira os bens da lista de reimpressão. */

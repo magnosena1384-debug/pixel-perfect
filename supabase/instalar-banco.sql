@@ -752,7 +752,7 @@ create table public.patrimonio_bens (
   numero_serie text,
   data_compra date not null,
   valor_compra_centavos bigint not null check (valor_compra_centavos >= 0),
-  vida_util_anos integer not null check (vida_util_anos between 0 and 100),
+  vida_util_anos integer not null check (vida_util_anos between 1 and 100),
   situacao text not null default 'em_uso'
     check (situacao in ('em_uso', 'com_defeito', 'em_transito', 'baixado')),
   baixa_data date,
@@ -789,9 +789,55 @@ using (public.pode_gestao(auth.uid(), unidade_id, 'patrimonio')
 create policy "patrimonio ver historico" on public.patrimonio_historico for select to authenticated
 using (exists (select 1 from public.patrimonio_bens b where b.id = bem_id));
 
+create or replace function public.patrimonio_pode_ver(_unidade uuid)
+returns boolean language sql stable security definer set search_path = public
+as $$
+  select public.pode_gestao(auth.uid(), _unidade, 'patrimonio')
+      or public.pode_gestao(auth.uid(), _unidade, 'patrimonio-gerenciar')
+$$;
+
 create or replace function public.patrimonio_pode_gerenciar(_unidade uuid)
 returns boolean language sql stable security definer set search_path = public
 as $$ select public.pode_gestao(auth.uid(), _unidade, 'patrimonio-gerenciar') $$;
+
+-- Nº de série já usado em outro bem não baixado: devolve {empresa} e, se a pessoa pode ver esse
+-- bem, também {id, tombamento, nome}. Null quando não há repetição.
+create or replace function public.patrimonio_serie_repetida(_serie text, _exceto uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  _rep record;
+begin
+  if nullif(trim(_serie), '') is null then return null; end if;
+  select b.id, b.tombamento, b.nome, b.unidade_id, u.nome as empresa into _rep
+  from public.patrimonio_bens b join public.unidades u on u.id = b.unidade_id
+  where lower(b.numero_serie) = lower(trim(_serie)) and b.situacao <> 'baixado'
+    and b.id is distinct from _exceto
+  limit 1;
+  if not found then return null; end if;
+  if public.patrimonio_pode_ver(_rep.unidade_id) then
+    return jsonb_build_object('id', _rep.id, 'tombamento', _rep.tombamento, 'nome', _rep.nome, 'empresa', _rep.empresa);
+  end if;
+  return jsonb_build_object('empresa', _rep.empresa);
+end $$;
+
+-- Confere os dados do bem antes de gravar.
+create or replace function public.patrimonio_validar(_dados jsonb)
+returns void language plpgsql stable set search_path = public
+as $$
+begin
+  if nullif(trim(_dados->>'nome'), '') is null then raise exception 'Informe o nome do bem.'; end if;
+  if (_dados->>'data_compra')::date > current_date then
+    raise exception 'A data de compra não pode ser no futuro.';
+  end if;
+  if coalesce((_dados->>'vida_util_anos')::integer, 0) < 1 then
+    raise exception 'A vida útil precisa ser de pelo menos 1 ano.';
+  end if;
+  if coalesce((_dados->>'valor_compra_centavos')::bigint, -1) < 0 then
+    raise exception 'Informe o valor de compra.';
+  end if;
+end $$;
 
 -- Cadastra um bem. Se o nº de série já existe num bem não baixado, devolve {repetido: …} sem
 -- gravar; com "confirmar_serie_repetida": true, grava mesmo assim.
@@ -801,21 +847,16 @@ language plpgsql security definer set search_path = public
 as $$
 declare
   _serie text := nullif(trim(_dados->>'numero_serie'), '');
-  _rep record;
+  _rep jsonb;
   _bem record;
 begin
   if not public.patrimonio_pode_gerenciar(_unidade) then
     raise exception 'Você não tem permissão para gerenciar o patrimônio desta empresa.';
   end if;
-  if _serie is not null and not coalesce((_dados->>'confirmar_serie_repetida')::boolean, false) then
-    select b.id, b.tombamento, b.nome, u.nome as empresa into _rep
-    from public.patrimonio_bens b join public.unidades u on u.id = b.unidade_id
-    where lower(b.numero_serie) = lower(_serie) and b.situacao <> 'baixado'
-    limit 1;
-    if found then
-      return jsonb_build_object('repetido', jsonb_build_object(
-        'id', _rep.id, 'tombamento', _rep.tombamento, 'nome', _rep.nome, 'empresa', _rep.empresa));
-    end if;
+  perform public.patrimonio_validar(_dados);
+  if not coalesce((_dados->>'confirmar_serie_repetida')::boolean, false) then
+    _rep := public.patrimonio_serie_repetida(_serie, null);
+    if _rep is not null then return jsonb_build_object('repetido', _rep); end if;
   end if;
 
   insert into public.patrimonio_bens (
@@ -834,14 +875,17 @@ begin
 end $$;
 
 -- Edita os dados de um bem. A empresa não muda aqui (só por transferência); bem em trânsito ou
--- baixado não é editado. Situação aceita só 'em_uso' ou 'com_defeito'.
+-- baixado não é editado. Situação aceita só 'em_uso' ou 'com_defeito'. Nº de série repetido
+-- devolve {repetido: …} sem gravar, como no cadastro.
 create or replace function public.patrimonio_editar(_id uuid, _dados jsonb)
-returns void
+returns jsonb
 language plpgsql security definer set search_path = public
 as $$
 declare
   _bem public.patrimonio_bens;
   _situacao text := coalesce(_dados->>'situacao', 'em_uso');
+  _rep jsonb;
+  _mudancas text[] := '{}';
 begin
   select * into _bem from public.patrimonio_bens where id = _id for update;
   if not found or not public.patrimonio_pode_gerenciar(_bem.unidade_id) then
@@ -852,6 +896,11 @@ begin
   end if;
   if _situacao not in ('em_uso', 'com_defeito') then
     raise exception 'Situação inválida.';
+  end if;
+  perform public.patrimonio_validar(_dados);
+  if not coalesce((_dados->>'confirmar_serie_repetida')::boolean, false) then
+    _rep := public.patrimonio_serie_repetida(_dados->>'numero_serie', _id);
+    if _rep is not null then return jsonb_build_object('repetido', _rep); end if;
   end if;
 
   update public.patrimonio_bens set
@@ -867,20 +916,29 @@ begin
     situacao = _situacao
   where id = _id;
 
+  if _bem.setor is distinct from coalesce(trim(_dados->>'setor'), '') then
+    _mudancas := _mudancas || format('Setor: %s → %s', coalesce(nullif(_bem.setor, ''), '—'),
+      coalesce(nullif(trim(_dados->>'setor'), ''), '—'));
+  end if;
+  if _bem.situacao <> _situacao then
+    _mudancas := _mudancas || case _situacao when 'com_defeito' then 'Marcado com defeito' else 'Voltou a uso' end;
+  end if;
   insert into public.patrimonio_historico (bem_id, evento, detalhe)
-  values (_id, 'edicao', case
-    when _bem.setor is distinct from coalesce(trim(_dados->>'setor'), '')
-      then format('Setor: %s → %s', coalesce(nullif(_bem.setor, ''), '—'), coalesce(nullif(trim(_dados->>'setor'), ''), '—'))
-    when _bem.situacao <> _situacao
-      then case _situacao when 'com_defeito' then 'Marcado com defeito' else 'Voltou a uso' end
-    else 'Dados atualizados' end);
+  values (_id, 'edicao', coalesce(nullif(array_to_string(_mudancas, ' · '), ''), 'Dados atualizados'));
+  return '{}'::jsonb;
 end $$;
 
 revoke execute on function public.patrimonio_nome_usuario() from public, anon;
+revoke execute on function public.patrimonio_pode_ver(uuid) from public, anon;
+revoke execute on function public.patrimonio_serie_repetida(text, uuid) from public, anon;
+revoke execute on function public.patrimonio_validar(jsonb) from public, anon;
 revoke execute on function public.patrimonio_pode_gerenciar(uuid) from public, anon;
 revoke execute on function public.patrimonio_cadastrar(uuid, jsonb) from public, anon;
 revoke execute on function public.patrimonio_editar(uuid, jsonb) from public, anon;
 grant execute on function public.patrimonio_nome_usuario() to authenticated, service_role;
+grant execute on function public.patrimonio_pode_ver(uuid) to authenticated, service_role;
+grant execute on function public.patrimonio_serie_repetida(text, uuid) to authenticated, service_role;
+grant execute on function public.patrimonio_validar(jsonb) to authenticated, service_role;
 grant execute on function public.patrimonio_pode_gerenciar(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_cadastrar(uuid, jsonb) to authenticated, service_role;
 grant execute on function public.patrimonio_editar(uuid, jsonb) to authenticated, service_role;
@@ -920,13 +978,6 @@ grant execute on function public.patrimonio_etiquetas_impressas(uuid[]) to authe
 -- Patrimônio: inventário por empresa. Um inventário aberto por empresa de cada vez; cada leitura
 -- fica guardada (uma por bem). Quem tem 'patrimonio' na empresa abre, lê, marca defeito, usa
 -- "bem sem etiqueta" e fecha. Ninguém escreve direto nas tabelas.
-
-create or replace function public.patrimonio_pode_ver(_unidade uuid)
-returns boolean language sql stable security definer set search_path = public
-as $$
-  select public.pode_gestao(auth.uid(), _unidade, 'patrimonio')
-      or public.pode_gestao(auth.uid(), _unidade, 'patrimonio-gerenciar')
-$$;
 
 create table public.patrimonio_inventarios (
   id uuid primary key default gen_random_uuid(),
@@ -973,11 +1024,11 @@ begin
   if not public.patrimonio_pode_ver(_unidade) then
     raise exception 'Você não tem acesso ao Patrimônio nesta empresa.';
   end if;
+  -- Dois aparelhos abrindo ao mesmo tempo: o índice único segura e os dois pegam o mesmo.
+  insert into public.patrimonio_inventarios (unidade_id) values (_unidade)
+  on conflict (unidade_id) where fechado_em is null do nothing;
   select id into _id from public.patrimonio_inventarios
   where unidade_id = _unidade and fechado_em is null;
-  if _id is null then
-    insert into public.patrimonio_inventarios (unidade_id) values (_unidade) returning id into _id;
-  end if;
   return _id;
 end $$;
 
@@ -1000,7 +1051,8 @@ begin
 end $$;
 
 -- Lê uma etiqueta. Devolve {status, bem}: encontrado, ja_lido, outra_empresa, em_transito,
--- baixado ou nao_existe. Só "encontrado" conta para o inventário.
+-- baixado ou nao_existe. Só "encontrado" conta para o inventário. De outra empresa devolve só o
+-- número e a empresa: quem lê não descobre os bens dos outros postos varrendo os números.
 create or replace function public.patrimonio_ler(_inventario uuid, _tombamento bigint)
 returns jsonb
 language plpgsql security definer set search_path = public
@@ -1017,22 +1069,24 @@ begin
   if not found then
     return jsonb_build_object('status', 'nao_existe', 'numero', _tombamento);
   end if;
-  _info := jsonb_build_object('id', _bem.id, 'tombamento', _bem.tombamento, 'nome', _bem.nome, 'empresa', _bem.empresa);
-
-  if exists (select 1 from public.patrimonio_leituras
-             where inventario_id = _inventario and bem_id = _bem.id) then
-    _status := 'ja_lido';
-  elsif _bem.situacao = 'baixado' then
-    _status := 'baixado';
-  elsif _bem.unidade_id <> _inv.unidade_id then
-    _status := 'outra_empresa';
+  if _bem.unidade_id <> _inv.unidade_id then
     insert into public.patrimonio_leituras (inventario_id, bem_id, fora_da_empresa, aviso)
-    values (_inventario, _bem.id, true, format('%s · %s (%s)', lpad(_bem.tombamento::text, 6, '0'), _bem.nome, _bem.empresa));
+    values (_inventario, _bem.id, true, format('%s (%s)', lpad(_bem.tombamento::text, 6, '0'), _bem.empresa))
+    on conflict do nothing;
+    return jsonb_build_object('status', 'outra_empresa',
+      'bem', jsonb_build_object('tombamento', _bem.tombamento, 'empresa', _bem.empresa));
+  end if;
+
+  _info := jsonb_build_object('id', _bem.id, 'tombamento', _bem.tombamento, 'nome', _bem.nome, 'empresa', _bem.empresa);
+  if _bem.situacao = 'baixado' then
+    _status := 'baixado';
   elsif _bem.situacao = 'em_transito' then
     _status := 'em_transito';
   else
-    _status := 'encontrado';
-    insert into public.patrimonio_leituras (inventario_id, bem_id) values (_inventario, _bem.id);
+    -- Duas leituras ao mesmo tempo do mesmo bem: a chave segura e a segunda vira "já lido".
+    insert into public.patrimonio_leituras (inventario_id, bem_id) values (_inventario, _bem.id)
+    on conflict do nothing;
+    _status := case when found then 'encontrado' else 'ja_lido' end;
   end if;
   return jsonb_build_object('status', _status, 'bem', _info);
 end $$;
@@ -1053,8 +1107,10 @@ begin
   update public.patrimonio_bens
   set situacao = case when _defeito then 'com_defeito' else 'em_uso' end
   where id = _bem and unidade_id = _inv.unidade_id and situacao in ('em_uso', 'com_defeito');
-  insert into public.patrimonio_historico (bem_id, evento, detalhe)
-  values (_bem, 'edicao', case when _defeito then 'Marcado com defeito no inventário' else 'Voltou a uso no inventário' end);
+  if found then
+    insert into public.patrimonio_historico (bem_id, evento, detalhe)
+    values (_bem, 'edicao', case when _defeito then 'Marcado com defeito no inventário' else 'Voltou a uso no inventário' end);
+  end if;
 end $$;
 
 -- Bem achado sem etiqueta: conta como encontrado e vai para "Etiquetas para reimprimir".
@@ -1109,22 +1165,25 @@ begin
   set fechado_em = now(), fechado_por_nome = public.patrimonio_nome_usuario()
   where id = _inventario;
 
+  -- Mesma conta da tela (resumoInventario): só os bens que ainda deviam estar na empresa.
   return jsonb_build_object(
-    'encontrados', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and not fora_da_empresa),
+    'encontrados', (select count(*) from public.patrimonio_leituras l join public.patrimonio_bens b on b.id = l.bem_id
+                    where l.inventario_id = _inventario and not l.fora_da_empresa
+                      and b.unidade_id = _inv.unidade_id and b.situacao in ('em_uso', 'com_defeito')),
     'nao_encontrados', _nao_encontrados,
-    'com_defeito', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and com_defeito),
+    'com_defeito', (select count(*) from public.patrimonio_leituras l join public.patrimonio_bens b on b.id = l.bem_id
+                    where l.inventario_id = _inventario and l.com_defeito and not l.fora_da_empresa
+                      and b.unidade_id = _inv.unidade_id and b.situacao in ('em_uso', 'com_defeito')),
     'fora_da_empresa', (select count(*) from public.patrimonio_leituras where inventario_id = _inventario and fora_da_empresa)
   );
 end $$;
 
-revoke execute on function public.patrimonio_pode_ver(uuid) from public, anon;
 revoke execute on function public.patrimonio_abrir_inventario(uuid) from public, anon;
 revoke execute on function public.patrimonio_inventario_aberto(uuid) from public, anon;
 revoke execute on function public.patrimonio_ler(uuid, bigint) from public, anon;
 revoke execute on function public.patrimonio_marcar_defeito(uuid, uuid, boolean) from public, anon;
 revoke execute on function public.patrimonio_sem_etiqueta(uuid, uuid) from public, anon;
 revoke execute on function public.patrimonio_fechar_inventario(uuid) from public, anon;
-grant execute on function public.patrimonio_pode_ver(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_abrir_inventario(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_inventario_aberto(uuid) to authenticated, service_role;
 grant execute on function public.patrimonio_ler(uuid, bigint) to authenticated, service_role;

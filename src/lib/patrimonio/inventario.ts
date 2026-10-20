@@ -10,7 +10,8 @@ export function lerNumero(texto: string): number | null {
   return n > 0 ? n : null;
 }
 
-export type BemLido = { id?: string; tombamento: number; nome: string; empresa: string };
+// De outra empresa, o banco devolve só o número e a empresa (sem nome nem id).
+export type BemLido = { id?: string; tombamento: number; nome?: string; empresa: string };
 
 export type ResultadoLeitura =
   | { status: "encontrado" | "ja_lido" | "outra_empresa" | "em_transito" | "baixado"; bem: BemLido }
@@ -25,7 +26,8 @@ export function avisoDaLeitura(r: ResultadoLeitura): Aviso {
       titulo: formatarTombamento(r.numero),
       texto: "Não existe bem com este número.",
     };
-  const titulo = `${formatarTombamento(r.bem.tombamento)} · ${r.bem.nome}`;
+  const numero = formatarTombamento(r.bem.tombamento);
+  const titulo = r.bem.nome ? `${numero} · ${r.bem.nome}` : numero;
   switch (r.status) {
     case "encontrado":
       return { tom: "certo", titulo, texto: "Encontrado." };
