@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   casarVendas,
   horasPorSetor,
+  diasQueContam,
+  mesAMes,
   minutosTrabalhados,
   porColaborador,
   porUnidade,
@@ -271,5 +273,59 @@ describe("RH: ticket médio de vendas por colaborador", () => {
 
   it("sem vendas, a pessoa fica sem ticket", () => {
     expect(casarVendas(pessoas, []).size).toBe(0);
+  });
+});
+
+describe("RH: ficha do colaborador", () => {
+  it("separa os números mês a mês, em ordem", () => {
+    const meses = mesAMes(
+      [
+        dia({ colaborador: "A", data: "2026-10-01", diurna: 480 }),
+        dia({ colaborador: "A", data: "2026-09-30", diurna: 240, descontos: 20 }),
+        dia({ colaborador: "A", data: "2026-10-02", diurna: 480 }),
+      ],
+      [irr("A", "ATRASO", "2026-09-30"), irr("A", "FALTA", "2026-10-05")],
+    );
+    expect(
+      meses.map((m) => [m.mes, m.minutos, m.faltas, m.atrasos, m.minutosAtraso, m.pontualidade]),
+    ).toEqual([
+      ["2026-09", 240, 0, 1, 20, 0],
+      ["2026-10", 960, 1, 0, 0, 100],
+    ]);
+  });
+
+  it("lista os dias que contam, do mais recente para o mais antigo", () => {
+    const lista = diasQueContam(
+      [
+        dia({ colaborador: "A", data: "2026-10-01", diurna: 480 }),
+        dia({
+          colaborador: "A",
+          data: "2026-10-03",
+          trabalhou: false,
+          observacao: "Atestado médico",
+        }),
+        dia({ colaborador: "A", data: "2026-10-04", trabalhou: false, observacao: "Férias" }),
+        dia({
+          colaborador: "A",
+          data: "2026-10-06",
+          trabalhou: false,
+          observacao: "FOLGA | Abonada (04:00)",
+        }),
+        dia({ colaborador: "A", data: "2026-10-12", observacao: "Feriado" }),
+      ],
+      [
+        irr("A", "FALTA", "2026-10-02"),
+        irr("A", "ATRASO", "2026-10-05"),
+        irr("A", "HORA_EXTRA", "2026-10-01"),
+      ],
+    );
+    expect(lista.map((d) => [d.data, d.tipo])).toEqual([
+      ["2026-10-06", "Abono"],
+      ["2026-10-05", "Atraso"],
+      ["2026-10-04", "Férias"],
+      ["2026-10-03", "Atestado"],
+      ["2026-10-02", "Falta"],
+    ]);
+    expect(lista.find((d) => d.tipo === "Atestado")?.observacao).toBe("Atestado médico");
   });
 });

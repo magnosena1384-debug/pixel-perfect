@@ -167,3 +167,46 @@ export function casarVendas(
   }
   return resultado;
 }
+
+/** Os números da pessoa mês a mês ("2026-10"), do mais antigo para o mais recente. */
+export function mesAMes(dias: DiaPonto[], irregularidades: Irregularidade[]) {
+  const meses = [...new Set([...dias, ...irregularidades].map((x) => x.data.slice(0, 7)))].sort();
+  return meses.map((mes) => ({
+    mes,
+    ...resumoRh(
+      dias.filter((d) => d.data.startsWith(mes)),
+      irregularidades.filter((i) => i.data.startsWith(mes)),
+    ),
+  }));
+}
+
+export type DiaQueConta = {
+  data: string;
+  tipo: "Falta" | "Atraso" | "Atestado" | "Férias" | "Abono";
+  observacao: string;
+};
+
+/** Faltas, atrasos, atestados, férias e abonos, do mais recente para o mais antigo. */
+export function diasQueContam(dias: DiaPonto[], irregularidades: Irregularidade[]) {
+  const lista: DiaQueConta[] = [];
+  const obs = new Map(dias.map((d) => [d.data, d.observacao]));
+  for (const i of irregularidades)
+    if (i.tipo === "FALTA" || i.tipo === "ATRASO")
+      lista.push({
+        data: i.data,
+        tipo: i.tipo === "FALTA" ? "Falta" : "Atraso",
+        observacao: obs.get(i.data) ?? "",
+      });
+  for (const d of dias) {
+    const o = normalizarNome(d.observacao);
+    const tipo = ehAtestado(d)
+      ? "Atestado"
+      : o.includes("FERIAS")
+        ? "Férias"
+        : o.includes("ABONAD")
+          ? "Abono"
+          : null;
+    if (tipo) lista.push({ data: d.data, tipo, observacao: d.observacao });
+  }
+  return lista.sort((a, b) => b.data.localeCompare(a.data));
+}

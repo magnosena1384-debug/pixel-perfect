@@ -8,3 +8,5 @@ Parte 1: código pronto, banco pendente (npx vitest run → 33 passed; npx tsc -
 Parte 2: código pronto, banco pendente (npx vitest run → 45 passed; tsc → ok; eslint → ok; vite build → ok; migração 0009 escrita, não aplicada)
 Parte 3: código pronto, banco pendente (npx vitest run → 52 passed; tsc → ok; eslint → ok; vite build → ok; migração 0010 escrita, não aplicada)
 Parte 4: código pronto, banco pendente (npx vitest run → 58 passed; tsc → ok; eslint → ok; vite build → ok; corpo da 0011 validado por consulta só de leitura com dados de exemplo; migração não aplicada)
+Decisão: a ficha usa o endereço /gestao/rh/colaborador/$unidade/$colaborador (dois parâmetros) em vez de um $id composto — evita codificar "unidade|nome" na URL — custa um endereço mais longo.
+Parte 5: código pronto, banco pendente (npx vitest run → 60 passed; tsc → ok; eslint → ok; vite build → ok)

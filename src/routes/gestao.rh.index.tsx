@@ -267,7 +267,14 @@ function PainelRh() {
               linhas={porColaborador(dias, irregularidades).map((c) => {
                 const venda = ticket.get(`${c.unidadeId}|${c.colaborador}`);
                 return [
-                  c.nome,
+                  <Link
+                    key="nome"
+                    to="/gestao/rh/colaborador/$unidade/$colaborador"
+                    params={{ unidade: c.unidadeId, colaborador: c.colaborador }}
+                    className="underline-offset-2 hover:underline"
+                  >
+                    {c.nome}
+                  </Link>,
                   ...(escolhidas.length > 1 ? [nomeDaUnidade(c.unidadeId)] : []),
                   setorDe(c.colaborador),
                   minParaHoras(c.minutos),
