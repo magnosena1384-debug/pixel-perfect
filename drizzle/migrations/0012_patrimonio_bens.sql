@@ -6,7 +6,7 @@
 -- Nome de quem está agindo, para o histórico (o gerente não lê o perfil de outras pessoas).
 create or replace function public.patrimonio_nome_usuario()
 returns text language sql stable security definer set search_path = public
-as $ select coalesce((select nome from public.profiles where id = auth.uid()), '') $;
+as $$ select coalesce((select nome from public.profiles where id = auth.uid()), '') $$;
 
 create table public.patrimonio_bens (
   id uuid primary key default gen_random_uuid(),

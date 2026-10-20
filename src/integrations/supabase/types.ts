@@ -446,6 +446,66 @@ export type Database = {
         }
         Relationships: []
       }
+      patrimonio_inventarios: {
+        Row: {
+          aberto_em: string
+          aberto_por_nome: string
+          fechado_em: string | null
+          fechado_por_nome: string | null
+          id: string
+          unidade_id: string
+        }
+        Insert: {
+          aberto_em?: string
+          aberto_por_nome?: string
+          fechado_em?: string | null
+          fechado_por_nome?: string | null
+          id?: string
+          unidade_id: string
+        }
+        Update: {
+          aberto_em?: string
+          aberto_por_nome?: string
+          fechado_em?: string | null
+          fechado_por_nome?: string | null
+          id?: string
+          unidade_id?: string
+        }
+        Relationships: []
+      }
+      patrimonio_leituras: {
+        Row: {
+          aviso: string
+          bem_id: string
+          com_defeito: boolean
+          fora_da_empresa: boolean
+          inventario_id: string
+          lido_em: string
+          lido_por_nome: string
+          sem_etiqueta: boolean
+        }
+        Insert: {
+          aviso?: string
+          bem_id: string
+          com_defeito?: boolean
+          fora_da_empresa?: boolean
+          inventario_id: string
+          lido_em?: string
+          lido_por_nome?: string
+          sem_etiqueta?: boolean
+        }
+        Update: {
+          aviso?: string
+          bem_id?: string
+          com_defeito?: boolean
+          fora_da_empresa?: boolean
+          inventario_id?: string
+          lido_em?: string
+          lido_por_nome?: string
+          sem_etiqueta?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -827,6 +887,21 @@ export type Database = {
           total: number
           unidade_id: string
         }[]
+      }
+      patrimonio_abrir_inventario: { Args: { _unidade: string }; Returns: string }
+      patrimonio_fechar_inventario: { Args: { _inventario: string }; Returns: Json }
+      patrimonio_ler: {
+        Args: { _inventario: string; _tombamento: number }
+        Returns: Json
+      }
+      patrimonio_marcar_defeito: {
+        Args: { _bem: string; _defeito: boolean; _inventario: string }
+        Returns: undefined
+      }
+      patrimonio_pode_ver: { Args: { _unidade: string }; Returns: boolean }
+      patrimonio_sem_etiqueta: {
+        Args: { _bem: string; _inventario: string }
+        Returns: undefined
       }
       patrimonio_cadastrar: {
         Args: { _dados: Json; _unidade: string }

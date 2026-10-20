@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import type { ResultadoLeitura } from "./inventario";
 
 // Leitura e gravação do patrimônio. Quem vê o quê e quem grava é regra do banco: as telas só
 // chamam as funções patrimonio_* e leem as tabelas.
@@ -159,3 +160,87 @@ export async function registrarEtiquetasImpressas(ids: string[]) {
   const { error } = await supabase.rpc("patrimonio_etiquetas_impressas", { _ids: ids });
   if (error) throw error;
 }
+
+// ---------- Inventário ----------
+
+export type LeituraInventario = {
+  bemId: string;
+  lidoEm: string;
+  comDefeito: boolean;
+  semEtiqueta: boolean;
+  foraDaEmpresa: boolean;
+  aviso: string;
+};
+
+/** Inventário aberto da empresa (ou null) e as leituras dele. */
+export function useInventarioAberto(unidadeId: string | undefined) {
+  return useQuery({
+    queryKey: ["patrimonio", "inventario", unidadeId],
+    enabled: !!unidadeId,
+    queryFn: async () => {
+      const { data: inv, error } = await supabase
+        .from("patrimonio_inventarios")
+        .select("id, aberto_em, aberto_por_nome")
+        .eq("unidade_id", unidadeId!)
+        .is("fechado_em", null)
+        .maybeSingle();
+      if (error) throw error;
+      if (!inv) return null;
+      const { data: leituras, error: e2 } = await supabase
+        .from("patrimonio_leituras")
+        .select("bem_id, lido_em, com_defeito, sem_etiqueta, fora_da_empresa, aviso")
+        .eq("inventario_id", inv.id)
+        .order("lido_em", { ascending: false });
+      if (e2) throw e2;
+      return {
+        ...inv,
+        leituras: leituras.map((l): LeituraInventario => ({
+          bemId: l.bem_id,
+          lidoEm: l.lido_em,
+          comDefeito: l.com_defeito,
+          semEtiqueta: l.sem_etiqueta,
+          foraDaEmpresa: l.fora_da_empresa,
+          aviso: l.aviso,
+        })),
+      };
+    },
+  });
+}
+
+async function rpc<T>(chamada: PromiseLike<{ data: unknown; error: Error | null }>) {
+  const { data, error } = await chamada;
+  if (error) throw error;
+  return data as T;
+}
+
+export const abrirInventario = (unidadeId: string) =>
+  rpc<string>(supabase.rpc("patrimonio_abrir_inventario", { _unidade: unidadeId }));
+
+export const lerEtiqueta = (inventarioId: string, tombamento: number) =>
+  rpc<ResultadoLeitura>(
+    supabase.rpc("patrimonio_ler", { _inventario: inventarioId, _tombamento: tombamento }),
+  );
+
+export const marcarDefeito = (inventarioId: string, bemId: string, defeito: boolean) =>
+  rpc<null>(
+    supabase.rpc("patrimonio_marcar_defeito", {
+      _inventario: inventarioId,
+      _bem: bemId,
+      _defeito: defeito,
+    }),
+  );
+
+export const bemSemEtiqueta = (inventarioId: string, bemId: string) =>
+  rpc<null>(supabase.rpc("patrimonio_sem_etiqueta", { _inventario: inventarioId, _bem: bemId }));
+
+export type RelatorioInventario = {
+  encontrados: number;
+  nao_encontrados: string[];
+  com_defeito: number;
+  fora_da_empresa: number;
+};
+
+export const fecharInventario = (inventarioId: string) =>
+  rpc<RelatorioInventario>(
+    supabase.rpc("patrimonio_fechar_inventario", { _inventario: inventarioId }),
+  );
