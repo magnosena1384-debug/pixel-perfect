@@ -68,7 +68,7 @@ Uma aba **Patrimônio** na Gestão, para quem tem o módulo em ao menos uma empr
 ### Etiquetas (quem gerencia)
 
 - Escolher um ou vários bens e imprimir pelo navegador em:
-  - **Folha A4 Pimaco 6180**: 30 etiquetas por folha, 25,4 × 66,7 mm.
+  - **Folha Pimaco 6180** (papel Carta, 216 × 279 mm): 30 etiquetas por folha, 25,4 × 66,7 mm.
   - **Térmica 50 × 30 mm**: uma etiqueta por bem.
 - Cada etiqueta tem: QR code com o número do tombamento, o número escrito, o nome do bem e o nome
   da empresa.
@@ -171,7 +171,7 @@ Cada linha vira teste.
 13. O gerente do Posto A não lê bens, inventários nem transferências do Posto B, nem chamando o
     banco direto; um bem em trânsito de A para B é visto pelos dois.
 14. Só a empresa de destino confirma o recebimento.
-15. A etiqueta A4 coloca 30 etiquetas por folha no tamanho 25,4 × 66,7 mm, e a térmica uma por
+15. A folha Pimaco 6180 coloca 30 etiquetas por folha no tamanho 25,4 × 66,7 mm, e a térmica uma por
     página de 50 × 30 mm, cada uma com o QR do tombamento, o número, o nome do bem e a empresa.
 16. O número lido do QR (ou digitado com ou sem zeros à esquerda, ex.: `123`) encontra o bem
     `000123`.

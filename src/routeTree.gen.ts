@@ -33,6 +33,7 @@ import { Route as AuthenticatedAdminAlunosRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminWebpostoRouteImport } from './routes/_authenticated/admin.webposto'
 import { Route as AuthenticatedAulaLessonIdRouteImport } from './routes/_authenticated/aula.$lessonId'
 import { Route as GestaoPatrimonioIndexRouteImport } from './routes/gestao.patrimonio.index'
+import { Route as GestaoPatrimonioEtiquetasRouteImport } from './routes/gestao.patrimonio.etiquetas'
 import { Route as GestaoPatrimonioNovoRouteImport } from './routes/gestao.patrimonio.novo'
 import { Route as GestaoRhIndexRouteImport } from './routes/gestao.rh.index'
 import { Route as GestaoRhImportarRouteImport } from './routes/gestao.rh.importar'
@@ -163,6 +164,12 @@ const GestaoPatrimonioIndexRoute = GestaoPatrimonioIndexRouteImport.update({
   path: '/',
   getParentRoute: () => GestaoPatrimonioRoute,
 } as any)
+const GestaoPatrimonioEtiquetasRoute =
+  GestaoPatrimonioEtiquetasRouteImport.update({
+    id: '/etiquetas',
+    path: '/etiquetas',
+    getParentRoute: () => GestaoPatrimonioRoute,
+  } as any)
 const GestaoPatrimonioNovoRoute = GestaoPatrimonioNovoRouteImport.update({
   id: '/novo',
   path: '/novo',
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
   '/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/alunos': typeof AuthenticatedAdminAlunosRoute
   '/_authenticated/admin/webposto': typeof AuthenticatedAdminWebpostoRoute
   '/_authenticated/aula/$lessonId': typeof AuthenticatedAulaLessonIdRoute
+  '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/admin/'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/alunos'
     | '/admin/webposto'
     | '/aula/$lessonId'
+    | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/admin'
@@ -370,6 +382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/alunos'
     | '/_authenticated/admin/webposto'
     | '/_authenticated/aula/$lessonId'
+    | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/novo'
     | '/gestao/rh/importar'
     | '/_authenticated/admin/'
@@ -559,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GestaoPatrimonioIndexRouteImport
       parentRoute: typeof GestaoPatrimonioRoute
     }
+    '/gestao/patrimonio/etiquetas': {
+      id: '/gestao/patrimonio/etiquetas'
+      path: '/etiquetas'
+      fullPath: '/gestao/patrimonio/etiquetas'
+      preLoaderRoute: typeof GestaoPatrimonioEtiquetasRouteImport
+      parentRoute: typeof GestaoPatrimonioRoute
+    }
     '/gestao/patrimonio/novo': {
       id: '/gestao/patrimonio/novo'
       path: '/novo'
@@ -641,12 +661,14 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface GestaoPatrimonioRouteChildren {
+  GestaoPatrimonioEtiquetasRoute: typeof GestaoPatrimonioEtiquetasRoute
   GestaoPatrimonioNovoRoute: typeof GestaoPatrimonioNovoRoute
   GestaoPatrimonioIndexRoute: typeof GestaoPatrimonioIndexRoute
   GestaoPatrimonioBemIdRoute: typeof GestaoPatrimonioBemIdRoute
 }
 
 const GestaoPatrimonioRouteChildren: GestaoPatrimonioRouteChildren = {
+  GestaoPatrimonioEtiquetasRoute: GestaoPatrimonioEtiquetasRoute,
   GestaoPatrimonioNovoRoute: GestaoPatrimonioNovoRoute,
   GestaoPatrimonioIndexRoute: GestaoPatrimonioIndexRoute,
   GestaoPatrimonioBemIdRoute: GestaoPatrimonioBemIdRoute,

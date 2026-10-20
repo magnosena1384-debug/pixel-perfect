@@ -836,6 +836,10 @@ export type Database = {
         Args: { _dados: Json; _id: string }
         Returns: undefined
       }
+      patrimonio_etiquetas_impressas: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
       patrimonio_nome_usuario: { Args: never; Returns: string }
       patrimonio_pode_gerenciar: {
         Args: { _unidade: string }

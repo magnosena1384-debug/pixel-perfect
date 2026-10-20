@@ -8,6 +8,7 @@ export const Route = createFileRoute("/gestao/patrimonio")({
 
 function PatrimonioLayout() {
   const { unidades, isLoading } = useUnidadesCom("patrimonio");
+  const { unidades: gerencia } = useUnidadesCom("patrimonio-gerenciar");
 
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!unidades.length)
@@ -33,6 +34,11 @@ function PatrimonioLayout() {
         >
           Bens
         </Link>
+        {gerencia.length > 0 && (
+          <Link to="/gestao/patrimonio/etiquetas" className={link} activeProps={ativo}>
+            Etiquetas
+          </Link>
+        )}
       </nav>
       <Outlet />
     </div>

@@ -153,3 +153,9 @@ export async function editarBem(id: string, dados: DadosBem) {
   });
   if (error) throw error;
 }
+
+/** Registra no histórico que as etiquetas foram impressas e tira os bens da lista de reimpressão. */
+export async function registrarEtiquetasImpressas(ids: string[]) {
+  const { error } = await supabase.rpc("patrimonio_etiquetas_impressas", { _ids: ids });
+  if (error) throw error;
+}

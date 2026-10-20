@@ -76,11 +76,25 @@ function Ficha() {
 
       <Painel
         acao={
-          editavel &&
-          !editando && (
-            <Button variant="outline" className="rounded-full" onClick={() => setEditando(true)}>
-              Editar
-            </Button>
+          podeGerenciar && (
+            <div className="flex flex-wrap gap-2">
+              {editavel && !editando && (
+                <Button
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => setEditando(true)}
+                >
+                  Editar
+                </Button>
+              )}
+              {bem.situacao !== "baixado" && (
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to="/gestao/patrimonio/etiquetas" search={{ ids: bem.id }}>
+                    Imprimir etiqueta
+                  </Link>
+                </Button>
+              )}
+            </div>
           )
         }
       >
