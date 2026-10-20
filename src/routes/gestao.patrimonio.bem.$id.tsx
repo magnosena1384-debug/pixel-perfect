@@ -3,11 +3,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Cartao, Painel, PilulaSituacao, Vazio } from "@/components/gestao/ui";
+import { Input } from "@/components/ui/input";
+import { Campo, Cartao, Painel, PilulaSituacao, Seletor, Vazio } from "@/components/gestao/ui";
 import { FormularioBem } from "@/components/patrimonio/FormularioBem";
 import { formatBRL } from "@/lib/auth";
 import { formatData, hoje, useUnidadesCom } from "@/lib/gestao";
-import { editarBem, useBem, type DadosBem } from "@/lib/patrimonio/dados";
+import {
+  editarBem,
+  transferirBem,
+  useBem,
+  useEmpresasDoGrupo,
+  type DadosBem,
+} from "@/lib/patrimonio/dados";
 import { depreciacao, formatarTombamento } from "@/lib/patrimonio/regras";
 
 export const Route = createFileRoute("/gestao/patrimonio/bem/$id")({
@@ -31,7 +38,10 @@ function Ficha() {
   const consulta = useBem(id);
   const { unidades } = useUnidadesCom("patrimonio");
   const { unidades: gerencia } = useUnidadesCom("patrimonio-gerenciar");
-  const [editando, setEditando] = useState(false);
+  const empresas = useEmpresasDoGrupo();
+  const [painel, setPainel] = useState<"editar" | "transferir" | null>(null);
+  const [destino, setDestino] = useState("");
+  const [observacao, setObservacao] = useState("");
   const [gravando, setGravando] = useState(false);
 
   if (consulta.isLoading) return <p className="text-muted-foreground">Carregando…</p>;
@@ -49,17 +59,22 @@ function Ficha() {
       </Painel>
     );
 
-  const empresa = unidades.find((u) => u.id === bem.unidadeId)?.nome ?? "";
+  const empresa =
+    empresas.data?.find((e) => e.id === bem.unidadeId)?.nome ??
+    unidades.find((u) => u.id === bem.unidadeId)?.nome ??
+    "";
+  const destinos = (empresas.data ?? []).filter((e) => e.id !== bem.unidadeId);
+  const destinoEscolhido = destinos.find((e) => e.id === destino) ?? destinos[0];
   const podeGerenciar = gerencia.some((u) => u.id === bem.unidadeId);
   const editavel = podeGerenciar && bem.situacao !== "em_transito" && bem.situacao !== "baixado";
   const d = depreciacao(bem, hoje());
 
-  async function gravar(dados: DadosBem) {
+  async function agir(fazer: () => Promise<unknown>, mensagem: string) {
     setGravando(true);
     try {
-      await editarBem(bem!.id, dados);
-      toast.success("Bem atualizado");
-      setEditando(false);
+      await fazer();
+      toast.success(mensagem);
+      setPainel(null);
       void qc.invalidateQueries({ queryKey: ["patrimonio"] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao gravar.");
@@ -78,14 +93,23 @@ function Ficha() {
         acao={
           podeGerenciar && (
             <div className="flex flex-wrap gap-2">
-              {editavel && !editando && (
-                <Button
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={() => setEditando(true)}
-                >
-                  Editar
-                </Button>
+              {editavel && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setPainel(painel === "editar" ? null : "editar")}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setPainel(painel === "transferir" ? null : "transferir")}
+                  >
+                    Transferir
+                  </Button>
+                </>
               )}
               {bem.situacao !== "baixado" && (
                 <Button asChild variant="outline" className="rounded-full">
@@ -126,7 +150,7 @@ function Ficha() {
         </dl>
       </Painel>
 
-      {editando && (
+      {painel === "editar" && (
         <Painel titulo="Editar bem">
           <p className="mb-4 text-sm text-muted-foreground">
             A empresa não muda aqui: para levar o bem a outra empresa, use a transferência.
@@ -139,11 +163,53 @@ function Ficha() {
             comSituacao
             rotulo="Gravar"
             gravando={gravando}
-            aoGravar={(dados) => void gravar(dados)}
+            aoGravar={(dados) => void agir(() => editarBem(bem.id, dados), "Bem atualizado")}
           />
-          <Button variant="ghost" className="mt-2" onClick={() => setEditando(false)}>
+          <Button variant="ghost" className="mt-2" onClick={() => setPainel(null)}>
             Cancelar
           </Button>
+        </Painel>
+      )}
+
+      {painel === "transferir" && (
+        <Painel titulo="Transferir para outra empresa">
+          <p className="mb-4 text-sm text-muted-foreground">
+            O bem fica em trânsito e continua de {empresa} até a empresa de destino confirmar o
+            recebimento. O tombamento e a etiqueta não mudam.
+          </p>
+          {!destinoEscolhido ? (
+            <Vazio>Não há outra empresa no grupo para receber o bem.</Vazio>
+          ) : (
+            <form
+              className="grid gap-4 sm:grid-cols-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void agir(
+                  () => transferirBem(bem.id, destinoEscolhido.id, observacao),
+                  `Enviado para ${destinoEscolhido.nome}; aguardando recebimento`,
+                );
+              }}
+            >
+              <Campo label="Empresa de destino">
+                <Seletor
+                  opcoes={destinos.map((e) => ({ valor: e.id, rotulo: e.nome }))}
+                  value={destinoEscolhido.id}
+                  onChange={(e) => setDestino(e.target.value)}
+                />
+              </Campo>
+              <Campo label="Observação (opcional)">
+                <Input value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+              </Campo>
+              <div className="flex gap-2 sm:col-span-2">
+                <Button type="submit" className="rounded-full" disabled={gravando}>
+                  {gravando ? "Enviando…" : `Enviar para ${destinoEscolhido.nome}`}
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setPainel(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          )}
         </Painel>
       )}
 

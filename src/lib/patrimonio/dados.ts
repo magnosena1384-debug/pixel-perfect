@@ -244,3 +244,70 @@ export const fecharInventario = (inventarioId: string) =>
   rpc<RelatorioInventario>(
     supabase.rpc("patrimonio_fechar_inventario", { _inventario: inventarioId }),
   );
+
+// ---------- Empresas e transferências ----------
+
+/** Id e nome de todas as empresas do grupo (para o destino e para os nomes nas listas). */
+export function useEmpresasDoGrupo() {
+  return useQuery({
+    queryKey: ["patrimonio", "empresas"],
+    staleTime: 5 * 60_000,
+    queryFn: () =>
+      rpc<{ id: string; nome: string }[]>(supabase.rpc("patrimonio_empresas_do_grupo")),
+  });
+}
+
+export type Transferencia = {
+  id: string;
+  bemId: string;
+  origemId: string;
+  destinoId: string;
+  situacao: "em_transito" | "recebida" | "cancelada";
+  observacao: string;
+  enviadoEm: string;
+  enviadoPorNome: string;
+  concluidoEm: string | null;
+  concluidoPorNome: string | null;
+};
+
+/** Transferências das empresas que a pessoa vê (como origem ou destino), as mais novas primeiro. */
+export function useTransferencias() {
+  return useQuery({
+    queryKey: ["patrimonio", "transferencias"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("patrimonio_transferencias")
+        .select("*")
+        .order("enviado_em", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data.map((t): Transferencia => ({
+        id: t.id,
+        bemId: t.bem_id,
+        origemId: t.origem_id,
+        destinoId: t.destino_id,
+        situacao: t.situacao as Transferencia["situacao"],
+        observacao: t.observacao,
+        enviadoEm: t.enviado_em,
+        enviadoPorNome: t.enviado_por_nome,
+        concluidoEm: t.concluido_em,
+        concluidoPorNome: t.concluido_por_nome,
+      }));
+    },
+  });
+}
+
+export const transferirBem = (bemId: string, destinoId: string, observacao: string) =>
+  rpc<string>(
+    supabase.rpc("patrimonio_transferir", {
+      _bem: bemId,
+      _destino: destinoId,
+      _observacao: observacao,
+    }),
+  );
+
+export const receberTransferencia = (id: string) =>
+  rpc<null>(supabase.rpc("patrimonio_receber", { _transferencia: id }));
+
+export const cancelarTransferencia = (id: string) =>
+  rpc<null>(supabase.rpc("patrimonio_cancelar_transferencia", { _transferencia: id }));

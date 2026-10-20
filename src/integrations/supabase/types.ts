@@ -506,6 +506,48 @@ export type Database = {
         }
         Relationships: []
       }
+      patrimonio_transferencias: {
+        Row: {
+          bem_id: string
+          concluido_em: string | null
+          concluido_por_nome: string | null
+          destino_id: string
+          enviado_em: string
+          enviado_por_nome: string
+          id: string
+          observacao: string
+          origem_id: string
+          situacao: string
+          situacao_bem: string
+        }
+        Insert: {
+          bem_id: string
+          concluido_em?: string | null
+          concluido_por_nome?: string | null
+          destino_id: string
+          enviado_em?: string
+          enviado_por_nome?: string
+          id?: string
+          observacao?: string
+          origem_id: string
+          situacao?: string
+          situacao_bem: string
+        }
+        Update: {
+          bem_id?: string
+          concluido_em?: string | null
+          concluido_por_nome?: string | null
+          destino_id?: string
+          enviado_em?: string
+          enviado_por_nome?: string
+          id?: string
+          observacao?: string
+          origem_id?: string
+          situacao?: string
+          situacao_bem?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -902,6 +944,19 @@ export type Database = {
       patrimonio_sem_etiqueta: {
         Args: { _bem: string; _inventario: string }
         Returns: undefined
+      }
+      patrimonio_cancelar_transferencia: {
+        Args: { _transferencia: string }
+        Returns: undefined
+      }
+      patrimonio_empresas_do_grupo: {
+        Args: never
+        Returns: { id: string; nome: string }[]
+      }
+      patrimonio_receber: { Args: { _transferencia: string }; Returns: undefined }
+      patrimonio_transferir: {
+        Args: { _bem: string; _destino: string; _observacao: string }
+        Returns: string
       }
       patrimonio_cadastrar: {
         Args: { _dados: Json; _unidade: string }

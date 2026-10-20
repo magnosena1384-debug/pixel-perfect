@@ -19,6 +19,11 @@ declare
   bem_a3 uuid;
   inv uuid;
   r2 jsonb;
+  uc uuid := gen_random_uuid();
+  gerente_b uuid := gen_random_uuid();
+  gerente_c uuid := gen_random_uuid();
+  tr uuid;
+  tomb_t bigint;
   dados jsonb := '{"nome":"Bomba 1","categoria":"Bombas e equipamentos de pista","setor":"Pista","numero_serie":"SN-TESTE-1","data_compra":"2026-01-15","valor_compra_centavos":1200000,"vida_util_anos":10}';
 begin
   insert into public.unidades (id, nome, ordem) values (ua, 'Teste Pat A', 900), (ub, 'Teste Pat B', 901);
@@ -153,6 +158,97 @@ begin
     falhas := falhas || 'leu em inventário fechado'::text;
   exception when others then ok := ok + 1;
   end;
+
+  -- Transferências (0015): A → B, vista pela origem e pelo destino, nunca por C.
+  reset role;
+  insert into public.unidades (id, nome, ordem) values (uc, 'Teste Pat C', 902);
+  insert into auth.users (id, email, aud, role) values
+    (gerente_b, 'gerente-b-pat@teste.invalid', 'authenticated', 'authenticated'),
+    (gerente_c, 'gerente-c-pat@teste.invalid', 'authenticated', 'authenticated');
+  insert into public.gestao_acessos (user_id, unidade_id, modulos) values
+    (gerente_b, ub, array['patrimonio']), (gerente_c, uc, array['patrimonio']);
+  tomb_t := (select tombamento from public.patrimonio_bens where id = bem_a3);
+
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  tr := public.patrimonio_transferir(bem_a3, ub, 'teste');
+  -- Prova 11: em trânsito continua da origem.
+  select count(*) into n from public.patrimonio_bens where id = bem_a3 and unidade_id = ua and situacao = 'em_transito';
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'p11: em trânsito não ficou na origem'::text; end if;
+  begin
+    perform public.patrimonio_transferir(bem_a3, uc, '');
+    falhas := falhas || 'transferiu bem em trânsito de novo'::text;
+  exception when others then ok := ok + 1;
+  end;
+  begin
+    perform public.patrimonio_editar(bem_a3, dados);
+    falhas := falhas || 'editou bem em trânsito'::text;
+  exception when others then ok := ok + 1;
+  end;
+  begin
+    perform public.patrimonio_transferir(bem_a2, ua, '');
+    falhas := falhas || 'transferiu para a própria empresa'::text;
+  exception when others then ok := ok + 1;
+  end;
+
+  -- Prova 14: só o destino recebe.
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.patrimonio_receber(tr);
+    falhas := falhas || 'p14: a origem recebeu'::text;
+  exception when others then ok := ok + 1;
+  end;
+  select count(*) into n from public.patrimonio_bens where id = bem_a3;
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'p13: origem não vê o bem em trânsito'::text; end if;
+  begin
+    perform public.patrimonio_transferir(bem_a2, ub, '');
+    falhas := falhas || 'p12: quem só vê enviou transferência'::text;
+  exception when others then ok := ok + 1;
+  end;
+
+  -- Prova 13: terceira empresa não vê o bem nem a transferência.
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_c, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.patrimonio_bens where id = bem_a3;
+  select count(*) + n into n from public.patrimonio_transferencias where id = tr;
+  if n = 0 then ok := ok + 1; else falhas := falhas || 'p13: terceira empresa viu a transferência'::text; end if;
+
+  -- Destino vê o bem em trânsito, recebe; o bem passa a ser dele com o mesmo tombamento (prova 2).
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_b, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.patrimonio_bens where id = bem_a3 and situacao = 'em_transito';
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'p13: destino não vê o bem em trânsito'::text; end if;
+  begin
+    perform public.patrimonio_cancelar_transferencia(tr);
+    falhas := falhas || 'o destino cancelou'::text;
+  exception when others then ok := ok + 1;
+  end;
+  perform public.patrimonio_receber(tr);
+  select count(*) into n from public.patrimonio_bens
+  where id = bem_a3 and unidade_id = ub and situacao = 'em_uso' and tombamento = tomb_t;
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'p11/p2: recebido não virou do destino com o mesmo tombamento'::text; end if;
+  select count(*) into n from public.patrimonio_historico where bem_id = bem_a3;
+  if n >= 4 then ok := ok + 1; else falhas := falhas || format('destino vê só %s eventos do histórico', n); end if;
+
+  -- Cancelada, volta para a origem com a situação de antes.
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  tr := public.patrimonio_transferir(bem_a1, ub, '');
+  perform public.patrimonio_cancelar_transferencia(tr);
+  select count(*) into n from public.patrimonio_bens where id = bem_a1 and unidade_id = ua and situacao = 'com_defeito';
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'p11: cancelada não voltou para a origem'::text; end if;
+
+  -- Quem tem Patrimônio vê o nome de todas as empresas do grupo (para escolher o destino).
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_c, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.patrimonio_empresas_do_grupo() e where e.id in (ua, ub, uc);
+  if n = 3 then ok := ok + 1; else falhas := falhas || format('empresas do grupo: %s de 3', n); end if;
 
   reset role;
   raise exception 'RESULTADO ok=% falhas=%', ok, array_to_string(falhas, ' | ');

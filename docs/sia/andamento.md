@@ -11,3 +11,5 @@ Decisão: a Pimaco 6180 é folha Carta (216 × 279 mm), não A4 — o combinado 
 Parte 2: código pronto, banco pendente (npx vitest run → 75 passed; tsc → ok; eslint → ok; vite build → ok; migração 0013 escrita, não aplicada)
 Correção: a 0012 commitada na parte 1 tinha `$` no lugar de `$$` na função patrimonio_nome_usuario (efeito de substituição por script); corrigida antes do ensaio da parte 3.
 Parte 3: código pronto, banco pendente (npx vitest run → 79 passed; tsc → ok; eslint → ok; vite build → ok; ensaio 0012+0013+0014 no Supabase → RESULTADO ok=23 falhas= (provas 1, 6–10, 12, 13), desfeito; câmera real só no celular, com a pessoa)
+Decisão: nomes das empresas do grupo vêm de patrimonio_empresas_do_grupo (só id e nome, para quem tem Patrimônio) — quem gerencia o Posto A precisa escolher como destino um posto em que não tem acesso — custa: quem tem Patrimônio em uma empresa vê o nome de todas.
+Parte 4: código pronto, banco pendente (npx vitest run → 79 passed; tsc → ok; eslint → ok; vite build → ok; ensaio 0012–0015 → RESULTADO ok=36 falhas= (provas 2, 11, 13, 14 e bem em trânsito bloqueado), desfeito; a lista de empresas entra no ensaio final)
