@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMeusAcessos, type Permissao } from "@/lib/gestao";
+import type { VendaFuncionario } from "./indicadores";
 import {
   diaParaBanco,
   type BancoHoras,
@@ -159,4 +160,28 @@ export async function gravarImportacao(unidadeId: string, arquivo: string, relat
           });
   if (error) throw error;
   return data;
+}
+
+/** Vendas do webPosto por funcionário no período, para o ticket médio (somadas no banco). */
+export function useVendasRh(de: string, ate: string, ligado: boolean) {
+  return useQuery({
+    queryKey: ["rh", "vendas", de, ate],
+    enabled: ligado,
+    queryFn: async (): Promise<VendaFuncionario[]> => {
+      const linhas = await todasAsPaginas((a, b) =>
+        supabase
+          .rpc("rh_ticket_vendas", { _de: de, _ate: ate })
+          .order("unidade_id")
+          .order("nome")
+          .range(a, b),
+      );
+      return linhas.map((l) => ({
+        unidadeId: l.unidade_id,
+        cpf: l.cpf,
+        nome: l.nome,
+        total: Number(l.total),
+        cupons: Number(l.cupons),
+      }));
+    },
+  });
 }

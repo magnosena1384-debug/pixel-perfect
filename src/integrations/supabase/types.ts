@@ -722,6 +722,16 @@ export type Database = {
         }
         Returns: number
       }
+      rh_ticket_vendas: {
+        Args: { _ate: string; _de: string }
+        Returns: {
+          cpf: string | null
+          cupons: number
+          nome: string
+          total: number
+          unidade_id: string
+        }[]
+      }
       pode_gestao: {
         Args: { _modulo: string; _unidade_id: string; _user_id: string }
         Returns: boolean

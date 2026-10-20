@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  casarVendas,
   horasPorSetor,
   minutosTrabalhados,
+  porColaborador,
+  porUnidade,
   resumoRh,
   saldoBanco,
   setores,
@@ -200,5 +203,73 @@ describe("RH: horas extras, banco de horas e setores", () => {
 
   it("saldo do banco soma os saldos, aceitando negativos", () => {
     expect(saldoBanco([saldo("A", "PISTA", 349), saldo("B", "PISTA", -72)])).toBe(277);
+  });
+});
+
+describe("RH: comparar postos e tabela por colaborador", () => {
+  const naUnidade = <T extends object>(unidadeId: string, x: T) => ({ ...x, unidadeId });
+  const dias = [
+    naUnidade("u1", dia({ colaborador: "A", data: "2026-10-01", diurna: 480 })),
+    naUnidade("u1", dia({ colaborador: "B", data: "2026-10-01", diurna: 240 })),
+    naUnidade("u2", dia({ colaborador: "C", data: "2026-10-01", diurna: 120 })),
+  ];
+  const irrs = [
+    naUnidade("u1", irr("B", "FALTA", "2026-10-02")),
+    naUnidade("u1", irr("A", "ATRASO", "2026-10-01")),
+    naUnidade("u1", irr("A", "ATRASO", "2026-10-03")),
+    naUnidade("u2", irr("C", "FALTA", "2026-10-02")),
+    naUnidade("u2", irr("C", "FALTA", "2026-10-03")),
+  ];
+
+  it("dá uma linha por unidade com os números de cada uma", () => {
+    const linhas = porUnidade(dias, irrs);
+    expect(linhas.map((l) => [l.unidadeId, l.minutos, l.faltas, l.atrasos])).toEqual([
+      ["u1", 720, 1, 2],
+      ["u2", 120, 2, 0],
+    ]);
+  });
+
+  it("por colaborador: mais faltas primeiro, depois mais atrasos", () => {
+    const linhas = porColaborador(dias, irrs);
+    expect(linhas.map((l) => l.colaborador)).toEqual(["C", "B", "A"]);
+    expect(linhas[2]).toMatchObject({
+      unidadeId: "u1",
+      colaborador: "A",
+      atrasos: 2,
+      minutos: 480,
+    });
+  });
+});
+
+describe("RH: ticket médio de vendas por colaborador", () => {
+  const pessoas = [
+    { unidadeId: "u1", colaborador: "ANA SOUZA", cpf: "111.222.333-44" },
+    { unidadeId: "u1", colaborador: "BRUNO LIMA", cpf: "" },
+    { unidadeId: "u2", colaborador: "CARLA DIAS", cpf: "" },
+  ];
+
+  it("casa por CPF, mesmo com nome diferente no webPosto", () => {
+    const m = casarVendas(pessoas, [
+      { unidadeId: "u1", cpf: "11122233344", nome: "ANA P SOUZA", total: 300, cupons: 4 },
+    ]);
+    expect(m.get("u1|ANA SOUZA")).toEqual({ total: 300, cupons: 4, ticket: 75 });
+  });
+
+  it("sem CPF, casa pelo nome na mesma unidade", () => {
+    const m = casarVendas(pessoas, [
+      { unidadeId: "u1", cpf: null, nome: "Bruno  Lima", total: 100, cupons: 2 },
+    ]);
+    expect(m.get("u1|BRUNO LIMA")).toEqual({ total: 100, cupons: 2, ticket: 50 });
+  });
+
+  it("homônimo em outra unidade não casa", () => {
+    const m = casarVendas(pessoas, [
+      { unidadeId: "u1", cpf: null, nome: "CARLA DIAS", total: 90, cupons: 3 },
+    ]);
+    expect(m.has("u2|CARLA DIAS")).toBe(false);
+  });
+
+  it("sem vendas, a pessoa fica sem ticket", () => {
+    expect(casarVendas(pessoas, []).size).toBe(0);
   });
 });

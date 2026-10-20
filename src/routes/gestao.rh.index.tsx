@@ -4,9 +4,18 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Input } from "@/components/ui/input";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
 import { Campo, Cartao, Painel, Seletor, Tabela, Vazio } from "@/components/gestao/ui";
+import { formatBRL } from "@/lib/auth";
 import { formatData, hoje } from "@/lib/gestao";
-import { useDadosRh, useUnidadesCom } from "@/lib/rh/dados";
-import { horasPorSetor, resumoRh, saldoBanco, setores } from "@/lib/rh/indicadores";
+import { useDadosRh, useUnidadesCom, useVendasRh } from "@/lib/rh/dados";
+import {
+  casarVendas,
+  horasPorSetor,
+  porColaborador,
+  porUnidade,
+  resumoRh,
+  saldoBanco,
+  setores,
+} from "@/lib/rh/indicadores";
 import { minParaHoras } from "@/lib/rh/planilha";
 
 export const Route = createFileRoute("/gestao/rh/")({
@@ -56,6 +65,14 @@ function PainelRh() {
   const r = resumoRh(dias, irregularidades);
   const porSetor = horasPorSetor(dias, setorDe);
   const referencias = [...new Set(banco.map((b) => b.referencia))].sort();
+  const nomeDaUnidade = (id: string) => unidades.find((u) => u.id === id)?.nome ?? "";
+
+  const vendas = useVendasRh(de, ate, escolhidas.length > 0);
+  const pessoas = porColaborador(todosDias, todasIrr);
+  const ticket = casarVendas(
+    pessoas,
+    (vendas.data ?? []).filter((v) => escolhidas.some((u) => u.id === v.unidadeId)),
+  );
   const vazio = dias.length === 0 && irregularidades.length === 0;
 
   return (
@@ -202,6 +219,72 @@ function PainelRh() {
                 ])}
               />
             </div>
+          </Painel>
+
+          {escolhidas.length > 1 && (
+            <Painel titulo="Comparar postos">
+              <Tabela
+                colunas={[
+                  "Unidade",
+                  "Colaboradores",
+                  "Horas",
+                  "Média",
+                  "Faltas",
+                  "Atrasos",
+                  "Min. atraso",
+                  "Pontualidade",
+                  "Atestados",
+                ]}
+                linhas={porUnidade(dias, irregularidades).map((u) => [
+                  nomeDaUnidade(u.unidadeId),
+                  u.colaboradores,
+                  minParaHoras(u.minutos),
+                  minParaHoras(u.mediaMinutos),
+                  u.faltas,
+                  u.atrasos,
+                  minParaHoras(u.minutosAtraso),
+                  pct(u.pontualidade),
+                  u.atestados,
+                ])}
+              />
+            </Painel>
+          )}
+
+          <Painel titulo="Por colaborador">
+            <Tabela
+              colunas={[
+                "Colaborador",
+                ...(escolhidas.length > 1 ? ["Unidade"] : []),
+                "Setor",
+                "Horas",
+                "Faltas",
+                "Atrasos",
+                "Min. atraso",
+                "Pontualidade",
+                "Atestados",
+                "Ticket vendas",
+              ]}
+              linhas={porColaborador(dias, irregularidades).map((c) => {
+                const venda = ticket.get(`${c.unidadeId}|${c.colaborador}`);
+                return [
+                  c.nome,
+                  ...(escolhidas.length > 1 ? [nomeDaUnidade(c.unidadeId)] : []),
+                  setorDe(c.colaborador),
+                  minParaHoras(c.minutos),
+                  c.faltas,
+                  c.atrasos,
+                  minParaHoras(c.minutosAtraso),
+                  pct(c.pontualidade),
+                  c.atestados,
+                  venda ? formatBRL(Math.round(venda.ticket * 100)) : "—",
+                ];
+              })}
+            />
+            {!vendas.data?.length && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Ticket de vendas aparece quando os cupons do webPosto do período estão importados.
+              </p>
+            )}
           </Painel>
         </>
       )}

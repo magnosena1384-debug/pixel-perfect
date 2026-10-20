@@ -80,3 +80,90 @@ export function horasPorSetor(dias: DiaPonto[], setorDe: (colaborador: string) =
 export function saldoBanco(banco: BancoHoras[]) {
   return banco.reduce((s, b) => s + b.saldo, 0);
 }
+
+type NaUnidade = { unidadeId: string; colaborador: string };
+
+function agrupar<D extends NaUnidade, I extends NaUnidade>(
+  dias: D[],
+  irregularidades: I[],
+  chave: (x: NaUnidade) => string,
+) {
+  const grupos = new Map<string, { dias: D[]; irregularidades: I[] }>();
+  const grupo = (x: NaUnidade) => {
+    const k = chave(x);
+    if (!grupos.has(k)) grupos.set(k, { dias: [], irregularidades: [] });
+    return grupos.get(k)!;
+  };
+  for (const d of dias) grupo(d).dias.push(d);
+  for (const i of irregularidades) grupo(i).irregularidades.push(i);
+  return grupos;
+}
+
+/** Uma linha por unidade, com os mesmos números do painel, na ordem em que as unidades aparecem. */
+export function porUnidade(
+  dias: (DiaPonto & NaUnidade)[],
+  irregularidades: (Irregularidade & NaUnidade)[],
+) {
+  return [...agrupar(dias, irregularidades, (x) => x.unidadeId)].map(([unidadeId, g]) => ({
+    unidadeId,
+    ...resumoRh(g.dias, g.irregularidades),
+  }));
+}
+
+/** Uma linha por pessoa (em cada unidade): mais faltas primeiro, depois mais atrasos. */
+export function porColaborador(
+  dias: (DiaPonto & NaUnidade)[],
+  irregularidades: (Irregularidade & NaUnidade)[],
+) {
+  return [...agrupar(dias, irregularidades, (x) => `${x.unidadeId}|${x.colaborador}`)]
+    .map(([, g]) => {
+      const primeiro = g.dias[0] ?? g.irregularidades[0]!;
+      return {
+        unidadeId: primeiro.unidadeId,
+        colaborador: primeiro.colaborador,
+        nome: primeiro.nome,
+        cpf: g.irregularidades.find((i) => i.cpf)?.cpf ?? "",
+        ...resumoRh(g.dias, g.irregularidades),
+      };
+    })
+    .sort((a, b) => b.faltas - a.faltas || b.atrasos - a.atrasos);
+}
+
+export type VendaFuncionario = {
+  unidadeId: string;
+  cpf: string | null;
+  nome: string;
+  total: number;
+  cupons: number;
+};
+
+const soDigitos = (cpf: string | null) => (cpf ?? "").replace(/\D/g, "");
+
+/**
+ * Junta as vendas do webPosto com as pessoas do RH: pelo CPF; sem CPF, pelo nome na mesma
+ * unidade. Chave do resultado: "unidadeId|colaborador".
+ */
+export function casarVendas(
+  pessoas: { unidadeId: string; colaborador: string; cpf: string }[],
+  vendas: VendaFuncionario[],
+) {
+  const porCpf = new Map<string, VendaFuncionario>();
+  const porNome = new Map<string, VendaFuncionario>();
+  for (const v of vendas) {
+    if (soDigitos(v.cpf)) porCpf.set(`${v.unidadeId}|${soDigitos(v.cpf)}`, v);
+    porNome.set(`${v.unidadeId}|${normalizarNome(v.nome)}`, v);
+  }
+  const resultado = new Map<string, { total: number; cupons: number; ticket: number }>();
+  for (const p of pessoas) {
+    const v =
+      (soDigitos(p.cpf) && porCpf.get(`${p.unidadeId}|${soDigitos(p.cpf)}`)) ||
+      porNome.get(`${p.unidadeId}|${p.colaborador}`);
+    if (v && v.cupons > 0)
+      resultado.set(`${p.unidadeId}|${p.colaborador}`, {
+        total: v.total,
+        cupons: v.cupons,
+        ticket: Math.round((v.total / v.cupons) * 100) / 100,
+      });
+  }
+  return resultado;
+}
