@@ -521,3 +521,20 @@ describe.skipIf(!existsSync(BANCO_REAL))("RH: Banco de Horas real do QuarkRH", (
     expect(r.linhas.some((l) => l.saldo < 0)).toBe(true);
   });
 });
+
+describe("RH: arquivo sem nenhuma linha aproveitável", () => {
+  it("Irregularidades só com datas inválidas é recusado (gravar apagaria o período)", () => {
+    expect(() =>
+      lerRelatorio([
+        IRR_CAB,
+        ["01/10/2026", "19/10/2026", "A", "1", "C", "S", "CLT", "FALTA", "31/02/2026", "1"],
+      ]),
+    ).toThrow(/nenhuma linha/i);
+  });
+
+  it("Banco de Horas só com saldos inválidos é recusado (gravar apagaria o banco da unidade)", () => {
+    expect(() =>
+      lerRelatorio([banco[0]!, banco[1]!, ["ANA", "27/05/2026", "PISTA", "1:00", "0:00", "abc"]]),
+    ).toThrow(/nenhuma linha/i);
+  });
+});

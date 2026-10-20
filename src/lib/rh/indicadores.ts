@@ -210,3 +210,8 @@ export function diasQueContam(dias: DiaPonto[], irregularidades: Irregularidade[
   }
   return lista.sort((a, b) => b.data.localeCompare(a.data));
 }
+
+/** Porcentagem com uma casa ("96,4%"), ou "—" quando não há base. */
+export function formatarPct(v: number | null) {
+  return v == null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}

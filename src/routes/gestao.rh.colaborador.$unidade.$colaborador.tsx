@@ -13,7 +13,7 @@ import {
 import { Campo, Cartao, Painel, Tabela, Vazio } from "@/components/gestao/ui";
 import { addDias, formatData, hoje } from "@/lib/gestao";
 import { useDadosRh, useUnidadesCom } from "@/lib/rh/dados";
-import { diasQueContam, mesAMes, resumoRh, setores } from "@/lib/rh/indicadores";
+import { diasQueContam, mesAMes, formatarPct, resumoRh, setores } from "@/lib/rh/indicadores";
 import { minParaHoras } from "@/lib/rh/planilha";
 import { cn } from "@/lib/utils";
 
@@ -31,9 +31,6 @@ const pilula: Record<string, string> = {
   Falta: "bg-destructive text-destructive-foreground",
   Atraso: "bg-amber-400 text-black",
 };
-
-const pct = (v: number | null) =>
-  v == null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
 const nomeDoMes = (mes: string) =>
   new Date(`${mes}-01T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
@@ -130,8 +127,19 @@ function Ficha() {
             />
             <Cartao
               rotulo="Pontualidade"
-              valor={pct(r.pontualidade)}
+              valor={formatarPct(r.pontualidade)}
               className="bg-secondary text-secondary-foreground"
+            />
+            <Cartao rotulo="Atestados" valor={r.atestados} detalhe="dias com atestado no ponto" />
+            <Cartao rotulo="Horas extras" valor={minParaHoras(r.minutosExtras)} />
+            <Cartao
+              rotulo="Banco de horas"
+              valor={banco[0] ? minParaHoras(banco[0].saldo) : "—"}
+              detalhe={
+                banco[0]
+                  ? `saldo em ${formatData(banco[0].referencia)}`
+                  : "sem banco de horas importado"
+              }
             />
           </div>
 
@@ -200,7 +208,7 @@ function Ficha() {
                   m.faltas,
                   m.atrasos,
                   minParaHoras(m.minutosAtraso),
-                  pct(m.pontualidade),
+                  formatarPct(m.pontualidade),
                   m.atestados,
                 ])}
               />

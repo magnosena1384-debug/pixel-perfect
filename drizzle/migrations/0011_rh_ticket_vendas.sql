@@ -30,8 +30,9 @@ as $$
   left join lateral (
     select nullif(trim(x.dados->>'cpf'), '') as cpf, nullif(trim(x.dados->>'nome'), '') as nome
     from public.webposto_registros x
+    -- Só o cadastro da mesma empresa (posto): nunca devolve nome ou CPF de outro posto.
     where x.endpoint = 'FUNCIONARIOS' and x.dados->>'funcionarioCodigo' = s.funcionario
-    order by (x.empresa_codigo is not distinct from s.empresa_codigo) desc
+      and x.empresa_codigo is not distinct from s.empresa_codigo
     limit 1
   ) f on true
 $$;

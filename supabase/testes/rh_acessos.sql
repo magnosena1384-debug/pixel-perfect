@@ -36,6 +36,13 @@ begin
   select count(*) into n from public.rh_ponto_dias where unidade_id = ua;
   if n = 2 then ok := ok + 1; else falhas := falhas || format('p11: %s dias na A, esperava 2', n); end if;
 
+  -- Uma Frequência só com outra pessoa não apaga os dias de quem não veio no arquivo.
+  perform public.rh_gravar_ponto(ua, 'so-outra.xls', '2026-10-01', '2026-10-02',
+    '[{"colaborador":"TESTE DOIS","nome":"Teste Dois","data":"2026-10-01"}]'::jsonb);
+  select count(*) into n from public.rh_ponto_dias where unidade_id = ua and colaborador = 'TESTE UM';
+  if n = 2 then ok := ok + 1; else falhas := falhas || format('troca parcial apagou %s dias de quem não veio', 2 - n); end if;
+  delete from public.rh_ponto_dias where unidade_id = ua and colaborador = 'TESTE DOIS';
+
   -- Prova 12: não lê nada da B.
   select count(*) into n from public.rh_ponto_dias where unidade_id = ub;
   if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: leu %s dias da B', n); end if;
@@ -73,6 +80,18 @@ begin
   if n = 1 then ok := ok + 1; else falhas := falhas || format('p11: %s irregularidades na A, esperava 1', n); end if;
   select count(*) into n from public.rh_irregularidades where unidade_id = ub;
   if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: leu %s irregularidades da B', n); end if;
+
+  -- Registro de importações e ticket de vendas (0011): nada da B para o gerente da A.
+  reset role;
+  insert into public.rh_importacoes (unidade_id, relatorio, arquivo) values (ub, 'frequencia', 'b.xls');
+  insert into public.webposto_registros (endpoint, codigo, empresa_codigo, unidade_id, data_ref, dados)
+  values ('VENDAS', 'teste-rh-b', null, ub, '2026-10-05', '{"funcionarioCodigo":1,"totalVenda":100}'::jsonb);
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.rh_importacoes where unidade_id = ub;
+  if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: leu %s importações da B', n); end if;
+  select count(*) into n from public.rh_ticket_vendas('2026-10-01', '2026-10-31') t where t.unidade_id = ub;
+  if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: ticket de vendas trouxe %s linhas da B', n); end if;
 
   -- Banco de horas (0010): troca a foto inteira e não vê a da B.
   reset role;

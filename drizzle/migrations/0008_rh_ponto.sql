@@ -53,7 +53,7 @@ with check (public.pode_gestao(auth.uid(), unidade_id, 'rh-importar'));
 create policy "rh trocar ponto" on public.rh_ponto_dias for delete to authenticated
 using (public.pode_gestao(auth.uid(), unidade_id, 'rh-importar'));
 
--- Troca os dias de ponto de uma unidade no período [_de, _ate] pelos dias enviados, tudo ou nada.
+-- Troca os dias de ponto, no período [_de, _ate], das pessoas que vieram no arquivo; tudo ou nada.
 -- Roda com as permissões de quem chama (as regras acima continuam valendo).
 create or replace function public.rh_gravar_ponto(
   _unidade uuid, _arquivo text, _de date, _ate date, _dias jsonb
@@ -73,7 +73,10 @@ begin
   values (_unidade, 'frequencia', _arquivo, _de, _ate, _n)
   returning id into _importacao;
 
-  delete from public.rh_ponto_dias where unidade_id = _unidade and data between _de and _ate;
+  -- Só troca quem veio no arquivo: um relatório filtrado para uma pessoa não apaga as outras.
+  delete from public.rh_ponto_dias
+  where unidade_id = _unidade and data between _de and _ate
+    and colaborador in (select e->>'colaborador' from jsonb_array_elements(_dias) e);
 
   insert into public.rh_ponto_dias (
     unidade_id, colaborador, nome, data, jornada, batidas, diurna_min, noturna_min, extras_min,

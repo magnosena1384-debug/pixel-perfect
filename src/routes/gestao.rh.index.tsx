@@ -12,6 +12,7 @@ import {
   horasPorSetor,
   porColaborador,
   porUnidade,
+  formatarPct,
   resumoRh,
   saldoBanco,
   setores,
@@ -26,9 +27,6 @@ const TODAS = "Todas";
 const TODOS = "Todos";
 
 const grafico = { minutos: { label: "Horas", color: "var(--chart-2)" } } satisfies ChartConfig;
-
-const pct = (v: number | null) =>
-  v == null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
 function PainelRh() {
   const { unidades } = useUnidadesCom("rh");
@@ -158,7 +156,7 @@ function PainelRh() {
             />
             <Cartao
               rotulo="Pontualidade"
-              valor={pct(r.pontualidade)}
+              valor={formatarPct(r.pontualidade)}
               detalhe={`${r.diasTrabalhados} dias trabalhados`}
               className="bg-secondary text-secondary-foreground"
             />
@@ -243,7 +241,7 @@ function PainelRh() {
                   u.faltas,
                   u.atrasos,
                   minParaHoras(u.minutosAtraso),
-                  pct(u.pontualidade),
+                  formatarPct(u.pontualidade),
                   u.atestados,
                 ])}
               />
@@ -281,16 +279,23 @@ function PainelRh() {
                   c.faltas,
                   c.atrasos,
                   minParaHoras(c.minutosAtraso),
-                  pct(c.pontualidade),
+                  formatarPct(c.pontualidade),
                   c.atestados,
                   venda ? formatBRL(Math.round(venda.ticket * 100)) : "—",
                 ];
               })}
             />
-            {!vendas.data?.length && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                Ticket de vendas aparece quando os cupons do webPosto do período estão importados.
+            {vendas.error ? (
+              <p className="mt-3 text-sm text-destructive">
+                Não foi possível carregar o ticket de vendas: {vendas.error.message}
               </p>
+            ) : (
+              !vendas.isLoading &&
+              !vendas.data?.length && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Ticket de vendas aparece quando os cupons do webPosto do período estão importados.
+                </p>
+              )
             )}
           </Painel>
         </>

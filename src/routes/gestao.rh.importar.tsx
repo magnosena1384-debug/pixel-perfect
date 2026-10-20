@@ -91,14 +91,15 @@ function Importar() {
       <Painel titulo="Importar do QuarkRH">
         <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
           No QuarkRH, filtre o posto e exporte em Excel o Relatório de Frequência Analítico ou o
-          Relatório de Irregularidades – Completo ou o Relatório Sintético de Banco de Horas.
-          Importar de novo o mesmo período substitui os dados daquele período nesta unidade.
+          Relatório de Irregularidades – Completo ou o Relatório Sintético de Banco de Horas. A
+          prévia mostra o que será trocado antes de gravar.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo label="Unidade">
             <Seletor
               opcoes={unidades.map((u) => u.nome)}
               value={unidade.nome}
+              disabled={gravando}
               onChange={(e) => {
                 setNomeUnidade(e.target.value);
                 limpar();
@@ -133,7 +134,13 @@ function Importar() {
             />
             <Cartao rotulo="Colaboradores" valor={previa.colaboradores} className="bg-muted" />
             <Cartao
-              rotulo={relatorio.tipo === "frequencia" ? "Dias de ponto" : "Ocorrências"}
+              rotulo={
+                {
+                  frequencia: "Dias de ponto",
+                  irregularidades: "Ocorrências",
+                  banco_horas: "Saldos",
+                }[relatorio.tipo]
+              }
               valor={previa.registros}
               detalhe={
                 Object.entries(previa.porTipo)
@@ -150,13 +157,22 @@ function Importar() {
           </div>
           {relatorio.problemas.length > 0 && (
             <ul className="mt-4 divide-y text-sm">
-              {relatorio.problemas.map((p) => (
-                <li key={p.linha} className="py-2">
+              {relatorio.problemas.map((p, i) => (
+                <li key={i} className="py-2">
                   Linha {p.linha}: {p.motivo}
                 </li>
               ))}
             </ul>
           )}
+          <p className="mt-4 text-sm text-muted-foreground">
+            {
+              {
+                frequencia: `Ao gravar, os dias de ${formatData(relatorio.de)} a ${formatData(relatorio.ate)} das pessoas deste arquivo são trocados. Quem não está no arquivo fica como estava.`,
+                irregularidades: `Ao gravar, todas as irregularidades de ${unidade.nome} de ${formatData(relatorio.de)} a ${formatData(relatorio.ate)} são trocadas pelas deste arquivo (quem não aparece nele fica sem ocorrências no período).`,
+                banco_horas: `Ao gravar, o banco de horas de ${unidade.nome} inteiro é trocado por este, com saldo em ${formatData(relatorio.ate)}.`,
+              }[relatorio.tipo]
+            }
+          </p>
           <div className="mt-6 flex gap-2">
             <Button className="rounded-full" disabled={gravando} onClick={() => void gravar()}>
               {gravando ? "Gravando…" : `Gravar em ${unidade.nome}`}

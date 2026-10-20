@@ -85,6 +85,12 @@ export type Relatorio = RelatorioFrequencia | RelatorioIrregularidades | Relator
 const NAO_RECONHECIDO =
   "Este arquivo não parece um relatório do QuarkRH (Frequência, Irregularidades ou Banco de Horas).";
 
+// Gravar um arquivo sem nenhum registro apagaria o que já está guardado: ele é recusado.
+const nadaLido = (problemas: Problema[]) =>
+  problemas.length
+    ? `Nenhuma linha deste arquivo pôde ser lida (${problemas[0]!.motivo}${problemas.length > 1 ? ` e mais ${problemas.length - 1}` : ""}).`
+    : NAO_RECONHECIDO;
+
 export function normalizarNome(nome: string) {
   return nome
     .normalize("NFD")
@@ -210,7 +216,7 @@ function lerBancoHoras(linhas: unknown[][]): RelatorioBancoHoras {
       saldo: horasParaMin(l[cSaldo!]),
     });
   });
-  if (!resultado.length && !problemas.length) throw new ErroRelatorio(NAO_RECONHECIDO);
+  if (!resultado.length) throw new ErroRelatorio(nadaLido(problemas));
   return {
     tipo: "banco_horas",
     referencia,
@@ -255,7 +261,7 @@ function lerIrregularidades(linhas: unknown[][]): RelatorioIrregularidades {
     }
   });
 
-  if (!irregularidades.length && !problemas.length) throw new ErroRelatorio(NAO_RECONHECIDO);
+  if (!irregularidades.length) throw new ErroRelatorio(nadaLido(problemas));
   if (!de || !ate) {
     const datas = irregularidades.map((i) => i.data).sort();
     de ||= datas[0] ?? "";
