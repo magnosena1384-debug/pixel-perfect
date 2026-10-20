@@ -90,7 +90,5 @@ gráficos com altura fixa e barras horizontais.
 - `src/components/gestao/ui.tsx` → `SituacaoBadge`: pílula colorida de situação.
 - `src/components/ui/chart.tsx` → `ChartContainer`/`ChartTooltip`/`ChartLegend`: base dos gráficos.
 - `src/components/ui/button.tsx` → `Button`; `src/components/ui/input.tsx` → `Input`.
-- Hoje só dentro de `src/routes/gestao.dashboard.tsx`: `Tabela` (tabela simples com a primeira
-  coluna em negrito e números à direita) e o cartão de indicador. O RH vai movê-las para
-  `src/components/gestao/ui.tsx` como `Tabela` e `Cartao`, e o dashboard de vendas passa a usar as
-  mesmas.
+- `src/components/gestao/ui.tsx` → `Cartao`: cartão de indicador (rótulo, número grande, detalhe, cor).
+- `src/components/gestao/ui.tsx` → `Tabela`: tabela simples com a primeira coluna em negrito e números à direita.

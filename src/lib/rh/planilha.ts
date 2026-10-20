@@ -59,13 +59,39 @@ export type RelatorioIrregularidades = {
   problemas: Problema[];
 };
 
-export type Relatorio = RelatorioFrequencia | RelatorioIrregularidades;
+export type BancoHoras = {
+  colaborador: string;
+  nome: string;
+  setor: string;
+  admissao: string | null;
+  // minutos; o saldo pode ser negativo
+  credito: number;
+  debito: number;
+  saldo: number;
+};
+
+export type RelatorioBancoHoras = {
+  tipo: "banco_horas";
+  /** Data do saldo ("Saldo em (31/12/2026)"); é também o período do arquivo. */
+  referencia: string;
+  de: string;
+  ate: string;
+  linhas: BancoHoras[];
+  problemas: Problema[];
+};
+
+export type Relatorio = RelatorioFrequencia | RelatorioIrregularidades | RelatorioBancoHoras;
 
 const NAO_RECONHECIDO =
   "Este arquivo não parece um relatório do QuarkRH (Frequência, Irregularidades ou Banco de Horas).";
 
 export function normalizarNome(nome: string) {
-  return nome.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+  return nome
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // tira os acentos separados pelo NFD
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** "94:22" → 5662; "-01:12" → -72; vazio ou "--:--" → 0. */
@@ -100,15 +126,15 @@ const pareceData = (v: unknown) => /^\d{2}\/\d{2}\/\d{4}$/.test(texto(v));
 
 /** O que a prévia e a mensagem de "deu certo" mostram sobre o arquivo lido. */
 export function resumoDoArquivo(r: Relatorio) {
-  const registros: { colaborador: string; tipo?: string }[] =
-    r.tipo === "frequencia" ? r.dias : r.irregularidades;
+  const registros: { colaborador: string }[] =
+    r.tipo === "frequencia" ? r.dias : r.tipo === "irregularidades" ? r.irregularidades : r.linhas;
   const porTipo: Record<string, number> = {};
   if (r.tipo === "irregularidades")
     for (const i of r.irregularidades) porTipo[i.tipo] = (porTipo[i.tipo] ?? 0) + 1;
   return {
     colaboradores: new Set(registros.map((x) => x.colaborador)).size,
     registros: registros.length,
-    unidade: r.tipo === "frequencia" ? "dias" : "ocorrências",
+    unidade: { frequencia: "dias", irregularidades: "ocorrências", banco_horas: "saldos" }[r.tipo],
     porTipo,
   };
 }
@@ -142,7 +168,57 @@ export function lerRelatorio(linhas: unknown[][]): Relatorio {
     )
   )
     return lerIrregularidades(linhas);
+  if (linhas.some((l) => texto(l[0]) === "Colaborador" && /^Saldo em/.test(texto(l[5]))))
+    return lerBancoHoras(linhas);
   throw new ErroRelatorio(NAO_RECONHECIDO);
+}
+
+function lerBancoHoras(linhas: unknown[][]): RelatorioBancoHoras {
+  const i0 = linhas.findIndex((l) => texto(l[0]) === "Colaborador");
+  const cab = linhas[i0]!.map(texto);
+  const col = (inicio: string) => cab.findIndex((c) => c.startsWith(inicio));
+  const [cAdm, cSetor, cCred, cDeb, cSaldo] = [
+    "Data de Admissão",
+    "Setor",
+    "Crédito",
+    "Débito",
+    "Saldo em",
+  ].map(col);
+  const referencia = dataIso(/\((\d{2}\/\d{2}\/\d{4})\)/.exec(cab[cSaldo!]!)?.[1]);
+  if (!referencia) throw new ErroRelatorio(NAO_RECONHECIDO);
+  const problemas: Problema[] = [];
+  const saldoValido = (v: unknown) => /^-?\d+:\d{2}$/.test(texto(v));
+
+  const resultado: BancoHoras[] = [];
+  linhas.slice(i0 + 1).forEach((l, k) => {
+    const nome = texto(l[0]);
+    if (!nome || /^Totais?$/i.test(nome)) return;
+    if (!saldoValido(l[cSaldo!])) {
+      problemas.push({
+        linha: i0 + k + 2,
+        motivo: `Saldo inválido: ${texto(l[cSaldo!]) || "vazio"}`,
+      });
+      return;
+    }
+    resultado.push({
+      colaborador: normalizarNome(nome),
+      nome: nome.replace(/\s+/g, " ").trim(),
+      setor: texto(l[cSetor!]),
+      admissao: dataIso(l[cAdm!]),
+      credito: horasParaMin(l[cCred!]),
+      debito: horasParaMin(l[cDeb!]),
+      saldo: horasParaMin(l[cSaldo!]),
+    });
+  });
+  if (!resultado.length && !problemas.length) throw new ErroRelatorio(NAO_RECONHECIDO);
+  return {
+    tipo: "banco_horas",
+    referencia,
+    de: referencia,
+    ate: referencia,
+    linhas: resultado,
+    problemas,
+  };
 }
 
 function lerIrregularidades(linhas: unknown[][]): RelatorioIrregularidades {

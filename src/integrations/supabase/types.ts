@@ -413,6 +413,45 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_banco_horas: {
+        Row: {
+          admissao: string | null
+          colaborador: string
+          credito_min: number
+          debito_min: number
+          importacao_id: string | null
+          nome: string
+          referencia: string
+          saldo_min: number
+          setor: string
+          unidade_id: string
+        }
+        Insert: {
+          admissao?: string | null
+          colaborador: string
+          credito_min?: number
+          debito_min?: number
+          importacao_id?: string | null
+          nome: string
+          referencia: string
+          saldo_min?: number
+          setor?: string
+          unidade_id: string
+        }
+        Update: {
+          admissao?: string | null
+          colaborador?: string
+          credito_min?: number
+          debito_min?: number
+          importacao_id?: string | null
+          nome?: string
+          referencia?: string
+          saldo_min?: number
+          setor?: string
+          unidade_id?: string
+        }
+        Relationships: []
+      }
       rh_importacoes: {
         Row: {
           arquivo: string
@@ -653,6 +692,15 @@ export type Database = {
           unidade_id: string
           vendas: number
         }[]
+      }
+      rh_gravar_banco_horas: {
+        Args: {
+          _arquivo: string
+          _linhas: Json
+          _referencia: string
+          _unidade: string
+        }
+        Returns: number
       }
       rh_gravar_irregularidades: {
         Args: {

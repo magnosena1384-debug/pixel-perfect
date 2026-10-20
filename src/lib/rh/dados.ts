@@ -1,10 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMeusAcessos, type Permissao } from "@/lib/gestao";
-import { diaParaBanco, type DiaPonto, type Irregularidade, type Relatorio } from "./planilha";
+import {
+  diaParaBanco,
+  type BancoHoras,
+  type DiaPonto,
+  type Irregularidade,
+  type Relatorio,
+} from "./planilha";
 
 export type DiaPontoDaUnidade = DiaPonto & { unidadeId: string };
 export type IrregularidadeDaUnidade = Irregularidade & { unidadeId: string };
+export type BancoHorasDaUnidade = BancoHoras & { unidadeId: string; referencia: string };
 
 /** Unidades em que o usuário tem a permissão pedida, na ordem do cadastro. */
 export function useUnidadesCom(permissao: Permissao) {
@@ -32,7 +39,7 @@ export function useDadosRh(de: string, ate: string, unidadeIds: string[]) {
     queryKey: ["rh", "dados", de, ate, unidadeIds],
     enabled: unidadeIds.length > 0,
     queryFn: async () => {
-      const [ponto, irr] = await Promise.all([
+      const [ponto, irr, saldos] = await Promise.all([
         todasAsPaginas((a, b) =>
           supabase
             .from("rh_ponto_dias")
@@ -56,6 +63,16 @@ export function useDadosRh(de: string, ate: string, unidadeIds: string[]) {
             .order("colaborador")
             .order("tipo")
             .order("data")
+            .range(a, b),
+        ),
+        // O banco de horas é uma foto (a última importada), não depende do período.
+        todasAsPaginas((a, b) =>
+          supabase
+            .from("rh_banco_horas")
+            .select("*")
+            .in("unidade_id", unidadeIds)
+            .order("unidade_id")
+            .order("colaborador")
             .range(a, b),
         ),
       ]);
@@ -87,7 +104,18 @@ export function useDadosRh(de: string, ate: string, unidadeIds: string[]) {
         tipo: i.tipo,
         data: i.data,
       }));
-      return { dias, irregularidades };
+      const banco: BancoHorasDaUnidade[] = saldos.map((b) => ({
+        unidadeId: b.unidade_id,
+        colaborador: b.colaborador,
+        nome: b.nome,
+        setor: b.setor,
+        admissao: b.admissao,
+        credito: b.credito_min,
+        debito: b.debito_min,
+        saldo: b.saldo_min,
+        referencia: b.referencia,
+      }));
+      return { dias, irregularidades, banco };
     },
   });
 }
@@ -111,14 +139,24 @@ export function useImportacoesRh(unidadeId: string | undefined) {
 
 /** Troca o período do arquivo pelo que foi lido, tudo ou nada. Devolve quantos registros gravou. */
 export async function gravarImportacao(unidadeId: string, arquivo: string, relatorio: Relatorio) {
-  const base = { _unidade: unidadeId, _arquivo: arquivo, _de: relatorio.de, _ate: relatorio.ate };
+  const base = { _unidade: unidadeId, _arquivo: arquivo };
+  const periodo = { ...base, _de: relatorio.de, _ate: relatorio.ate };
   const { data, error } =
     relatorio.tipo === "frequencia"
-      ? await supabase.rpc("rh_gravar_ponto", { ...base, _dias: relatorio.dias.map(diaParaBanco) })
-      : await supabase.rpc("rh_gravar_irregularidades", {
-          ...base,
-          _linhas: relatorio.irregularidades,
-        });
+      ? await supabase.rpc("rh_gravar_ponto", {
+          ...periodo,
+          _dias: relatorio.dias.map(diaParaBanco),
+        })
+      : relatorio.tipo === "irregularidades"
+        ? await supabase.rpc("rh_gravar_irregularidades", {
+            ...periodo,
+            _linhas: relatorio.irregularidades,
+          })
+        : await supabase.rpc("rh_gravar_banco_horas", {
+            ...base,
+            _referencia: relatorio.referencia,
+            _linhas: relatorio.linhas,
+          });
   if (error) throw error;
   return data;
 }

@@ -71,6 +71,13 @@
       "when": 1792500000000,
       "tag": "0009_rh_irregularidades",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792600000000,
+      "tag": "0010_rh_banco_horas",
+      "breakpoints": true
     }
   ]
 }

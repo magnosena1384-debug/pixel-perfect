@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { minutosTrabalhados, resumoRh } from "@/lib/rh/indicadores";
-import { normalizarNome, type DiaPonto, type Irregularidade } from "@/lib/rh/planilha";
+import {
+  horasPorSetor,
+  minutosTrabalhados,
+  resumoRh,
+  saldoBanco,
+  setores,
+} from "@/lib/rh/indicadores";
+import {
+  normalizarNome,
+  type BancoHoras,
+  type DiaPonto,
+  type Irregularidade,
+} from "@/lib/rh/planilha";
 
 const dia = (p: Partial<DiaPonto> & { colaborador: string; data: string }): DiaPonto => ({
   nome: p.colaborador,
@@ -139,5 +150,55 @@ describe("RH: faltas, atrasos, pontualidade e atestados", () => {
     expect(
       resumoRh(dias, [irr(normalizarNome("JOSE DA SILVA"), "ATRASO", "2026-10-09")]).minutosAtraso,
     ).toBe(30);
+  });
+});
+
+const saldo = (colaborador: string, setor: string, min: number): BancoHoras => ({
+  colaborador,
+  nome: colaborador,
+  setor,
+  admissao: null,
+  credito: 0,
+  debito: 0,
+  saldo: min,
+});
+
+describe("RH: horas extras, banco de horas e setores", () => {
+  it("horas extras = Extras Normais + Extras 100%", () => {
+    const r = resumoRh([
+      dia({ colaborador: "A", data: "2026-10-01", extras: 34 }),
+      dia({ colaborador: "A", data: "2026-10-12", extras100: 249 }),
+    ]);
+    expect(r.minutosExtras).toBe(283);
+  });
+
+  it("setor vem das Irregularidades, depois do Banco de Horas, senão Sem setor", () => {
+    const setorDe = setores(
+      [{ ...irr("A", "FALTA", "2026-10-02"), setor: "PISTA" }],
+      [saldo("A", "OPERACIONAL", 0), saldo("B", "LOJA", 0)],
+    );
+    expect(setorDe("A")).toBe("PISTA");
+    expect(setorDe("B")).toBe("LOJA");
+    expect(setorDe("C")).toBe("Sem setor");
+  });
+
+  it("horas por setor com a média por colaborador do setor", () => {
+    const setorDe = setores(
+      [],
+      [saldo("A", "PISTA", 0), saldo("B", "PISTA", 0), saldo("C", "LOJA", 0)],
+    );
+    const dias = [
+      dia({ colaborador: "A", data: "2026-10-01", diurna: 480 }),
+      dia({ colaborador: "B", data: "2026-10-01", diurna: 240 }),
+      dia({ colaborador: "C", data: "2026-10-01", diurna: 120 }),
+    ];
+    expect(horasPorSetor(dias, setorDe)).toEqual([
+      { setor: "PISTA", colaboradores: 2, minutos: 720, media: 360 },
+      { setor: "LOJA", colaboradores: 1, minutos: 120, media: 120 },
+    ]);
+  });
+
+  it("saldo do banco soma os saldos, aceitando negativos", () => {
+    expect(saldoBanco([saldo("A", "PISTA", 349), saldo("B", "PISTA", -72)])).toBe(277);
   });
 });

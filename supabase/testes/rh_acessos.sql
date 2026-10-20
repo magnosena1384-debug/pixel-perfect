@@ -15,6 +15,7 @@ declare
     {"colaborador":"TESTE UM","nome":"Teste Um","data":"2026-10-02","jornada":"08:00 12:00","batidas":[],"diurna_min":0,"noturna_min":0,"extras_min":0,"extras100_min":0,"hn_min":0,"descontos_min":240,"observacao":"","folga":false,"trabalhou":false}
   ]';
   uma_falta jsonb := '[{"colaborador":"TESTE UM","nome":"Teste Um","cpf":"000.000.000-00","cargo":"FRENTISTA","setor":"PISTA","vinculo":"CLT","tipo":"FALTA","data":"2026-10-02"}]';
+  um_saldo jsonb := '[{"colaborador":"TESTE UM","nome":"Teste Um","setor":"PISTA","admissao":"2024-01-02","credito":60,"debito":132,"saldo":-72}]';
 begin
   insert into public.unidades (id, nome, ordem) values (ua, 'Teste RH A', 900), (ub, 'Teste RH B', 901);
   insert into auth.users (id, email, aud, role) values
@@ -72,6 +73,26 @@ begin
   if n = 1 then ok := ok + 1; else falhas := falhas || format('p11: %s irregularidades na A, esperava 1', n); end if;
   select count(*) into n from public.rh_irregularidades where unidade_id = ub;
   if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: leu %s irregularidades da B', n); end if;
+
+  -- Banco de horas (0010): troca a foto inteira e não vê a da B.
+  reset role;
+  insert into public.rh_banco_horas (unidade_id, colaborador, nome, referencia) values (ub, 'OUTRO POSTO', 'Outro Posto', '2026-12-31');
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.rh_gravar_banco_horas(ua, 'banco.xls', '2026-12-31', um_saldo);
+  perform public.rh_gravar_banco_horas(ua, 'banco.xls', '2026-12-31', um_saldo);
+  select count(*) into n from public.rh_banco_horas where unidade_id = ua;
+  if n = 1 then ok := ok + 1; else falhas := falhas || format('p11: %s saldos na A, esperava 1', n); end if;
+  select count(*) into n from public.rh_banco_horas where unidade_id = ub;
+  if n = 0 then ok := ok + 1; else falhas := falhas || format('p12: leu %s saldos da B', n); end if;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', leitor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.rh_gravar_banco_horas(ua, 'banco.xls', '2026-12-31', um_saldo);
+    falhas := falhas || 'p13: leitor gravou banco de horas'::text;
+  exception when others then ok := ok + 1;
+  end;
 
   reset role;
   raise exception 'RESULTADO ok=% falhas=%', ok, array_to_string(falhas, ' | ');

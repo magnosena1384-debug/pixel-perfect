@@ -465,3 +465,59 @@ describe("RH: resumo do arquivo para a prévia", () => {
     });
   });
 });
+
+// Mesmo formato do "Relatório Sintético - Banco de Horas" do QuarkRH, com dados inventados.
+const banco: unknown[][] = [
+  ["Relatório Analítico - Banco de Horas 2º SEMESTRE 2026"],
+  ["Colaborador", "Data de Admissão", "Setor", "Crédito", "Débito", "Saldo em (31/12/2026)"],
+  ["ANA PAULA DE SOUZA", "27/05/2026", "PISTA ", "28:28", "22:39", "05:49"],
+  ["José  da Silva", "18/12/2024", "OPERACIONAL ", "00:00", "01:12", "-01:12"],
+  ["Totais ", null, null, "28:28", "23:51", "04:37"],
+];
+
+describe("RH: Banco de Horas", () => {
+  it("lê crédito, débito e saldo (com sinal), o setor e a data do saldo", () => {
+    const r = lerRelatorio(banco);
+    if (r.tipo !== "banco_horas") throw new Error(r.tipo);
+    expect(r.referencia).toBe("2026-12-31");
+    expect(r.linhas).toEqual([
+      {
+        colaborador: "ANA PAULA DE SOUZA",
+        nome: "ANA PAULA DE SOUZA",
+        setor: "PISTA",
+        admissao: "2026-05-27",
+        credito: 1708,
+        debito: 1359,
+        saldo: 349,
+      },
+      {
+        colaborador: "JOSE DA SILVA",
+        nome: "José da Silva",
+        setor: "OPERACIONAL",
+        admissao: "2024-12-18",
+        credito: 0,
+        debito: 72,
+        saldo: -72,
+      },
+    ]);
+  });
+
+  it("aparece na prévia como saldos de colaboradores", () => {
+    expect(resumoDoArquivo(lerRelatorio(banco))).toMatchObject({
+      colaboradores: 2,
+      registros: 2,
+      unidade: "saldos",
+    });
+  });
+});
+
+const BANCO_REAL = `${REAIS}Relatório Sintético - Banco de Horas 2º SEMESTRE 2026.xls`;
+describe.skipIf(!existsSync(BANCO_REAL))("RH: Banco de Horas real do QuarkRH", () => {
+  it("lê os 13 colaboradores e o saldo negativo", () => {
+    const r = lerRelatorio(linhasDoArquivo(readFileSync(BANCO_REAL)));
+    if (r.tipo !== "banco_horas") throw new Error(r.tipo);
+    expect(r.linhas).toHaveLength(13);
+    expect(r.problemas).toEqual([]);
+    expect(r.linhas.some((l) => l.saldo < 0)).toBe(true);
+  });
+});

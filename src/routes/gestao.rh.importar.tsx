@@ -91,8 +91,8 @@ function Importar() {
       <Painel titulo="Importar do QuarkRH">
         <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
           No QuarkRH, filtre o posto e exporte em Excel o Relatório de Frequência Analítico ou o
-          Relatório de Irregularidades – Completo. Importar de novo o mesmo período substitui os
-          dados daquele período nesta unidade.
+          Relatório de Irregularidades – Completo ou o Relatório Sintético de Banco de Horas.
+          Importar de novo o mesmo período substitui os dados daquele período nesta unidade.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo label="Unidade">

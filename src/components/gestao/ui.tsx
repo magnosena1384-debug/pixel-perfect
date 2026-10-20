@@ -48,6 +48,42 @@ export function Cartao({
   );
 }
 
+/** Tabela simples: primeira coluna em negrito, as outras alinhadas à direita como números. */
+export function Tabela({ colunas, linhas }: { colunas: string[]; linhas: ReactNode[][] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left text-muted-foreground">
+            {colunas.map((c, i) => (
+              <th key={c} className={cn("py-2 font-medium", i && "pl-3 text-right")}>
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {linhas.map((l, j) => (
+            <tr key={j}>
+              {l.map((v, i) => (
+                <td
+                  key={i}
+                  className={cn(
+                    "whitespace-nowrap py-2",
+                    i ? "pl-3 text-right tabular-nums" : "font-semibold",
+                  )}
+                >
+                  {v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function Campo({
   label,
   children,

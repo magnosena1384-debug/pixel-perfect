@@ -10,7 +10,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { Campo, Cartao, Painel, Seletor, Vazio } from "@/components/gestao/ui";
+import { Campo, Cartao, Painel, Seletor, Tabela, Vazio } from "@/components/gestao/ui";
 import { formatBRL } from "@/lib/auth";
 import {
   agruparCelulas,
@@ -351,37 +351,5 @@ function TicketPor({
         />
       </div>
     </Painel>
-  );
-}
-
-function Tabela({ colunas, linhas }: { colunas: string[]; linhas: string[][] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            {colunas.map((c, i) => (
-              <th key={c} className={`py-2 font-medium ${i ? "text-right" : ""}`}>
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {linhas.map((l) => (
-            <tr key={l[0]}>
-              {l.map((v, i) => (
-                <td
-                  key={i}
-                  className={`whitespace-nowrap py-2 ${i ? "text-right tabular-nums" : "font-semibold"}`}
-                >
-                  {v}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
