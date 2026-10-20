@@ -34,6 +34,7 @@ import { Route as AuthenticatedAulaLessonIdRouteImport } from './routes/_authent
 import { Route as GestaoRhIndexRouteImport } from './routes/gestao.rh.index'
 import { Route as GestaoRhImportarRouteImport } from './routes/gestao.rh.importar'
 import { Route as AuthenticatedAdminCursosIdRouteImport } from './routes/_authenticated/admin.cursos.$id'
+import { Route as GestaoRhColaboradorUnidadeColaboradorRouteImport } from './routes/gestao.rh.colaborador.$unidade.$colaborador'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -164,6 +165,12 @@ const AuthenticatedAdminCursosIdRoute =
     path: '/cursos/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const GestaoRhColaboradorUnidadeColaboradorRoute =
+  GestaoRhColaboradorUnidadeColaboradorRouteImport.update({
+    id: '/colaborador/$unidade/$colaborador',
+    path: '/colaborador/$unidade/$colaborador',
+    getParentRoute: () => GestaoRhRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/gestao/rh/': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/gestao/rh': typeof GestaoRhIndexRoute
   '/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -241,6 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/gestao/rh/': typeof GestaoRhIndexRoute
   '/_authenticated/admin/cursos/$id': typeof AuthenticatedAdminCursosIdRoute
+  '/gestao/rh/colaborador/$unidade/$colaborador': typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/gestao/rh/'
     | '/admin/cursos/$id'
+    | '/gestao/rh/colaborador/$unidade/$colaborador'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/gestao/rh'
     | '/admin/cursos/$id'
+    | '/gestao/rh/colaborador/$unidade/$colaborador'
   id:
     | '__root__'
     | '/'
@@ -319,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/gestao/rh/'
     | '/_authenticated/admin/cursos/$id'
+    | '/gestao/rh/colaborador/$unidade/$colaborador'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -507,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCursosIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/gestao/rh/colaborador/$unidade/$colaborador': {
+      id: '/gestao/rh/colaborador/$unidade/$colaborador'
+      path: '/colaborador/$unidade/$colaborador'
+      fullPath: '/gestao/rh/colaborador/$unidade/$colaborador'
+      preLoaderRoute: typeof GestaoRhColaboradorUnidadeColaboradorRouteImport
+      parentRoute: typeof GestaoRhRoute
+    }
   }
 }
 
@@ -549,11 +569,14 @@ const AuthenticatedRouteRouteWithChildren =
 interface GestaoRhRouteChildren {
   GestaoRhImportarRoute: typeof GestaoRhImportarRoute
   GestaoRhIndexRoute: typeof GestaoRhIndexRoute
+  GestaoRhColaboradorUnidadeColaboradorRoute: typeof GestaoRhColaboradorUnidadeColaboradorRoute
 }
 
 const GestaoRhRouteChildren: GestaoRhRouteChildren = {
   GestaoRhImportarRoute: GestaoRhImportarRoute,
   GestaoRhIndexRoute: GestaoRhIndexRoute,
+  GestaoRhColaboradorUnidadeColaboradorRoute:
+    GestaoRhColaboradorUnidadeColaboradorRoute,
 }
 
 const GestaoRhRouteWithChildren = GestaoRhRoute._addFileChildren(
