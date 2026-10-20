@@ -4,6 +4,7 @@ import {
   depreciacao,
   formatarTombamento,
   mesesCompletos,
+  resumoPatrimonio,
   vidaUtilSugerida,
 } from "@/lib/patrimonio/regras";
 
@@ -67,5 +68,49 @@ describe("Patrimônio: tombamento e categorias", () => {
       "Outros",
     ]);
     expect(CATEGORIAS.map(vidaUtilSugerida)).toEqual([10, 10, 10, 5, 5, 5, 10]);
+  });
+});
+
+describe("Patrimônio: resumo de valores", () => {
+  const b = (
+    unidadeId: string,
+    categoria: string,
+    valorCompra: number,
+    situacao = "em_uso",
+    baixaData: string | null = null,
+  ) => ({
+    unidadeId,
+    categoria,
+    valorCompra,
+    vidaUtilAnos: 10,
+    dataCompra: "2026-01-15",
+    situacao,
+    baixaData,
+  });
+
+  it("soma compra, depreciação e valor atual por empresa e por categoria, sem os baixados", () => {
+    const r = resumoPatrimonio(
+      [
+        b("u1", "Informática", 1_200_000),
+        b("u1", "Móveis e utensílios", 120_000),
+        b("u2", "Informática", 2_400_000),
+        b("u2", "Informática", 999_999, "baixado", "2026-02-15"),
+      ],
+      "2026-10-15",
+    );
+    expect(r.total).toEqual({
+      quantidade: 3,
+      compra: 3_720_000,
+      acumulada: 279_000,
+      atual: 3_441_000,
+    });
+    expect(r.porEmpresa).toEqual([
+      { chave: "u2", quantidade: 1, compra: 2_400_000, acumulada: 180_000, atual: 2_220_000 },
+      { chave: "u1", quantidade: 2, compra: 1_320_000, acumulada: 99_000, atual: 1_221_000 },
+    ]);
+    expect(r.porCategoria.map((c) => [c.chave, c.quantidade])).toEqual([
+      ["Informática", 2],
+      ["Móveis e utensílios", 1],
+    ]);
   });
 });

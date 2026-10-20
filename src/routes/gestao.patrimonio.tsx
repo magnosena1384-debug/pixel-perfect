@@ -40,6 +40,9 @@ function PatrimonioLayout() {
         <Link to="/gestao/patrimonio/transferencias" className={link} activeProps={ativo}>
           Transferências
         </Link>
+        <Link to="/gestao/patrimonio/resumo" className={link} activeProps={ativo}>
+          Resumo
+        </Link>
         {gerencia.length > 0 && (
           <Link to="/gestao/patrimonio/etiquetas" className={link} activeProps={ativo}>
             Etiquetas

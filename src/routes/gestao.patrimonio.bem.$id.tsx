@@ -9,7 +9,9 @@ import { FormularioBem } from "@/components/patrimonio/FormularioBem";
 import { formatBRL } from "@/lib/auth";
 import { formatData, hoje, useUnidadesCom } from "@/lib/gestao";
 import {
+  baixarBem,
   editarBem,
+  MOTIVOS_BAIXA,
   transferirBem,
   useBem,
   useEmpresasDoGrupo,
@@ -39,7 +41,10 @@ function Ficha() {
   const { unidades } = useUnidadesCom("patrimonio");
   const { unidades: gerencia } = useUnidadesCom("patrimonio-gerenciar");
   const empresas = useEmpresasDoGrupo();
-  const [painel, setPainel] = useState<"editar" | "transferir" | null>(null);
+  const [painel, setPainel] = useState<"editar" | "transferir" | "baixa" | null>(null);
+  const [motivo, setMotivo] = useState<string>(MOTIVOS_BAIXA[0].valor);
+  const [dataBaixa, setDataBaixa] = useState(hoje());
+  const [obsBaixa, setObsBaixa] = useState("");
   const [destino, setDestino] = useState("");
   const [observacao, setObservacao] = useState("");
   const [gravando, setGravando] = useState(false);
@@ -109,6 +114,13 @@ function Ficha() {
                   >
                     Transferir
                   </Button>
+                  <Button
+                    variant="ghost"
+                    className="rounded-full"
+                    onClick={() => setPainel(painel === "baixa" ? null : "baixa")}
+                  >
+                    Dar baixa
+                  </Button>
                 </>
               )}
               {bem.situacao !== "baixado" && (
@@ -139,7 +151,12 @@ function Ficha() {
             ["Data de compra", formatData(bem.dataCompra)],
             ["Vida útil", `${bem.vidaUtilAnos} anos`],
             ...(bem.baixaData
-              ? [["Baixa", `${formatData(bem.baixaData)} · ${bem.baixaMotivo ?? ""}`]]
+              ? [
+                  [
+                    "Baixa",
+                    `${formatData(bem.baixaData)} · ${MOTIVOS_BAIXA.find((m) => m.valor === bem.baixaMotivo)?.rotulo ?? ""}`,
+                  ],
+                ]
               : []),
           ].map(([rotulo, valor]) => (
             <div key={rotulo}>
@@ -210,6 +227,57 @@ function Ficha() {
               </div>
             </form>
           )}
+        </Painel>
+      )}
+
+      {painel === "baixa" && (
+        <Painel titulo="Dar baixa">
+          <p className="mb-4 text-sm text-muted-foreground">
+            O bem para de depreciar na data da baixa, sai do inventário e das etiquetas e continua
+            no histórico. A baixa não pode ser desfeita por aqui.
+          </p>
+          <form
+            className="grid gap-4 sm:grid-cols-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!confirm(`Dar baixa no bem ${formatarTombamento(bem.tombamento)}?`)) return;
+              void agir(() => baixarBem(bem.id, motivo, dataBaixa, obsBaixa), "Baixa registrada");
+            }}
+          >
+            <Campo label="Motivo">
+              <Seletor
+                opcoes={MOTIVOS_BAIXA}
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+              />
+            </Campo>
+            <Campo label="Data da baixa">
+              <Input
+                type="date"
+                value={dataBaixa}
+                min={bem.dataCompra}
+                max={hoje()}
+                onChange={(e) => setDataBaixa(e.target.value)}
+                required
+              />
+            </Campo>
+            <Campo label="Observação (opcional)">
+              <Input value={obsBaixa} onChange={(e) => setObsBaixa(e.target.value)} />
+            </Campo>
+            <div className="flex gap-2 sm:col-span-3">
+              <Button
+                type="submit"
+                variant="destructive"
+                className="rounded-full"
+                disabled={gravando}
+              >
+                {gravando ? "Gravando…" : "Confirmar baixa"}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setPainel(null)}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
         </Painel>
       )}
 

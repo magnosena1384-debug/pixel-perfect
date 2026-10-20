@@ -243,6 +243,43 @@ begin
   select count(*) into n from public.patrimonio_bens where id = bem_a1 and unidade_id = ua and situacao = 'com_defeito';
   if n = 1 then ok := ok + 1; else falhas := falhas || 'p11: cancelada não voltou para a origem'::text; end if;
 
+  -- Baixa (0016): só quem gerencia; bem em trânsito não; baixado sai do inventário.
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gerente_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.patrimonio_baixar(bem_a2, 'descarte', current_date, '');
+    falhas := falhas || 'p12: quem só vê deu baixa'::text;
+  exception when others then ok := ok + 1;
+  end;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', gestor, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  tr := public.patrimonio_transferir(bem_a2, ub, '');
+  begin
+    perform public.patrimonio_baixar(bem_a2, 'descarte', current_date, '');
+    falhas := falhas || 'baixou bem em trânsito'::text;
+  exception when others then ok := ok + 1;
+  end;
+  perform public.patrimonio_cancelar_transferencia(tr);
+  begin
+    perform public.patrimonio_baixar(bem_a2, 'qualquer', current_date, '');
+    falhas := falhas || 'aceitou motivo inválido'::text;
+  exception when others then ok := ok + 1;
+  end;
+  perform public.patrimonio_baixar(bem_a2, 'descarte', '2026-03-15', 'quebrou');
+  select count(*) into n from public.patrimonio_bens
+  where id = bem_a2 and situacao = 'baixado' and baixa_data = '2026-03-15' and baixa_motivo = 'descarte';
+  if n = 1 then ok := ok + 1; else falhas := falhas || 'baixa não gravou'::text; end if;
+  begin
+    perform public.patrimonio_editar(bem_a2, dados);
+    falhas := falhas || 'editou bem baixado'::text;
+  exception when others then ok := ok + 1;
+  end;
+  inv := public.patrimonio_abrir_inventario(ua);
+  r := public.patrimonio_ler(inv, (select tombamento from public.patrimonio_bens where id = bem_a2));
+  if r ->> 'status' = 'baixado' then ok := ok + 1; else falhas := falhas || format('baixado no inventário: %s', r); end if;
+
   -- Quem tem Patrimônio vê o nome de todas as empresas do grupo (para escolher o destino).
   reset role;
   perform set_config('request.jwt.claims', json_build_object('sub', gerente_c, 'role', 'authenticated')::text, true);

@@ -958,6 +958,10 @@ export type Database = {
         Args: { _bem: string; _destino: string; _observacao: string }
         Returns: string
       }
+      patrimonio_baixar: {
+        Args: { _bem: string; _data: string; _motivo: string; _observacao: string }
+        Returns: undefined
+      }
       patrimonio_cadastrar: {
         Args: { _dados: Json; _unidade: string }
         Returns: Json

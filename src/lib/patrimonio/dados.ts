@@ -311,3 +311,22 @@ export const receberTransferencia = (id: string) =>
 
 export const cancelarTransferencia = (id: string) =>
   rpc<null>(supabase.rpc("patrimonio_cancelar_transferencia", { _transferencia: id }));
+
+// ---------- Baixa ----------
+
+export const MOTIVOS_BAIXA = [
+  { valor: "venda", rotulo: "Venda" },
+  { valor: "descarte", rotulo: "Descarte" },
+  { valor: "furto_perda", rotulo: "Furto ou perda" },
+  { valor: "cadastro_duplicado", rotulo: "Cadastro duplicado" },
+] as const;
+
+export const baixarBem = (bemId: string, motivo: string, data: string, observacao: string) =>
+  rpc<null>(
+    supabase.rpc("patrimonio_baixar", {
+      _bem: bemId,
+      _motivo: motivo,
+      _data: data,
+      _observacao: observacao,
+    }),
+  );

@@ -59,3 +59,37 @@ export function depreciacao(bem: BaseDepreciacao, hoje: string) {
     atual: bem.valorCompra - acumulada,
   };
 }
+
+type BemDoResumo = BaseDepreciacao & { unidadeId: string; categoria: string; situacao: string };
+
+type Somas = { quantidade: number; compra: number; acumulada: number; atual: number };
+
+/** Totais sem os baixados: geral, por empresa e por categoria (maior valor atual primeiro). */
+export function resumoPatrimonio(bens: BemDoResumo[], hoje: string) {
+  const ativos = bens.filter((b) => b.situacao !== "baixado");
+  const somar = (lista: BemDoResumo[]): Somas =>
+    lista.reduce(
+      (s, b) => {
+        const d = depreciacao(b, hoje);
+        return {
+          quantidade: s.quantidade + 1,
+          compra: s.compra + b.valorCompra,
+          acumulada: s.acumulada + d.acumulada,
+          atual: s.atual + d.atual,
+        };
+      },
+      { quantidade: 0, compra: 0, acumulada: 0, atual: 0 },
+    );
+  const agrupar = (chave: (b: BemDoResumo) => string) => {
+    const grupos = new Map<string, BemDoResumo[]>();
+    for (const b of ativos) grupos.set(chave(b), [...(grupos.get(chave(b)) ?? []), b]);
+    return [...grupos]
+      .map(([k, lista]) => ({ chave: k, ...somar(lista) }))
+      .sort((a, b) => b.atual - a.atual);
+  };
+  return {
+    total: somar(ativos),
+    porEmpresa: agrupar((b) => b.unidadeId),
+    porCategoria: agrupar((b) => b.categoria),
+  };
+}

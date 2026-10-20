@@ -36,6 +36,7 @@ import { Route as GestaoPatrimonioIndexRouteImport } from './routes/gestao.patri
 import { Route as GestaoPatrimonioEtiquetasRouteImport } from './routes/gestao.patrimonio.etiquetas'
 import { Route as GestaoPatrimonioInventarioRouteImport } from './routes/gestao.patrimonio.inventario'
 import { Route as GestaoPatrimonioNovoRouteImport } from './routes/gestao.patrimonio.novo'
+import { Route as GestaoPatrimonioResumoRouteImport } from './routes/gestao.patrimonio.resumo'
 import { Route as GestaoPatrimonioTransferenciasRouteImport } from './routes/gestao.patrimonio.transferencias'
 import { Route as GestaoRhIndexRouteImport } from './routes/gestao.rh.index'
 import { Route as GestaoRhImportarRouteImport } from './routes/gestao.rh.importar'
@@ -183,6 +184,11 @@ const GestaoPatrimonioNovoRoute = GestaoPatrimonioNovoRouteImport.update({
   path: '/novo',
   getParentRoute: () => GestaoPatrimonioRoute,
 } as any)
+const GestaoPatrimonioResumoRoute = GestaoPatrimonioResumoRouteImport.update({
+  id: '/resumo',
+  path: '/resumo',
+  getParentRoute: () => GestaoPatrimonioRoute,
+} as any)
 const GestaoPatrimonioTransferenciasRoute =
   GestaoPatrimonioTransferenciasRouteImport.update({
     id: '/transferencias',
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/inventario': typeof GestaoPatrimonioInventarioRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
+  '/gestao/patrimonio/resumo': typeof GestaoPatrimonioResumoRoute
   '/gestao/patrimonio/transferencias': typeof GestaoPatrimonioTransferenciasRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/inventario': typeof GestaoPatrimonioInventarioRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
+  '/gestao/patrimonio/resumo': typeof GestaoPatrimonioResumoRoute
   '/gestao/patrimonio/transferencias': typeof GestaoPatrimonioTransferenciasRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -308,6 +316,7 @@ export interface FileRoutesById {
   '/gestao/patrimonio/etiquetas': typeof GestaoPatrimonioEtiquetasRoute
   '/gestao/patrimonio/inventario': typeof GestaoPatrimonioInventarioRoute
   '/gestao/patrimonio/novo': typeof GestaoPatrimonioNovoRoute
+  '/gestao/patrimonio/resumo': typeof GestaoPatrimonioResumoRoute
   '/gestao/patrimonio/transferencias': typeof GestaoPatrimonioTransferenciasRoute
   '/gestao/rh/importar': typeof GestaoRhImportarRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/inventario'
     | '/gestao/patrimonio/novo'
+    | '/gestao/patrimonio/resumo'
     | '/gestao/patrimonio/transferencias'
     | '/gestao/rh/importar'
     | '/admin/'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/inventario'
     | '/gestao/patrimonio/novo'
+    | '/gestao/patrimonio/resumo'
     | '/gestao/patrimonio/transferencias'
     | '/gestao/rh/importar'
     | '/admin'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/gestao/patrimonio/etiquetas'
     | '/gestao/patrimonio/inventario'
     | '/gestao/patrimonio/novo'
+    | '/gestao/patrimonio/resumo'
     | '/gestao/patrimonio/transferencias'
     | '/gestao/rh/importar'
     | '/_authenticated/admin/'
@@ -619,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GestaoPatrimonioNovoRouteImport
       parentRoute: typeof GestaoPatrimonioRoute
     }
+    '/gestao/patrimonio/resumo': {
+      id: '/gestao/patrimonio/resumo'
+      path: '/resumo'
+      fullPath: '/gestao/patrimonio/resumo'
+      preLoaderRoute: typeof GestaoPatrimonioResumoRouteImport
+      parentRoute: typeof GestaoPatrimonioRoute
+    }
     '/gestao/patrimonio/transferencias': {
       id: '/gestao/patrimonio/transferencias'
       path: '/transferencias'
@@ -704,6 +723,7 @@ interface GestaoPatrimonioRouteChildren {
   GestaoPatrimonioEtiquetasRoute: typeof GestaoPatrimonioEtiquetasRoute
   GestaoPatrimonioInventarioRoute: typeof GestaoPatrimonioInventarioRoute
   GestaoPatrimonioNovoRoute: typeof GestaoPatrimonioNovoRoute
+  GestaoPatrimonioResumoRoute: typeof GestaoPatrimonioResumoRoute
   GestaoPatrimonioTransferenciasRoute: typeof GestaoPatrimonioTransferenciasRoute
   GestaoPatrimonioIndexRoute: typeof GestaoPatrimonioIndexRoute
   GestaoPatrimonioBemIdRoute: typeof GestaoPatrimonioBemIdRoute
@@ -713,6 +733,7 @@ const GestaoPatrimonioRouteChildren: GestaoPatrimonioRouteChildren = {
   GestaoPatrimonioEtiquetasRoute: GestaoPatrimonioEtiquetasRoute,
   GestaoPatrimonioInventarioRoute: GestaoPatrimonioInventarioRoute,
   GestaoPatrimonioNovoRoute: GestaoPatrimonioNovoRoute,
+  GestaoPatrimonioResumoRoute: GestaoPatrimonioResumoRoute,
   GestaoPatrimonioTransferenciasRoute: GestaoPatrimonioTransferenciasRoute,
   GestaoPatrimonioIndexRoute: GestaoPatrimonioIndexRoute,
   GestaoPatrimonioBemIdRoute: GestaoPatrimonioBemIdRoute,
