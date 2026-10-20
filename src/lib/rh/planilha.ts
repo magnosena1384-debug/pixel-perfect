@@ -39,7 +39,27 @@ export type RelatorioFrequencia = {
   problemas: Problema[];
 };
 
-export type Relatorio = RelatorioFrequencia;
+export type Irregularidade = {
+  colaborador: string;
+  nome: string;
+  cpf: string;
+  cargo: string;
+  setor: string;
+  vinculo: string;
+  /** Como o QuarkRH escreve: FALTA, ATRASO, HORA_EXTRA, INTRAJORNADA, JORNADA_MAXIMA… */
+  tipo: string;
+  data: string;
+};
+
+export type RelatorioIrregularidades = {
+  tipo: "irregularidades";
+  de: string;
+  ate: string;
+  irregularidades: Irregularidade[];
+  problemas: Problema[];
+};
+
+export type Relatorio = RelatorioFrequencia | RelatorioIrregularidades;
 
 const NAO_RECONHECIDO =
   "Este arquivo não parece um relatório do QuarkRH (Frequência, Irregularidades ou Banco de Horas).";
@@ -78,6 +98,21 @@ export function dataIso(v: unknown) {
 
 const pareceData = (v: unknown) => /^\d{2}\/\d{2}\/\d{4}$/.test(texto(v));
 
+/** O que a prévia e a mensagem de "deu certo" mostram sobre o arquivo lido. */
+export function resumoDoArquivo(r: Relatorio) {
+  const registros: { colaborador: string; tipo?: string }[] =
+    r.tipo === "frequencia" ? r.dias : r.irregularidades;
+  const porTipo: Record<string, number> = {};
+  if (r.tipo === "irregularidades")
+    for (const i of r.irregularidades) porTipo[i.tipo] = (porTipo[i.tipo] ?? 0) + 1;
+  return {
+    colaboradores: new Set(registros.map((x) => x.colaborador)).size,
+    registros: registros.length,
+    unidade: r.tipo === "frequencia" ? "dias" : "ocorrências",
+    porTipo,
+  };
+}
+
 /** O dia de ponto no formato das colunas de rh_ponto_dias (o que rh_gravar_ponto recebe). */
 export function diaParaBanco(d: DiaPonto) {
   return {
@@ -101,7 +136,56 @@ export function diaParaBanco(d: DiaPonto) {
 export function lerRelatorio(linhas: unknown[][]): Relatorio {
   if (linhas.some((l) => texto(l[0]) === "Dia" && texto(l[1]) === "Jornada"))
     return lerFrequencia(linhas);
+  if (
+    linhas.some(
+      (l) => texto(l[0]) === "Data Inicial" && l.some((c) => texto(c) === "Irregularidade"),
+    )
+  )
+    return lerIrregularidades(linhas);
   throw new ErroRelatorio(NAO_RECONHECIDO);
+}
+
+function lerIrregularidades(linhas: unknown[][]): RelatorioIrregularidades {
+  const i0 = linhas.findIndex((l) => texto(l[0]) === "Data Inicial");
+  const col = Object.fromEntries(linhas[i0]!.map((c, j) => [texto(c), j]));
+  const campo = (l: unknown[], nome: string) => texto(l[col[nome]!]);
+  const irregularidades: Irregularidade[] = [];
+  const problemas: Problema[] = [];
+  let de = "";
+  let ate = "";
+
+  linhas.slice(i0 + 1).forEach((l, k) => {
+    const nome = campo(l, "Nome do Colaborador");
+    const tipo = campo(l, "Irregularidade");
+    if (!nome || !tipo) return; // linha de total
+    de ||= dataIso(campo(l, "Data Inicial")) ?? "";
+    ate ||= dataIso(campo(l, "Data Final")) ?? "";
+    const base = {
+      colaborador: normalizarNome(nome),
+      nome: nome.replace(/\s+/g, " ").trim(),
+      cpf: campo(l, "CPF"),
+      cargo: campo(l, "Cargo"),
+      setor: campo(l, "Setor"),
+      vinculo: campo(l, "Vínculo"),
+      tipo,
+    };
+    for (const d of campo(l, "Datas")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)) {
+      const data = dataIso(d);
+      if (data) irregularidades.push({ ...base, data });
+      else problemas.push({ linha: i0 + k + 2, motivo: `Data inválida: ${d}` });
+    }
+  });
+
+  if (!irregularidades.length && !problemas.length) throw new ErroRelatorio(NAO_RECONHECIDO);
+  if (!de || !ate) {
+    const datas = irregularidades.map((i) => i.data).sort();
+    de ||= datas[0] ?? "";
+    ate ||= datas.at(-1) ?? "";
+  }
+  return { tipo: "irregularidades", de, ate, irregularidades, problemas };
 }
 
 function lerFrequencia(linhas: unknown[][]): RelatorioFrequencia {

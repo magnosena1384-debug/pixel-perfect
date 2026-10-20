@@ -5,3 +5,4 @@ Decisão: a ligação recusou duas vezes aplicar a 0008 (bloqueio de permissão 
 Decisão: "RH – importar" também dá "RH" (ver), no banco e na tela — quem importa precisa ver o que gravou, e gravar devolvendo o registro exige leitura — custa um gerente com só importar ver o painel daquela unidade.
 Decisão: .env saiu do Git (git rm --cached) e entrou no .gitignore — AGENTS.md proíbe segredo no Git — quem clonar precisa criar o .env a partir do .env.example.
 Parte 1: código pronto, banco pendente (npx vitest run → 33 passed; npx tsc --noEmit → ok; eslint → ok; vite build → ok; SQL de acesso → falhou como esperado: rh_ponto_dias não existe)
+Parte 2: código pronto, banco pendente (npx vitest run → 45 passed; tsc → ok; eslint → ok; vite build → ok; migração 0009 escrita, não aplicada)

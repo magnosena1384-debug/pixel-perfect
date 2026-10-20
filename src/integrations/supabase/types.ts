@@ -449,6 +449,45 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_irregularidades: {
+        Row: {
+          cargo: string
+          colaborador: string
+          cpf: string
+          data: string
+          importacao_id: string | null
+          nome: string
+          setor: string
+          tipo: string
+          unidade_id: string
+          vinculo: string
+        }
+        Insert: {
+          cargo?: string
+          colaborador: string
+          cpf?: string
+          data: string
+          importacao_id?: string | null
+          nome: string
+          setor?: string
+          tipo: string
+          unidade_id: string
+          vinculo?: string
+        }
+        Update: {
+          cargo?: string
+          colaborador?: string
+          cpf?: string
+          data?: string
+          importacao_id?: string | null
+          nome?: string
+          setor?: string
+          tipo?: string
+          unidade_id?: string
+          vinculo?: string
+        }
+        Relationships: []
+      }
       rh_ponto_dias: {
         Row: {
           batidas: string[]
@@ -614,6 +653,16 @@ export type Database = {
           unidade_id: string
           vendas: number
         }[]
+      }
+      rh_gravar_irregularidades: {
+        Args: {
+          _arquivo: string
+          _ate: string
+          _de: string
+          _linhas: Json
+          _unidade: string
+        }
+        Returns: number
       }
       rh_gravar_ponto: {
         Args: {

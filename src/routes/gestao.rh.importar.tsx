@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Cartao, Painel, Seletor, Vazio } from "@/components/gestao/ui";
 import { formatData } from "@/lib/gestao";
-import { gravarFrequencia, useImportacoesRh, useUnidadesCom } from "@/lib/rh/dados";
-import { ErroRelatorio, lerRelatorio, type Relatorio } from "@/lib/rh/planilha";
+import { gravarImportacao, useImportacoesRh, useUnidadesCom } from "@/lib/rh/dados";
+import { ErroRelatorio, lerRelatorio, resumoDoArquivo, type Relatorio } from "@/lib/rh/planilha";
 
 export const Route = createFileRoute("/gestao/rh/importar")({
   component: Importar,
@@ -70,10 +70,10 @@ function Importar() {
     if (!relatorio || !arquivo || !unidade) return;
     setGravando(true);
     try {
-      await gravarFrequencia(unidade.id, arquivo, relatorio);
-      const colaboradores = new Set(relatorio.dias.map((d) => d.colaborador)).size;
+      await gravarImportacao(unidade.id, arquivo, relatorio);
+      const r = resumoDoArquivo(relatorio);
       toast.success(
-        `${NOMES[relatorio.tipo]} de ${formatData(relatorio.de)} a ${formatData(relatorio.ate)}: ${colaboradores} colaboradores, ${relatorio.dias.length} dias`,
+        `${NOMES[relatorio.tipo]} de ${formatData(relatorio.de)} a ${formatData(relatorio.ate)}: ${r.colaboradores} colaboradores, ${r.registros} ${r.unidade}`,
       );
       limpar();
       void qc.invalidateQueries({ queryKey: ["rh"] });
@@ -84,14 +84,15 @@ function Importar() {
     }
   }
 
-  const colaboradores = relatorio ? new Set(relatorio.dias.map((d) => d.colaborador)).size : 0;
+  const previa = relatorio && resumoDoArquivo(relatorio);
 
   return (
     <div className="space-y-8">
       <Painel titulo="Importar do QuarkRH">
         <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
-          No QuarkRH, filtre o posto e exporte em Excel o Relatório de Frequência Analítico.
-          Importar de novo o mesmo período substitui os dados daquele período nesta unidade.
+          No QuarkRH, filtre o posto e exporte em Excel o Relatório de Frequência Analítico ou o
+          Relatório de Irregularidades – Completo. Importar de novo o mesmo período substitui os
+          dados daquele período nesta unidade.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo label="Unidade">
@@ -122,7 +123,7 @@ function Importar() {
         </Painel>
       )}
 
-      {relatorio && (
+      {relatorio && previa && (
         <Painel titulo={`Prévia: ${NOMES[relatorio.tipo]}`}>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Cartao
@@ -130,8 +131,17 @@ function Importar() {
               valor={`${formatData(relatorio.de)} – ${formatData(relatorio.ate)}`}
               className="bg-muted text-base"
             />
-            <Cartao rotulo="Colaboradores" valor={colaboradores} className="bg-muted" />
-            <Cartao rotulo="Dias de ponto" valor={relatorio.dias.length} className="bg-muted" />
+            <Cartao rotulo="Colaboradores" valor={previa.colaboradores} className="bg-muted" />
+            <Cartao
+              rotulo={relatorio.tipo === "frequencia" ? "Dias de ponto" : "Ocorrências"}
+              valor={previa.registros}
+              detalhe={
+                Object.entries(previa.porTipo)
+                  .map(([tipo, n]) => `${n} ${tipo.toLowerCase().replace("_", " ")}`)
+                  .join(" · ") || undefined
+              }
+              className="bg-muted"
+            />
             <Cartao
               rotulo="Linhas não lidas"
               valor={relatorio.problemas.length}

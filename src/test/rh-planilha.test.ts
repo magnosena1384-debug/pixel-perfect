@@ -8,6 +8,7 @@ import {
   lerRelatorio,
   minParaHoras,
   normalizarNome,
+  resumoDoArquivo,
   type RelatorioFrequencia,
   type Somatorio,
 } from "@/lib/rh/planilha";
@@ -323,5 +324,144 @@ describe.skipIf(!existsSync(REAL))("RH: Frequência real do QuarkRH", () => {
     const somas = somasPorColaborador(r);
     for (const [colaborador, esperado] of r.somatorios)
       expect(somas.get(colaborador)).toEqual(esperado);
+  });
+});
+
+// Mesmo formato do "Relatório de Irregularidades - Completo" do QuarkRH, com dados inventados.
+const IRR_CAB = [
+  "Data Inicial",
+  "Data Final",
+  "Nome do Colaborador",
+  "CPF",
+  "Cargo",
+  "Setor",
+  "Vínculo",
+  "Irregularidade",
+  "Datas",
+  "Total",
+];
+const irregularidades: unknown[][] = [
+  IRR_CAB,
+  [
+    "01/10/2026",
+    "19/10/2026",
+    "ANA PAULA DE SOUZA",
+    "111.222.333-44",
+    "FRENTISTA",
+    "PISTA",
+    "CLT",
+    "FALTA",
+    "02/10/2026, 19/10/2026",
+    "2",
+  ],
+  [
+    "01/10/2026",
+    "19/10/2026",
+    "ANA PAULA DE SOUZA",
+    "111.222.333-44",
+    "FRENTISTA",
+    "PISTA",
+    "CLT",
+    "ATRASO",
+    "09/10/2026",
+    "1",
+  ],
+  [
+    "01/10/2026",
+    "19/10/2026",
+    "José  da Silva ",
+    "555.666.777-88",
+    "CAIXA",
+    "LOJA ",
+    "CLT",
+    "HORA_EXTRA",
+    "01/10/2026",
+    "1",
+  ],
+  [null, null, null, null, null, null, null, null, null, null, "Total: ", "4"],
+];
+
+describe("RH: Relatório de Irregularidades", () => {
+  it("vira uma ocorrência por data, com CPF, cargo e setor", () => {
+    const r = lerRelatorio(irregularidades);
+    if (r.tipo !== "irregularidades") throw new Error(r.tipo);
+    expect(r.de).toBe("2026-10-01");
+    expect(r.ate).toBe("2026-10-19");
+    expect(r.irregularidades).toHaveLength(4);
+    const faltas = r.irregularidades.filter((i) => i.tipo === "FALTA");
+    expect(faltas.map((f) => f.data)).toEqual(["2026-10-02", "2026-10-19"]);
+    expect(faltas[0]).toMatchObject({
+      colaborador: "ANA PAULA DE SOUZA",
+      cpf: "111.222.333-44",
+      cargo: "FRENTISTA",
+      setor: "PISTA",
+    });
+  });
+
+  it("usa o mesmo nome normalizado da Frequência e limpa o setor", () => {
+    const r = lerRelatorio(irregularidades);
+    if (r.tipo !== "irregularidades") throw new Error(r.tipo);
+    expect(r.irregularidades.at(-1)).toMatchObject({ colaborador: "JOSE DA SILVA", setor: "LOJA" });
+  });
+
+  it("aponta a data que não deu para ler", () => {
+    const r = lerRelatorio([
+      IRR_CAB,
+      [
+        "01/10/2026",
+        "19/10/2026",
+        "A",
+        "1",
+        "C",
+        "S",
+        "CLT",
+        "FALTA",
+        "02/10/2026, 31/02/2026",
+        "2",
+      ],
+    ]);
+    if (r.tipo !== "irregularidades") throw new Error(r.tipo);
+    expect(r.irregularidades).toHaveLength(1);
+    expect(r.problemas).toEqual([{ linha: 2, motivo: expect.stringMatching(/31\/02\/2026/) }]);
+  });
+});
+
+const REAIS = "docs/contexto/quarkrh/";
+const IRR_REAL = `${REAIS}Relatório de Irregularidades - Completo (1).xls`;
+describe.skipIf(!existsSync(REAL) || !existsSync(IRR_REAL))(
+  "RH: Irregularidades reais do QuarkRH",
+  () => {
+    it("toda FALTA cai num dia sem batida e sem observação no ponto", () => {
+      const freq = lerFrequencia(linhasDoArquivo(readFileSync(REAL)));
+      const irr = lerRelatorio(linhasDoArquivo(readFileSync(IRR_REAL)));
+      if (irr.tipo !== "irregularidades") throw new Error(irr.tipo);
+      expect(irr.problemas).toEqual([]);
+      const faltas = irr.irregularidades.filter((i) => i.tipo === "FALTA");
+      expect(faltas.length).toBeGreaterThan(0);
+      for (const f of faltas) {
+        const d = freq.dias.find((x) => x.colaborador === f.colaborador && x.data === f.data);
+        expect(d, `${f.data}`).toMatchObject({ trabalhou: false, observacao: "" });
+      }
+    });
+  },
+);
+
+describe("RH: resumo do arquivo para a prévia", () => {
+  it("Frequência: colaboradores e dias de ponto", () => {
+    expect(resumoDoArquivo(lerRelatorio(frequencia))).toEqual({
+      colaboradores: 2,
+      registros: 6,
+      unidade: "dias",
+      porTipo: {},
+    });
+  });
+
+  it("Irregularidades: colaboradores, ocorrências e quantas de cada tipo", () => {
+    expect(resumoDoArquivo(lerRelatorio(irregularidades))).toEqual({
+      colaboradores: 2,
+      registros: 4,
+      unidade: "ocorrências",
+      porTipo: { FALTA: 2, ATRASO: 1, HORA_EXTRA: 1 },
+    });
   });
 });
