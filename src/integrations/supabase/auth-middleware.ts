@@ -33,8 +33,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    const SUPABASE_URL = process.env['SUPABASE_URL'];
-    const SUPABASE_PUBLISHABLE_KEY = process.env['SUPABASE_PUBLISHABLE_KEY'];
+    // Same public fallback as client.ts (postos-lemon project).
+    const SUPABASE_URL = process.env['SUPABASE_URL'] || 'https://ybftywiceifdvgnsmows.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY =
+      process.env['SUPABASE_PUBLISHABLE_KEY'] || 'sb_publishable_zPJKtN8zgDQpr8YERItfCQ_D5fMssVJ';
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [
