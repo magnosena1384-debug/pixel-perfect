@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   chaveRegistro,
+  codigoGravado,
+  lerChaves,
   dataRegistro,
   empresaRegistro,
   extrairLista,
@@ -35,5 +37,16 @@ describe("webPosto: leitura das respostas", () => {
   it("avança a paginação pelo ultimoCodigo da API ou pelo maior código", () => {
     expect(proximoCodigo({ ultimoCodigo: 50, resultados: [] }, [], "VENDA", 0)).toBe(50);
     expect(proximoCodigo([], [{ codigo: 3 }, { codigo: 9 }], "VENDA", 0)).toBe(9);
+  });
+});
+
+describe("várias chaves", () => {
+  it("lê chaves separadas por vírgula, espaço ou linha, sem repetir", () => {
+    expect(lerChaves(" a, b\nc ;a ")).toEqual(["a", "b", "c"]);
+    expect(lerChaves(undefined)).toEqual([]);
+  });
+  it("o código gravado leva o posto, para dois postos não se sobrescreverem", () => {
+    expect(codigoGravado({ codigo: 7 }, "VENDAS", 1)).toBe("1:7");
+    expect(codigoGravado({ codigo: 7 }, "VENDAS", 2)).toBe("2:7");
   });
 });

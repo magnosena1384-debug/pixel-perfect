@@ -21,10 +21,10 @@ function WebPosto() {
       <div className="rounded-3xl bg-card p-6">
         <h2 className="text-2xl font-bold uppercase">Integração webPosto</h2>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Importa vendas, operação e financeiro do webPosto (Quality Automação). A chave da API é
-          gerada no webPosto em Administração → Integrações (depois que a Quality libera o contrato
-          "API Integração") e deve ser cadastrada na Vercel como variável de ambiente{" "}
-          <code className="rounded bg-muted px-1">WEBPOSTO_CHAVE</code>.
+          Importa vendas, operação e financeiro do webPosto (Quality Automação). Cada posto tem a
+          sua chave, gerada no webPosto em Administração → Integrações (depois que a Quality libera
+          o contrato "API Integração"). Cadastre todas na Vercel numa variável de ambiente{" "}
+          <code className="rounded bg-muted px-1">WEBPOSTO_CHAVES</code>, separadas por vírgula.
         </p>
       </div>
       <Empresas />

@@ -5,7 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 // API de integração do webPosto (Quality Automação). A chave é gerada no webPosto em
-// Administração > Integrações e fica no segredo WEBPOSTO_CHAVE do servidor.
+// Administração > Integrações. Cada posto tem a sua: ficam no segredo WEBPOSTO_CHAVES do servidor,
+// separadas por vírgula (WEBPOSTO_CHAVE, com uma só, continua valendo).
 // Caminhos conforme o Swagger público: web.qualityautomacao.com.br/v3/api-docs/integracao
 const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO/V1";
 const LIMITE = 2000;
@@ -46,6 +47,11 @@ export function chaveRegistro(r: Registro, endpoint: string): string {
   return JSON.stringify(r);
 }
 
+/** Código gravado no banco: o do registro precedido do posto (empresa), único entre os postos. */
+export function codigoGravado(r: Registro, endpoint: string, posto: number | string): string {
+  return `${posto}:${chaveRegistro(r, endpoint)}`;
+}
+
 /** Primeira data do registro (campo começando com "data"), no formato AAAA-MM-DD. */
 export function dataRegistro(r: Registro): string | null {
   for (const [k, v] of Object.entries(r)) {
@@ -73,9 +79,26 @@ export function proximoCodigo(corpo: unknown, lista: Registro[], endpoint: strin
   return numeros.length ? Math.max(atual, ...numeros) : atual;
 }
 
-async function chamar(endpoint: string, params: Record<string, string | number>) {
-  const chave = process.env["WEBPOSTO_CHAVE"];
-  if (!chave) throw new Error("Chave do webPosto não configurada (segredo WEBPOSTO_CHAVE).");
+/** As chaves configuradas no servidor, sem repetidas. */
+export function lerChaves(texto: string | undefined): string[] {
+  return [
+    ...new Set(
+      (texto ?? "")
+        .split(/[\s,;]+/)
+        .map((c) => c.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function chaves(): string[] {
+  const lista = lerChaves(process.env["WEBPOSTO_CHAVES"] || process.env["WEBPOSTO_CHAVE"]);
+  if (!lista.length)
+    throw new Error("Chaves do webPosto não configuradas (segredo WEBPOSTO_CHAVES).");
+  return lista;
+}
+
+async function chamar(chave: string, endpoint: string, params: Record<string, string | number>) {
   const url = new URL(`${BASE}/${endpoint}`);
   url.searchParams.set("chave", chave);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
@@ -109,7 +132,8 @@ export const listarEmpresasWebPosto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await exigirAdmin(context);
-    const lista = extrairLista(await chamar("EMPRESAS", {}));
+    const lista: Registro[] = [];
+    for (const chave of chaves()) lista.push(...extrairLista(await chamar(chave, "EMPRESAS", {})));
     return lista.map((e) => ({
       codigo: empresaRegistro(e) ?? Number(chaveRegistro(e, "EMPRESA")),
       nome: String(
@@ -141,48 +165,54 @@ export const importarWebPosto = createServerFn({ method: "POST" })
         .map((u) => [u.webposto_empresa!, u.id]),
     );
 
-    let ultimo = 0;
     let quantidade = 0;
     let semUnidade = 0;
     let erro: string | null = null;
-    try {
-      for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
-        const corpo = await chamar(data.endpoint, {
-          dataInicial: data.dataInicial,
-          dataFinal: data.dataFinal,
-          ultimoCodigo: ultimo,
-          limite: LIMITE,
-        });
-        const lista = extrairLista(corpo);
-        if (!lista.length) break;
-        const linhas = lista.map((r) => {
-          const empresa = empresaRegistro(r);
-          const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
-          if (!unidade) semUnidade++;
-          return {
-            endpoint: data.endpoint,
-            codigo: chaveRegistro(r, data.endpoint),
-            empresa_codigo: empresa,
-            unidade_id: unidade,
-            data_ref: dataRegistro(r),
-            dados: r as Json,
-            importado_em: new Date().toISOString(),
-          };
-        });
-        for (let i = 0; i < linhas.length; i += 500) {
-          const { error } = await supabase
-            .from("webposto_registros")
-            .upsert(linhas.slice(i, i + 500));
-          if (error) throw new Error(error.message);
+    const lista_chaves = chaves();
+    const erros: string[] = [];
+    for (const [n, chave] of lista_chaves.entries()) {
+      let ultimo = 0;
+      try {
+        for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+          const corpo = await chamar(chave, data.endpoint, {
+            dataInicial: data.dataInicial,
+            dataFinal: data.dataFinal,
+            ultimoCodigo: ultimo,
+            limite: LIMITE,
+          });
+          const lista = extrairLista(corpo);
+          if (!lista.length) break;
+          const linhas = lista.map((r) => {
+            const empresa = empresaRegistro(r);
+            const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
+            if (!unidade) semUnidade++;
+            return {
+              endpoint: data.endpoint,
+              // Cada posto numera os seus registros: o código leva o posto para um não sobrescrever o outro.
+              codigo: codigoGravado(r, data.endpoint, empresa ?? `chave${n + 1}`),
+              empresa_codigo: empresa,
+              unidade_id: unidade,
+              data_ref: dataRegistro(r),
+              dados: r as Json,
+              importado_em: new Date().toISOString(),
+            };
+          });
+          for (let i = 0; i < linhas.length; i += 500) {
+            const { error } = await supabase
+              .from("webposto_registros")
+              .upsert(linhas.slice(i, i + 500));
+            if (error) throw new Error(error.message);
+          }
+          quantidade += lista.length;
+          const proximo = proximoCodigo(corpo, lista, data.endpoint, ultimo);
+          if (lista.length < LIMITE || proximo === ultimo) break;
+          ultimo = proximo;
         }
-        quantidade += lista.length;
-        const proximo = proximoCodigo(corpo, lista, data.endpoint, ultimo);
-        if (lista.length < LIMITE || proximo === ultimo) break;
-        ultimo = proximo;
+      } catch (e) {
+        erros.push(`Chave ${n + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
-    } catch (e) {
-      erro = e instanceof Error ? e.message : String(e);
     }
+    if (erros.length) erro = erros.join(" | ");
 
     await supabase.from("webposto_importacoes").insert({
       endpoint: data.endpoint,
