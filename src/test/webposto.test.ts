@@ -3,6 +3,7 @@ import {
   chaveRegistro,
   caminhoEndpoint,
   codigoGravado,
+  diasDoPeriodo,
   itemCompacto,
   lerChaves,
   dataRegistro,
@@ -98,5 +99,17 @@ describe("itens das vendas", () => {
   });
   it("descarta item sem identificação", () => {
     expect(itemCompacto({ empresaCodigo: 1, dataMovimento: "2026-10-21" }, null)).toBeNull();
+  });
+});
+
+describe("diasDoPeriodo", () => {
+  it("lista os dias do período, inclusive, atravessando o mês", () => {
+    expect(diasDoPeriodo("2026-10-30", "2026-11-02")).toEqual([
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+    ]);
+    expect(diasDoPeriodo("2026-10-05", "2026-10-05")).toEqual(["2026-10-05"]);
   });
 });

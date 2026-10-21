@@ -25,6 +25,16 @@ export const ENDPOINTS = [
 
 export type Registro = Record<string, unknown>;
 
+/** Dias (AAAA-MM-DD) de `de` a `ate`, inclusive. */
+export function diasDoPeriodo(de: string, ate: string): string[] {
+  const dias: string[] = [];
+  for (let d = new Date(`${de}T00:00:00Z`); d <= new Date(`${ate}T00:00:00Z`);) {
+    dias.push(d.toISOString().slice(0, 10));
+    d = new Date(d.getTime() + 86_400_000);
+  }
+  return dias;
+}
+
 /** Caminho na API: os itens das vendas ficam em VENDAS/ITENS. */
 export function caminhoEndpoint(endpoint: string): string {
   return endpoint === "VENDAS_ITENS" ? "VENDAS/ITENS" : endpoint;
@@ -275,11 +285,17 @@ export const importarWebPosto = createServerFn({ method: "POST" })
 
     // Hora, vendedor e cancelamento vêm do cupom e são copiados para os itens (painel rápido).
     if (data.endpoint === "VENDAS" || data.endpoint === "VENDAS_ITENS") {
-      const { error } = await supabase.rpc("webposto_consolidar_vendas", {
-        _de: data.dataInicial,
-        _ate: data.dataFinal,
-      });
-      if (error && !erro) erro = `Importou, mas não preencheu hora e vendedor: ${error.message}`;
+      // Um dia por vez: cada chamada fica dentro do limite de tempo do banco.
+      for (const dia of diasDoPeriodo(data.dataInicial, data.dataFinal)) {
+        const { error } = await supabase.rpc("webposto_consolidar_vendas", {
+          _de: dia,
+          _ate: dia,
+        });
+        if (error) {
+          if (!erro) erro = `Importou, mas não somou o painel de ${dia}: ${error.message}`;
+          break;
+        }
+      }
     }
 
     await supabase.from("webposto_importacoes").insert({
