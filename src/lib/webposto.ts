@@ -5,8 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 // API de integração do webPosto (Quality Automação). A chave é gerada no webPosto em
-// Administração > Integrações. Cada posto tem a sua: ficam no segredo WEBPOSTO_CHAVES do servidor,
-// separadas por vírgula (WEBPOSTO_CHAVE, com uma só, continua valendo).
+// Administração > Integrações. Ficam no Vault do Supabase (webposto_chave_<n>); cada uma enxerga
+// todos os postos do grupo, e as outras servem de reserva.
 // Caminhos conforme o Swagger público: web.qualityautomacao.com.br/v3/api-docs/integracao
 const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO/V1";
 const LIMITE = 2000;
@@ -216,6 +216,9 @@ export const importarWebPosto = createServerFn({ method: "POST" })
           if (lista.length < LIMITE || proximo === ultimo) break;
           ultimo = proximo;
         }
+        // Cada chave enxerga todos os postos do grupo: a primeira que funciona basta.
+        erros.length = 0;
+        break;
       } catch (e) {
         erros.push(`Chave ${n + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
