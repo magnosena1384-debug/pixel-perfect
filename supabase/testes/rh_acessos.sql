@@ -18,6 +18,10 @@ declare
   um_saldo jsonb := '[{"colaborador":"TESTE UM","nome":"Teste Um","setor":"PISTA","admissao":"2024-01-02","credito":60,"debito":132,"saldo":-72}]';
 begin
   insert into public.unidades (id, nome, ordem) values (ua, 'Teste RH A', 900), (ub, 'Teste RH B', 901);
+  -- O primeiro usuário do banco vira admin (handle_new_user); este vem antes para os de teste
+  -- serem usuários comuns.
+  insert into auth.users (id, email, aud, role) values
+    (gen_random_uuid(), 'admin-rh@teste.invalid', 'authenticated', 'authenticated');
   insert into auth.users (id, email, aud, role) values
     (gerente, 'gerente-rh@teste.invalid', 'authenticated', 'authenticated'),
     (leitor, 'leitor-rh@teste.invalid', 'authenticated', 'authenticated');

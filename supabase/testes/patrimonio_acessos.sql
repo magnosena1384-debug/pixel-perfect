@@ -30,6 +30,10 @@ declare
   dados jsonb := '{"nome":"Bomba 1","categoria":"Bombas e equipamentos de pista","setor":"Pista","numero_serie":"SN-TESTE-1","data_compra":"2026-01-15","valor_compra_centavos":1200000,"vida_util_anos":10}';
 begin
   insert into public.unidades (id, nome, ordem) values (ua, 'Teste Pat A', 900), (ub, 'Teste Pat B', 901);
+  -- O primeiro usuário do banco vira admin (handle_new_user); este vem antes para os de teste
+  -- serem usuários comuns.
+  insert into auth.users (id, email, aud, role) values
+    (gen_random_uuid(), 'admin-pat@teste.invalid', 'authenticated', 'authenticated');
   insert into auth.users (id, email, aud, role) values
     (gestor, 'gestor-pat@teste.invalid', 'authenticated', 'authenticated'),
     (gerente_a, 'gerente-pat@teste.invalid', 'authenticated', 'authenticated'),
