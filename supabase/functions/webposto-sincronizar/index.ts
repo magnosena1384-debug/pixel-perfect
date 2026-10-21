@@ -1,5 +1,5 @@
 // Importação automática do webPosto, chamada de hora em hora pelo pg_cron (migração 0018).
-// Busca FUNCIONARIOS e VENDAS de ontem e hoje em cada posto, com as chaves do Vault, e grava em
+// Busca FUNCIONARIOS, VENDAS e VENDAS_ITENS de ontem e hoje (ou do período {dataInicial, dataFinal} do corpo) em cada posto, com as chaves do Vault, e grava em
 // webposto_registros do mesmo jeito que a importação manual (src/lib/webposto.ts).
 // Só aceita quem manda o segredo do agendador (Vault: webposto_cron_segredo).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -7,7 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 const BASE = "https://web.qualityautomacao.com.br/INTEGRACAO/V1";
 const LIMITE = 2000;
 const MAX_PAGINAS = 50;
-const ENDPOINTS = ["FUNCIONARIOS", "VENDAS"];
+const ENDPOINTS = ["FUNCIONARIOS", "VENDAS", "VENDAS_ITENS"];
 
 type Registro = Record<string, unknown>;
 
@@ -48,6 +48,28 @@ function empresaRegistro(r: Registro): number | null {
   return null;
 }
 
+/** Item de venda reduzido ao que o painel usa (igual a itemCompacto em src/lib/webposto.ts). */
+function itemCompacto(r: Registro, unidadeId: string | null) {
+  const empresa = Number(r["empresaCodigo"]);
+  const item = Number(r["vendaItemCodigo"] ?? r["codigo"]);
+  const venda = Number(r["vendaCodigo"]);
+  const data = typeof r["dataMovimento"] === "string" ? r["dataMovimento"].slice(0, 10) : null;
+  if (![empresa, item, venda].every(Number.isFinite) || !data) return null;
+  const descricao = String(r["produtoDescricao"] ?? "").trim();
+  return {
+    empresa_codigo: empresa,
+    item_codigo: item,
+    venda_codigo: venda,
+    unidade_id: unidadeId,
+    data_ref: data,
+    produto: descricao || `Produto ${r["produtoCodigo"] ?? "?"}`,
+    bico: r["bicoCodigo"] != null,
+    quantidade: Number(r["quantidade"]) || 0,
+    total: Number(r["totalVenda"]) || 0,
+    importado_em: new Date().toISOString(),
+  };
+}
+
 function proximoCodigo(corpo: unknown, lista: Registro[], endpoint: string, atual: number) {
   if (corpo && typeof corpo === "object" && !Array.isArray(corpo)) {
     const v = (corpo as Record<string, unknown>)["ultimoCodigo"];
@@ -58,7 +80,7 @@ function proximoCodigo(corpo: unknown, lista: Registro[], endpoint: string, atua
 }
 
 async function chamar(chave: string, endpoint: string, params: Record<string, string | number>) {
-  const url = new URL(`${BASE}/${endpoint}`);
+  const url = new URL(`${BASE}/${endpoint === "VENDAS_ITENS" ? "VENDAS/ITENS" : endpoint}`);
   url.searchParams.set("chave", chave);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
   const res = await fetch(url, {
@@ -97,11 +119,14 @@ Deno.serve(async (req) => {
       .map((u) => [u.webposto_empresa as number, u.id as string]),
   );
 
-  const dataInicial = diaBrasilia(1);
-  const dataFinal = diaBrasilia(0);
+  const corpoPedido = await req.json().catch(() => ({}));
+  const periodo = /^\d{4}-\d{2}-\d{2}$/;
+  const dataInicial = periodo.test(corpoPedido?.dataInicial) ? corpoPedido.dataInicial : diaBrasilia(1);
+  const dataFinal = periodo.test(corpoPedido?.dataFinal) ? corpoPedido.dataFinal : diaBrasilia(0);
+  const so = Array.isArray(corpoPedido?.endpoints) ? (corpoPedido.endpoints as string[]) : null;
   const resumo: Record<string, unknown> = {};
 
-  for (const endpoint of ENDPOINTS) {
+  for (const endpoint of ENDPOINTS.filter((e) => !so || so.includes(e))) {
     let quantidade = 0;
     let semUnidade = 0;
     const erros: string[] = [];
@@ -117,6 +142,26 @@ Deno.serve(async (req) => {
           });
           const lista = extrairLista(corpo);
           if (!lista.length) break;
+          if (endpoint === "VENDAS_ITENS") {
+            const itens = lista.flatMap((r) => {
+              const empresa = empresaRegistro(r);
+              const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
+              if (!unidade) semUnidade++;
+              const item = itemCompacto(r, unidade);
+              return item ? [item] : [];
+            });
+            for (let i = 0; i < itens.length; i += 500) {
+              const { error } = await supabase
+                .from("webposto_vendas_itens")
+                .upsert(itens.slice(i, i + 500));
+              if (error) throw new Error(error.message);
+            }
+            quantidade += lista.length;
+            const prox = proximoCodigo(corpo, lista, endpoint, ultimo);
+            if (lista.length < LIMITE || prox === ultimo) break;
+            ultimo = prox;
+            continue;
+          }
           const linhas = lista.map((r) => {
             const empresa = empresaRegistro(r);
             const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
@@ -148,6 +193,14 @@ Deno.serve(async (req) => {
       } catch (e) {
         erros.push(`Chave ${n + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
+    }
+    // Hora, vendedor e cancelamento vêm do cupom e são copiados para os itens (painel rápido).
+    if (endpoint === "VENDAS" || endpoint === "VENDAS_ITENS") {
+      const { error } = await supabase.rpc("webposto_consolidar_vendas", {
+        _de: dataInicial,
+        _ate: dataFinal,
+      });
+      if (error) erros.push(`Consolidar: ${error.message}`);
     }
     await supabase.from("webposto_importacoes").insert({
       endpoint,

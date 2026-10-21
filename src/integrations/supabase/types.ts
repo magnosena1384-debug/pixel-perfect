@@ -818,6 +818,62 @@ export type Database = {
         }
         Relationships: []
       }
+      webposto_vendas_itens: {
+        Row: {
+          bico: boolean
+          cancelada: boolean
+          funcionario: string | null
+          hora: number | null
+          data_ref: string
+          empresa_codigo: number
+          importado_em: string
+          item_codigo: number
+          produto: string
+          quantidade: number
+          total: number
+          unidade_id: string | null
+          venda_codigo: number
+        }
+        Insert: {
+          bico?: boolean
+          cancelada?: boolean
+          funcionario?: string | null
+          hora?: number | null
+          data_ref: string
+          empresa_codigo: number
+          importado_em?: string
+          item_codigo: number
+          produto: string
+          quantidade?: number
+          total?: number
+          unidade_id?: string | null
+          venda_codigo: number
+        }
+        Update: {
+          bico?: boolean
+          cancelada?: boolean
+          funcionario?: string | null
+          hora?: number | null
+          data_ref?: string
+          empresa_codigo?: number
+          importado_em?: string
+          item_codigo?: number
+          produto?: string
+          quantidade?: number
+          total?: number
+          unidade_id?: string | null
+          venda_codigo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webposto_vendas_itens_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webposto_registros: {
         Row: {
           codigo: string
@@ -918,6 +974,10 @@ export type Database = {
           _dias: Json
           _unidade: string
         }
+        Returns: number
+      }
+      webposto_consolidar_vendas: {
+        Args: { _de: string; _ate: string }
         Returns: number
       }
       webposto_chaves: {

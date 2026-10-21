@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   chaveRegistro,
+  caminhoEndpoint,
   codigoGravado,
+  itemCompacto,
   lerChaves,
   dataRegistro,
   empresaRegistro,
@@ -48,5 +50,53 @@ describe("várias chaves", () => {
   it("o código gravado leva o posto, para dois postos não se sobrescreverem", () => {
     expect(codigoGravado({ codigo: 7 }, "VENDAS", 1)).toBe("1:7");
     expect(codigoGravado({ codigo: 7 }, "VENDAS", 2)).toBe("2:7");
+  });
+});
+
+describe("itens das vendas", () => {
+  it("usa o caminho VENDAS/ITENS só para os itens", () => {
+    expect(caminhoEndpoint("VENDAS_ITENS")).toBe("VENDAS/ITENS");
+    expect(caminhoEndpoint("VENDAS")).toBe("VENDAS");
+  });
+  it("reduz o item ao que o painel usa; combustível é o que tem bico", () => {
+    const item = itemCompacto(
+      {
+        empresaCodigo: 1758,
+        vendaCodigo: 10,
+        vendaItemCodigo: 99,
+        dataMovimento: "2026-10-21",
+        produtoDescricao: " GASOLINA ADITIVADA ",
+        bicoCodigo: 5,
+        quantidade: 2.55,
+        totalVenda: 16.29,
+      },
+      "u1",
+    );
+    expect(item).toMatchObject({
+      empresa_codigo: 1758,
+      item_codigo: 99,
+      venda_codigo: 10,
+      unidade_id: "u1",
+      data_ref: "2026-10-21",
+      produto: "GASOLINA ADITIVADA",
+      bico: true,
+      quantidade: 2.55,
+      total: 16.29,
+    });
+    expect(
+      itemCompacto(
+        {
+          empresaCodigo: 1,
+          vendaCodigo: 1,
+          vendaItemCodigo: 2,
+          dataMovimento: "2026-10-21",
+          produtoCodigo: 7,
+        },
+        null,
+      ),
+    ).toMatchObject({ bico: false, produto: "Produto 7" });
+  });
+  it("descarta item sem identificação", () => {
+    expect(itemCompacto({ empresaCodigo: 1, dataMovimento: "2026-10-21" }, null)).toBeNull();
   });
 });

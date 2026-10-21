@@ -14,7 +14,8 @@ const MAX_PAGINAS = 200;
 
 /** Endpoints sugeridos por área. VENDAS e FUNCIONARIOS alimentam o dashboard da gestão. */
 export const ENDPOINTS = [
-  { id: "VENDAS", area: "Vendas", label: "Vendas (cupons com itens)" },
+  { id: "VENDAS", area: "Vendas", label: "Vendas (cupons: hora e vendedor)" },
+  { id: "VENDAS_ITENS", area: "Vendas", label: "Itens das vendas (produtos e litros)" },
   { id: "FUNCIONARIOS", area: "Vendas", label: "Funcionários (nomes no dashboard)" },
   { id: "ABASTECIMENTOS", area: "Operação", label: "Abastecimentos" },
   { id: "CAIXAS", area: "Operação", label: "Caixas / turnos" },
@@ -23,6 +24,33 @@ export const ENDPOINTS = [
 ] as const;
 
 export type Registro = Record<string, unknown>;
+
+/** Caminho na API: os itens das vendas ficam em VENDAS/ITENS. */
+export function caminhoEndpoint(endpoint: string): string {
+  return endpoint === "VENDAS_ITENS" ? "VENDAS/ITENS" : endpoint;
+}
+
+/** Item de venda reduzido ao que o painel usa; null se faltar o que identifica o item. */
+export function itemCompacto(r: Registro, unidadeId: string | null) {
+  const empresa = Number(r["empresaCodigo"]);
+  const item = Number(r["vendaItemCodigo"] ?? r["codigo"]);
+  const venda = Number(r["vendaCodigo"]);
+  const data = typeof r["dataMovimento"] === "string" ? r["dataMovimento"].slice(0, 10) : null;
+  if (![empresa, item, venda].every(Number.isFinite) || !data) return null;
+  const descricao = String(r["produtoDescricao"] ?? "").trim();
+  return {
+    empresa_codigo: empresa,
+    item_codigo: item,
+    venda_codigo: venda,
+    unidade_id: unidadeId,
+    data_ref: data,
+    produto: descricao || `Produto ${r["produtoCodigo"] ?? "?"}`,
+    bico: r["bicoCodigo"] != null,
+    quantidade: Number(r["quantidade"]) || 0,
+    total: Number(r["totalVenda"]) || 0,
+    importado_em: new Date().toISOString(),
+  };
+}
 
 /** A API pode devolver uma lista direta ou um objeto com a lista dentro (ex.: `resultados`). */
 export function extrairLista(corpo: unknown): Registro[] {
@@ -106,7 +134,7 @@ async function chaves(supabase: SupabaseClient<Database>): Promise<string[]> {
 }
 
 async function chamar(chave: string, endpoint: string, params: Record<string, string | number>) {
-  const url = new URL(`${BASE}/${endpoint}`);
+  const url = new URL(`${BASE}/${caminhoEndpoint(endpoint)}`);
   url.searchParams.set("chave", chave);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
   const res = await fetch(url, {
@@ -190,6 +218,26 @@ export const importarWebPosto = createServerFn({ method: "POST" })
           });
           const lista = extrairLista(corpo);
           if (!lista.length) break;
+          if (data.endpoint === "VENDAS_ITENS") {
+            const itens = lista.flatMap((r) => {
+              const empresa = empresaRegistro(r);
+              const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
+              if (!unidade) semUnidade++;
+              const item = itemCompacto(r, unidade);
+              return item ? [item] : [];
+            });
+            for (let i = 0; i < itens.length; i += 500) {
+              const { error } = await supabase
+                .from("webposto_vendas_itens")
+                .upsert(itens.slice(i, i + 500));
+              if (error) throw new Error(error.message);
+            }
+            quantidade += lista.length;
+            const proximo = proximoCodigo(corpo, lista, data.endpoint, ultimo);
+            if (lista.length < LIMITE || proximo === ultimo) break;
+            ultimo = proximo;
+            continue;
+          }
           const linhas = lista.map((r) => {
             const empresa = empresaRegistro(r);
             const unidade = empresa != null ? (porEmpresa.get(empresa) ?? null) : null;
@@ -224,6 +272,15 @@ export const importarWebPosto = createServerFn({ method: "POST" })
       }
     }
     if (erros.length) erro = erros.join(" | ");
+
+    // Hora, vendedor e cancelamento vêm do cupom e são copiados para os itens (painel rápido).
+    if (data.endpoint === "VENDAS" || data.endpoint === "VENDAS_ITENS") {
+      const { error } = await supabase.rpc("webposto_consolidar_vendas", {
+        _de: data.dataInicial,
+        _ate: data.dataFinal,
+      });
+      if (error && !erro) erro = `Importou, mas não preencheu hora e vendedor: ${error.message}`;
+    }
 
     await supabase.from("webposto_importacoes").insert({
       endpoint: data.endpoint,
