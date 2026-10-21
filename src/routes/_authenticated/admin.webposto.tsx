@@ -23,8 +23,8 @@ function WebPosto() {
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           Importa vendas, operação e financeiro do webPosto (Quality Automação). Cada posto tem a
           sua chave, gerada no webPosto em Administração → Integrações (depois que a Quality libera
-          o contrato "API Integração"). Cadastre todas na Vercel numa variável de ambiente{" "}
-          <code className="rounded bg-muted px-1">WEBPOSTO_CHAVES</code>, separadas por vírgula.
+          o contrato "API Integração"). Ficam guardadas no Vault do Supabase, com os nomes{" "}
+          <code className="rounded bg-muted px-1">webposto_chave_1</code>, _2, ….
         </p>
       </div>
       <Empresas />

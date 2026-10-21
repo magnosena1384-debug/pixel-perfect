@@ -91,10 +91,17 @@ export function lerChaves(texto: string | undefined): string[] {
   ];
 }
 
-function chaves(): string[] {
-  const lista = lerChaves(process.env["WEBPOSTO_CHAVES"] || process.env["WEBPOSTO_CHAVE"]);
+/** Chaves do Vault do Supabase (webposto_chave_<n>); sem nenhuma lá, as do servidor. */
+async function chaves(supabase: SupabaseClient<Database>): Promise<string[]> {
+  const { data, error } = await supabase.rpc("webposto_chaves");
+  if (error) throw new Error(error.message);
+  const lista = lerChaves(
+    (data ?? []).map((c) => c.chave).join(",") ||
+      process.env["WEBPOSTO_CHAVES"] ||
+      process.env["WEBPOSTO_CHAVE"],
+  );
   if (!lista.length)
-    throw new Error("Chaves do webPosto não configuradas (segredo WEBPOSTO_CHAVES).");
+    throw new Error("Chaves do webPosto não configuradas (Vault: webposto_chave_1, _2, …).");
   return lista;
 }
 
@@ -133,7 +140,8 @@ export const listarEmpresasWebPosto = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await exigirAdmin(context);
     const lista: Registro[] = [];
-    for (const chave of chaves()) lista.push(...extrairLista(await chamar(chave, "EMPRESAS", {})));
+    for (const chave of await chaves(context.supabase))
+      lista.push(...extrairLista(await chamar(chave, "EMPRESAS", {})));
     return lista.map((e) => ({
       codigo: empresaRegistro(e) ?? Number(chaveRegistro(e, "EMPRESA")),
       nome: String(
@@ -168,7 +176,7 @@ export const importarWebPosto = createServerFn({ method: "POST" })
     let quantidade = 0;
     let semUnidade = 0;
     let erro: string | null = null;
-    const lista_chaves = chaves();
+    const lista_chaves = await chaves(supabase);
     const erros: string[] = [];
     for (const [n, chave] of lista_chaves.entries()) {
       let ultimo = 0;

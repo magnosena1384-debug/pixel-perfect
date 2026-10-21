@@ -120,6 +120,13 @@
       "when": 1793200000000,
       "tag": "0016_patrimonio_baixa",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793300000000,
+      "tag": "0017_webposto_chaves_vault",
+      "breakpoints": true
     }
   ]
 }

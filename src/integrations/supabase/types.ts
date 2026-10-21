@@ -920,6 +920,13 @@ export type Database = {
         }
         Returns: number
       }
+      webposto_chaves: {
+        Args: never
+        Returns: {
+          nome: string
+          chave: string
+        }[]
+      }
       rh_ticket_vendas: {
         Args: { _ate: string; _de: string }
         Returns: {
