@@ -1,5 +1,7 @@
-import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { Building2, GraduationCap, KeyRound, LayoutGrid, Plug } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AreaComBarra, type GrupoMenu } from "@/components/BarraLateral";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -12,45 +14,26 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
+const GRUPOS: GrupoMenu[] = [
+  {
+    titulo: "Administração",
+    itens: [
+      { to: "/admin", label: "Painel", icone: LayoutGrid, exato: true },
+      { to: "/admin/alunos", label: "Alunos", icone: GraduationCap },
+      { to: "/admin/acessos", label: "Acessos", icone: KeyRound },
+      { to: "/admin/webposto", label: "webPosto", icone: Plug },
+    ],
+  },
+  { titulo: "Ir para", itens: [{ to: "/gestao", label: "Gestão do posto", icone: Building2 }] },
+];
+
 function AdminLayout() {
-  const link = "rounded-full px-4 py-2 text-sm font-medium";
   return (
     <div className="min-h-screen bg-muted">
       <SiteHeader />
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <nav className="mb-8 flex gap-2">
-          <Link
-            to="/admin"
-            activeOptions={{ exact: true }}
-            className={link}
-            activeProps={{ className: "bg-ink text-cream" }}
-          >
-            Painel
-          </Link>
-          <Link
-            to="/admin/alunos"
-            className={link}
-            activeProps={{ className: "bg-ink text-cream" }}
-          >
-            Alunos
-          </Link>
-          <Link
-            to="/admin/acessos"
-            className={link}
-            activeProps={{ className: "bg-ink text-cream" }}
-          >
-            Acessos
-          </Link>
-          <Link
-            to="/admin/webposto"
-            className={link}
-            activeProps={{ className: "bg-ink text-cream" }}
-          >
-            webPosto
-          </Link>
-        </nav>
+      <AreaComBarra grupos={GRUPOS} titulo="Gestão de eficiência">
         <Outlet />
-      </div>
+      </AreaComBarra>
     </div>
   );
 }

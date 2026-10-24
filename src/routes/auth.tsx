@@ -83,11 +83,20 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      <div className="dot-grid relative hidden items-end p-10 md:flex">
-        <div className="rounded-3xl bg-ink p-8 text-cream">
-          <p className="text-sm font-medium lowercase tracking-wide text-lime">postos</p>
-          <p className="wordmark text-5xl text-lime">Lemon</p>
-          <p className="mt-2 text-lg">Treinamento que acompanha sua rotina.</p>
+      <div className="dot-grid relative hidden flex-col justify-between p-10 md:flex">
+        <img src="/logo-lemon.png" alt="Lemon" width={72} height={72} className="rounded-2xl" />
+        <div className="space-y-6">
+          <img
+            src="/posto-lemon.jpg"
+            alt="Posto Lemon à noite, com a cobertura iluminada em verde"
+            width={288}
+            height={288}
+            className="size-72 rounded-3xl object-cover"
+          />
+          <div className="rounded-3xl bg-ink p-8 text-cream">
+            <p className="wordmark text-4xl text-lime">Postos Lemon</p>
+            <p className="mt-2 text-lg">Gestão de Eficiência</p>
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-center p-6">

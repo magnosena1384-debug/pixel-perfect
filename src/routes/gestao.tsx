@@ -1,8 +1,25 @@
-import { createFileRoute, Link, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Fragment, useEffect, useState } from "react";
+import {
+  Bell,
+  Boxes,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  KeyRound,
+  LayoutDashboard,
+  LayoutGrid,
+  Package,
+  Plug,
+  TrendingUp,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AreaComBarra, type GrupoMenu } from "@/components/BarraLateral";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Painel } from "@/components/gestao/ui";
@@ -29,7 +46,7 @@ export const Route = createFileRoute("/gestao")({
 });
 
 function GestaoLayout() {
-  const { unidade, modulos, isLoading } = useUnidadeAtual();
+  const { unidade, modulos, isLoading, isAdmin } = useUnidadeAtual();
   const { pathname } = useLocation();
   const alertas = useAlertas();
   const vencidos = alertas.filter((a) => a.situacao === "vencido").length;
@@ -59,11 +76,48 @@ function GestaoLayout() {
   const moduloDaRota = MODULOS.find((m) => pathname.startsWith(m.rota));
   const semAcessoAqui = moduloDaRota && !modulos.has(moduloDaRota.id);
 
-  const link = "whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium hover:bg-background";
+  const selo =
+    alertas.length > 0 ? (
+      <span
+        className={`rounded-full px-2 py-0.5 text-xs font-bold ${vencidos ? "bg-destructive text-destructive-foreground" : "bg-amber-400 text-black"}`}
+      >
+        {alertas.length}
+      </span>
+    ) : undefined;
+
+  const operacao: GrupoMenu["itens"] = [];
+  for (const a of abas) {
+    operacao.push({ to: a.rota, label: a.label, icone: ICONES[a.id] });
+    if (a.id === "vendas")
+      operacao.push({ to: "/gestao/dashboard", label: "Dashboard", icone: LayoutDashboard });
+  }
+  // O RH e o Patrimônio reúnem todas as unidades em que a pessoa tem acesso, não só a selecionada.
+  if (unidadesRh.length > 0) operacao.push({ to: "/gestao/rh", label: "RH", icone: Users });
+  if (unidadesPatrimonio.length > 0)
+    operacao.push({ to: "/gestao/patrimonio", label: "Patrimônio", icone: Boxes });
+
+  const grupos: GrupoMenu[] = [
+    { itens: [{ to: "/gestao", label: "Notificações", icone: Bell, exato: true, selo }] },
+    { titulo: "Operação", itens: operacao },
+    ...(isAdmin
+      ? [
+          {
+            titulo: "Administração",
+            itens: [
+              { to: "/admin", label: "Painel", icone: LayoutGrid, exato: true },
+              { to: "/admin/alunos", label: "Alunos", icone: GraduationCap },
+              { to: "/admin/acessos", label: "Acessos", icone: KeyRound },
+              { to: "/admin/webposto", label: "webPosto", icone: Plug },
+            ],
+          } satisfies GrupoMenu,
+        ]
+      : []),
+  ];
+
   return (
     <div className="min-h-screen bg-muted">
       <SiteHeader />
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <AreaComBarra grupos={grupos} titulo="Gestão de eficiência">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-4xl font-bold uppercase">Gestão do posto</h1>
           {unidade && <SeletorUnidade />}
@@ -79,62 +133,6 @@ function GestaoLayout() {
           </Painel>
         ) : (
           <>
-            <nav className="mb-8 flex gap-2 overflow-x-auto pb-1">
-              <Link
-                to="/gestao"
-                activeOptions={{ exact: true }}
-                className={link}
-                activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
-              >
-                Notificações
-                {alertas.length > 0 && (
-                  <span
-                    className={`ml-2 rounded-full px-2 py-0.5 text-xs font-bold ${vencidos ? "bg-destructive text-destructive-foreground" : "bg-amber-400 text-black"}`}
-                  >
-                    {alertas.length}
-                  </span>
-                )}
-              </Link>
-              {abas.map((a) => (
-                <Fragment key={a.id}>
-                  <Link
-                    to={a.rota}
-                    className={link}
-                    activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
-                  >
-                    {a.label}
-                  </Link>
-                  {a.id === "vendas" && (
-                    <Link
-                      to="/gestao/dashboard"
-                      className={link}
-                      activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
-                    >
-                      Dashboard
-                    </Link>
-                  )}
-                </Fragment>
-              ))}
-              {/* O RH reúne todas as unidades em que a pessoa tem acesso, não só a selecionada. */}
-              {unidadesRh.length > 0 && (
-                <Link
-                  to="/gestao/rh"
-                  className={link}
-                  activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
-                >
-                  RH
-                </Link>
-              )}
-              {unidadesPatrimonio.length > 0 && (
-                <Link
-                  to="/gestao/patrimonio"
-                  className={link}
-                  activeProps={{ className: "bg-ink text-cream hover:bg-ink" }}
-                >
-                  Patrimônio
-                </Link>
-              )}
-            </nav>
             <ImportarDoNavegador />
             {semAcessoAqui ? (
               <Painel>
@@ -145,10 +143,18 @@ function GestaoLayout() {
             )}
           </>
         )}
-      </div>
+      </AreaComBarra>
     </div>
   );
 }
+
+const ICONES: Record<(typeof MODULOS)[number]["id"], LucideIcon> = {
+  vendas: TrendingUp,
+  rotinas: ClipboardList,
+  pedidos: Package,
+  documentos: FileText,
+  manutencao: Wrench,
+};
 
 function SeletorUnidade() {
   const { unidade, unidades, selecionar } = useUnidadeAtual();

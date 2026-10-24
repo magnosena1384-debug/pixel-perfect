@@ -23,6 +23,27 @@ na máquina); a fonte é o próprio código.
 - **Evitar**: cor nova fora dos tokens; ícone emoji; tabela sem rolagem horizontal no celular;
   gráfico sem tabela equivalente; número sem formatação pt-BR.
 
+## Identidade e navegação (2026-10-23)
+
+- **Logo**: `public/logo-lemon.png` (quadrado verde-limão com "LEMON" em branco), usada por
+  `Logo` em `SiteHeader` (cabeçalho, entrada e redefinir senha). Imagem, não texto. A logo vem em
+  92 px; a cópia do projeto é ampliada, então só vale em tamanho pequeno (até ~64 px).
+- **Foto do posto**: `public/posto-lemon.jpg` (original 148 px, ampliada para 592 px, sem detalhe
+  novo). Só em cartão arredondado de até 18rem, nunca em tela cheia. Troque o arquivo quando
+  houver foto em alta resolução. A foto traz o texto "Seja muito bem-vinda 2026!" gravado.
+- **Frase da marca**: "Postos Lemon, Gestão de Eficiência" (entrada).
+- **Entrada**: painel esquerdo (só de `md` para cima) `dot-grid` forest com a logo grande, a frase
+  da marca em letra grande e o cartão da foto; o formulário continua à direita.
+- **Barra lateral** (`BarraLateral`, na Gestão e no Admin): cartão `bg-ink text-cream`
+  `rounded-3xl`, 16rem de largura, fixo ao rolar (`sticky`), grupos com `eyebrow` em
+  `text-cream/60`, itens com ícone `lucide-react` (18 px) e texto; item ativo `bg-lime text-ink`
+  (`bg-primary text-primary-foreground`); hover `bg-cream/10`. Selo de alerta (Notificações) em
+  pílula `bg-destructive` ou `bg-amber-400 text-black`. Alvo de toque mínimo 44 px.
+- **Celular (<768px)**: a barra some e entra o botão "Menu" (mesmo bloco, abre para baixo, fecha ao
+  escolher um item). Conteúdo ocupa a largura toda, sem rolagem lateral.
+- A faixa de abas em pílula no topo da Gestão e do Admin sai; as sub-abas de RH e Patrimônio
+  (dentro das páginas) continuam em pílula.
+
 ## Estados (do combinado)
 
 - **Carregando**: texto "Carregando…" em `text-muted-foreground` no lugar do conteúdo; o botão que

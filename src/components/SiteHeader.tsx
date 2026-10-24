@@ -4,16 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 
-export function Logo({ inverted = false }: { inverted?: boolean }) {
+/** Logo dos Postos Lemon (public/logo-lemon.png). `tamanho` é o lado, em px. */
+export function Logo({ tamanho = 40 }: { tamanho?: number }) {
   return (
-    <Link to="/" className="flex flex-col leading-none">
-      <span
-        className={`text-[10px] font-medium lowercase tracking-wide ${inverted ? "text-lime" : "text-forest"}`}
-      >
-        postos
-      </span>
-      <span className={`wordmark text-2xl ${inverted ? "text-background" : "text-foreground"}`}>
-        Lemon
+    <Link to="/" className="flex items-center gap-3" aria-label="Postos Lemon">
+      <img
+        src="/logo-lemon.png"
+        alt="Lemon"
+        width={tamanho}
+        height={tamanho}
+        className="rounded-xl"
+      />
+      <span className="hidden flex-col leading-none sm:flex">
+        <span className="text-[10px] font-medium lowercase tracking-wide text-forest">postos</span>
+        <span className="wordmark text-xl text-foreground">Lemon</span>
       </span>
     </Link>
   );
@@ -33,7 +37,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <Logo />
         <nav className="flex items-center gap-1 text-sm sm:gap-2">
           <Link to="/" className="hidden rounded-full px-3 py-2 hover:bg-muted sm:inline">
