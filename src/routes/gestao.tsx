@@ -117,7 +117,7 @@ function GestaoLayout() {
   return (
     <div className="min-h-screen bg-muted">
       <SiteHeader />
-      <AreaComBarra grupos={grupos} titulo="Gestão de eficiência">
+      <AreaComBarra grupos={grupos} titulo="Gestão com eficiência">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-4xl font-bold uppercase">Gestão do posto</h1>
           {unidade && <SeletorUnidade />}

@@ -31,7 +31,7 @@ function AdminLayout() {
   return (
     <div className="min-h-screen bg-muted">
       <SiteHeader />
-      <AreaComBarra grupos={GRUPOS} titulo="Gestão de eficiência">
+      <AreaComBarra grupos={GRUPOS} titulo="Gestão com eficiência">
         <Outlet />
       </AreaComBarra>
     </div>

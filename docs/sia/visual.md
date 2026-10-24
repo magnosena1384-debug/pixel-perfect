@@ -31,7 +31,7 @@ na máquina); a fonte é o próprio código.
 - **Foto do posto**: `public/posto-lemon.jpg` (1025 × 1534 px, retrato, posto ao entardecer, céu
   azul no alto). Ocupa o painel esquerdo da entrada inteiro (`object-cover`, ponto de foco à
   esquerda e abaixo para manter a placa LEMON e as bombas à vista).
-- **Frase da marca**: "Postos Lemon, Gestão de Eficiência" (entrada).
+- **Frase da marca**: "Postos Lemon, Gestão com Eficiência" (entrada).
 - **Entrada**: painel esquerdo (só de `md` para cima) com a foto em tela cheia, a logo no alto
   (sobre o céu) e o cartão `bg-ink` com a frase da marca embaixo; o formulário fica à direita.
 - **Barra lateral** (`BarraLateral`, na Gestão e no Admin): cartão `bg-ink text-cream`

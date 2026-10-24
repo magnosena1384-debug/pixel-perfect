@@ -98,7 +98,7 @@ function AuthPage() {
         />
         <div className="relative w-fit rounded-3xl border border-cream/30 bg-forest/70 px-8 py-6 text-cream backdrop-blur-md">
           <p className="wordmark text-4xl text-cream">Postos Lemon</p>
-          <p className="mt-2 text-lg font-medium text-cream">Gestão de Eficiência</p>
+          <p className="mt-2 text-lg font-medium text-cream">Gestão com Eficiência</p>
         </div>
       </div>
       <div className="flex items-center justify-center p-6">
