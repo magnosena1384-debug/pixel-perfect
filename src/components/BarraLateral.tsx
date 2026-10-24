@@ -70,7 +70,7 @@ export function AreaComBarra({
         <nav
           id="menu-lateral"
           aria-label={titulo ?? "Menu"}
-          className={`${aberto ? "block" : "hidden"} mb-6 rounded-3xl bg-ink p-3 text-cream md:mb-0 md:block`}
+          className={`${aberto ? "block" : "hidden"} mb-6 rounded-3xl bg-ink p-3 text-cream md:mb-0 md:block md:max-h-[calc(100vh-7rem)] md:overflow-y-auto`}
         >
           {titulo && <p className="eyebrow px-3 pb-3 pt-2 text-lime">{titulo}</p>}
           <Itens grupos={grupos} />

@@ -83,25 +83,27 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      <div className="dot-grid relative hidden flex-col justify-between p-10 md:flex">
-        <img src="/logo-lemon.png" alt="Lemon" width={72} height={72} className="rounded-2xl" />
-        <div className="space-y-6">
-          <img
-            src="/posto-lemon.jpg"
-            alt="Posto Lemon à noite, com a cobertura iluminada em verde"
-            width={288}
-            height={288}
-            className="size-72 rounded-3xl object-cover"
-          />
-          <div className="rounded-3xl bg-ink p-8 text-cream">
-            <p className="wordmark text-4xl text-lime">Postos Lemon</p>
-            <p className="mt-2 text-lg">Gestão de Eficiência</p>
-          </div>
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-forest p-10 md:flex">
+        <img
+          src="/posto-lemon.jpg"
+          alt="Posto Lemon ao entardecer, com a cobertura iluminada em verde"
+          className="absolute inset-0 size-full object-cover object-[30%_60%]"
+        />
+        <img
+          src="/logo-lemon.png"
+          alt="Lemon"
+          width={72}
+          height={72}
+          className="relative rounded-2xl"
+        />
+        <div className="relative w-fit rounded-3xl border border-cream/30 bg-forest/70 px-8 py-6 text-cream backdrop-blur-md">
+          <p className="wordmark text-4xl text-cream">Postos Lemon</p>
+          <p className="mt-2 text-lg font-medium text-cream">Gestão de Eficiência</p>
         </div>
       </div>
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <Logo />
+          <Logo tamanho={56} />
           <h1 className="mt-8 text-3xl font-bold uppercase">
             {mode === "login" ? "Entrar" : mode === "signup" ? "Criar conta" : "Recuperar senha"}
           </h1>
