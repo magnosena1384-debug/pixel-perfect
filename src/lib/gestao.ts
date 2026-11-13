@@ -51,6 +51,9 @@ export type Documento = {
   validade: string;
   avisar_dias: number;
   obs: string;
+  /** Caminho do arquivo anexado (PDF ou imagem) no espaço "regulacao-documentos". */
+  arquivo?: string;
+  arquivo_nome?: string;
 };
 
 export type Inspecao = {

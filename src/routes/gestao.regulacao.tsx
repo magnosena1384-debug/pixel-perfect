@@ -5,12 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Painel, Seletor, SituacaoBadge, Vazio } from "@/components/gestao/ui";
 import {
+  ACEITA,
+  anexarArquivo,
+  apagarArquivo,
+  enderecoDoArquivo,
+  validarArquivo,
+} from "@/lib/regulacao-arquivos";
+import {
   DOCUMENTOS_SUGERIDOS,
   formatData,
   ORGAOS,
   situacao,
   uid,
   useColecao,
+  useUnidadeAtual,
   type Documento,
 } from "@/lib/gestao";
 
@@ -33,29 +41,96 @@ function Regulacao() {
   const [form, setForm] = useState(novo);
   const [editando, setEditando] = useState<string | null>(null);
   const [orgaoFiltro, setOrgaoFiltro] = useState("Todos");
+  const { unidade } = useUnidadeAtual();
+  // Arquivo: o que já está gravado no documento, o escolhido agora e se é para tirar o atual.
+  const [atual, setAtual] = useState<{ arquivo: string; nome: string } | null>(null);
+  const [escolhido, setEscolhido] = useState<File | null>(null);
+  const [tirarAtual, setTirarAtual] = useState(false);
+  const [gravando, setGravando] = useState(false);
+  const [campoArquivo, setCampoArquivo] = useState(0);
 
-  function enviar(e: React.FormEvent) {
+  function limparArquivo() {
+    setAtual(null);
+    setEscolhido(null);
+    setTirarAtual(false);
+    setCampoArquivo((n) => n + 1);
+  }
+
+  async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nome.trim()) {
       toast.error("Informe o nome do documento.");
       return;
     }
-    const doc: Documento = {
-      ...form,
-      id: editando ?? uid(),
-      nome: form.nome.trim(),
-      avisar_dias: Number(form.avisar_dias) || 30,
-    };
-    salvar((l) => (editando ? l.map((d) => (d.id === editando ? doc : d)) : [...l, doc]));
-    toast.success(editando ? "Documento atualizado" : "Documento cadastrado");
-    setEditando(null);
-    setForm(novo(form.orgao));
+    if (!unidade) return;
+    const id = editando ?? uid();
+    let arquivo = tirarAtual ? undefined : atual?.arquivo;
+    let arquivoNome = tirarAtual ? undefined : atual?.nome;
+    setGravando(true);
+    try {
+      if (escolhido) {
+        const erro = validarArquivo(escolhido);
+        if (erro) {
+          toast.error(erro);
+          return;
+        }
+        arquivo = await anexarArquivo(escolhido, unidade.id, id);
+        arquivoNome = escolhido.name;
+      }
+      const doc: Documento = {
+        ...form,
+        id,
+        nome: form.nome.trim(),
+        avisar_dias: Number(form.avisar_dias) || 30,
+        ...(arquivo ? { arquivo, arquivo_nome: arquivoNome ?? "arquivo" } : {}),
+      };
+      await salvar((l) => (editando ? l.map((d) => (d.id === editando ? doc : d)) : [...l, doc]));
+      // O arquivo antigo só sai depois de o documento novo estar gravado.
+      if (atual && atual.arquivo !== arquivo) void apagarArquivo(atual.arquivo);
+      toast.success(editando ? "Documento atualizado" : "Documento cadastrado");
+      setEditando(null);
+      setForm(novo(form.orgao));
+      limparArquivo();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível gravar o documento.");
+    } finally {
+      setGravando(false);
+    }
   }
 
   function editar(d: Documento) {
     setEditando(d.id);
-    setForm({ ...d, avisar_dias: String(d.avisar_dias) });
+    setForm({
+      orgao: d.orgao,
+      nome: d.nome,
+      numero: d.numero,
+      emissao: d.emissao,
+      validade: d.validade,
+      avisar_dias: String(d.avisar_dias),
+      obs: d.obs,
+    });
+    limparArquivo();
+    if (d.arquivo) setAtual({ arquivo: d.arquivo, nome: d.arquivo_nome ?? "arquivo" });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function abrir(d: Documento) {
+    if (!d.arquivo) return;
+    const aba = window.open("about:blank", "_blank");
+    try {
+      const url = await enderecoDoArquivo(d.arquivo);
+      if (aba) aba.location.href = url;
+      else window.location.href = url;
+    } catch (e) {
+      aba?.close();
+      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o arquivo.");
+    }
+  }
+
+  function excluir(d: Documento) {
+    if (!confirm("Excluir este documento?")) return;
+    void salvar((l) => l.filter((x) => x.id !== d.id));
+    if (d.arquivo) void apagarArquivo(d.arquivo);
   }
 
   const set =
@@ -108,9 +183,37 @@ function Regulacao() {
           <Campo label="Observação">
             <Input value={form.obs} onChange={set("obs")} />
           </Campo>
+          <Campo label="Arquivo (PDF, JPG ou PNG, até 50 MB)" className="sm:col-span-2">
+            <Input
+              key={campoArquivo}
+              type="file"
+              accept={ACEITA}
+              onChange={(e) => setEscolhido(e.target.files?.[0] ?? null)}
+            />
+            {atual && !tirarAtual && !escolhido && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Arquivo atual: {atual.nome}{" "}
+                <button
+                  type="button"
+                  className="text-destructive underline"
+                  onClick={() => setTirarAtual(true)}
+                >
+                  Tirar
+                </button>
+              </p>
+            )}
+            {atual && tirarAtual && !escolhido && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                O arquivo atual será tirado ao salvar.{" "}
+                <button type="button" className="underline" onClick={() => setTirarAtual(false)}>
+                  Desfazer
+                </button>
+              </p>
+            )}
+          </Campo>
           <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
-            <Button type="submit" className="rounded-full">
-              {editando ? "Salvar alterações" : "Cadastrar"}
+            <Button type="submit" className="rounded-full" disabled={gravando}>
+              {gravando ? "Gravando…" : editando ? "Salvar alterações" : "Cadastrar"}
             </Button>
             {editando && (
               <Button
@@ -119,6 +222,7 @@ function Regulacao() {
                 onClick={() => {
                   setEditando(null);
                   setForm(novo());
+                  limparArquivo();
                 }}
               >
                 Cancelar
@@ -165,17 +269,15 @@ function Regulacao() {
                           situacao={situacao(d.validade || null, d.avisar_dias)}
                           vencimento={d.validade || null}
                         />
+                        {d.arquivo && (
+                          <Button variant="outline" size="sm" onClick={() => abrir(d)}>
+                            Abrir arquivo
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => editar(d)}>
                           Editar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            confirm("Excluir este documento?") &&
-                            salvar((l) => l.filter((x) => x.id !== d.id))
-                          }
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => excluir(d)}>
                           Excluir
                         </Button>
                       </div>

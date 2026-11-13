@@ -44,3 +44,6 @@ graphify-out/
 .env
 .env.*
 !.env.example
+
+# Cópia local dos documentos do Posto Seguro (dados pessoais: nunca vai para o Git)
+.postoseguro/

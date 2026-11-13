@@ -1792,3 +1792,89 @@ $$;
 
 revoke execute on function public.painel_vendas_webposto(date, date) from public, anon;
 grant execute on function public.painel_vendas_webposto(date, date) to authenticated, service_role;
+
+-- ===== 0022_regulacao_arquivos =====
+-- Arquivos (PDF ou imagem) dos documentos da Regulação. Ficam no Storage, num espaço privado, em
+-- "<unidade_id>/<arquivo>". Quem tem o módulo Regulação ("documentos") na unidade lê, anexa,
+-- troca e apaga os arquivos daquela unidade; ninguém mais. O caminho do arquivo é guardado no
+-- próprio documento (gestao_itens.dados.arquivo).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'regulacao-documentos',
+  'regulacao-documentos',
+  false,
+  52428800,
+  array['application/pdf', 'image/jpeg', 'image/png']
+)
+on conflict (id) do nothing;
+
+-- O primeiro pedaço do caminho tem de ser o id de uma unidade em que a pessoa tem Regulação.
+create or replace function public.regulacao_pode_arquivo(_caminho text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when split_part(_caminho, '/', 1) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then public.pode_gestao(auth.uid(), split_part(_caminho, '/', 1)::uuid, 'documentos')
+    else false
+  end
+$$;
+
+revoke execute on function public.regulacao_pode_arquivo(text) from public, anon;
+grant execute on function public.regulacao_pode_arquivo(text) to authenticated, service_role;
+
+create policy "regulacao le arquivos" on storage.objects for select to authenticated
+using (bucket_id = 'regulacao-documentos' and public.regulacao_pode_arquivo(name));
+
+create policy "regulacao anexa arquivos" on storage.objects for insert to authenticated
+with check (bucket_id = 'regulacao-documentos' and public.regulacao_pode_arquivo(name));
+
+create policy "regulacao troca arquivos" on storage.objects for update to authenticated
+using (bucket_id = 'regulacao-documentos' and public.regulacao_pode_arquivo(name))
+with check (bucket_id = 'regulacao-documentos' and public.regulacao_pode_arquivo(name));
+
+create policy "regulacao apaga arquivos" on storage.objects for delete to authenticated
+using (bucket_id = 'regulacao-documentos' and public.regulacao_pode_arquivo(name));
+
+-- ===== 0023_regulacao_importacao =====
+-- Fila da importação dos documentos do Posto Seguro para a Regulação. Cada linha é um documento
+-- já montado; a função do Supabase "importar-regulacao" baixa o PDF, guarda no espaço de
+-- arquivos e cria o documento. Só quem administra o banco e essa função mexem na fila.
+create table public.regulacao_importacao (
+  id text primary key,                 -- id do documento no Posto Seguro
+  unidade_id uuid not null references public.unidades(id) on delete cascade,
+  doc jsonb not null,                  -- documento da Regulação, sem o arquivo
+  arquivo_url text,
+  arquivo_nome text,
+  estado text not null default 'pendente' check (estado in ('pendente', 'fazendo', 'feito', 'erro')),
+  erro text,
+  atualizado_em timestamptz not null default now()
+);
+alter table public.regulacao_importacao enable row level security;
+revoke all on public.regulacao_importacao from anon, authenticated;
+grant all on public.regulacao_importacao to service_role;
+
+-- Pega até _n linhas pendentes (ou paradas em "fazendo" há mais de 10 minutos) e as marca como
+-- em andamento. Chamadas ao mesmo tempo não pegam a mesma linha.
+create or replace function public.regulacao_importacao_pegar(_n integer)
+returns setof public.regulacao_importacao
+language sql
+security definer
+set search_path = public
+as $$
+  update public.regulacao_importacao r
+  set estado = 'fazendo', atualizado_em = now()
+  where r.id in (
+    select id from public.regulacao_importacao
+    where estado = 'pendente' or (estado = 'fazendo' and atualizado_em < now() - interval '10 minutes')
+    order by id
+    limit greatest(_n, 0)
+    for update skip locked
+  )
+  returning r.*
+$$;
+revoke execute on function public.regulacao_importacao_pegar(integer) from public, anon, authenticated;
+grant execute on function public.regulacao_importacao_pegar(integer) to service_role;
