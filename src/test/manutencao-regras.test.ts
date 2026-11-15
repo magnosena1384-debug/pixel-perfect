@@ -3,8 +3,12 @@ import {
   agruparAfericoes,
   contarPendentes,
   formatarLitros,
+  formatarVazao,
+  horaDaAfericao,
+  resultadoAfericao,
   resumoPorTanque,
   situacaoPeriodica,
+  vazaoDentro,
   type Afericao,
   type Drenagem,
 } from "@/lib/manutencao-regras";
@@ -39,6 +43,9 @@ const afer = (p: Partial<Afericao>): Afericao => ({
   responsavel: "Fulano",
   obs: null,
   origem_id: null,
+  realizada_em: null,
+  vazao_alta_ml: null,
+  vazao_baixa_ml: null,
   ...p,
 });
 
@@ -116,5 +123,38 @@ describe("pendências e litros", () => {
     expect(formatarLitros(1234.5)).toBe("1.234,5 L");
     expect(formatarLitros(0)).toBe("0 L");
     expect(formatarLitros(null)).toBe("—");
+  });
+});
+
+describe("aferição de vazão", () => {
+  it("a tolerância é de mais ou menos 100 ml, inclusive", () => {
+    expect(vazaoDentro(100)).toBe(true);
+    expect(vazaoDentro(-100)).toBe(true);
+    expect(vazaoDentro(0)).toBe(true);
+    expect(vazaoDentro(101)).toBe(false);
+    expect(vazaoDentro(-120)).toBe(false);
+    expect(vazaoDentro(null)).toBeNull();
+  });
+  it("aprovada só se as duas vazões lidas estão dentro", () => {
+    expect(resultadoAfericao(-20, -40)).toBe("aprovado");
+    expect(resultadoAfericao(40, 100)).toBe("aprovado");
+    expect(resultadoAfericao(150, 0)).toBe("reprovado");
+    expect(resultadoAfericao(0, -101)).toBe("reprovado");
+  });
+  it("com só uma vazão informada, vale a que existe; sem nenhuma, não há resultado", () => {
+    expect(resultadoAfericao(-20, null)).toBe("aprovado");
+    expect(resultadoAfericao(null, 130)).toBe("reprovado");
+    expect(resultadoAfericao(null, null)).toBe("sem-resultado");
+  });
+  it("mostra o valor com sinal", () => {
+    expect(formatarVazao(20)).toBe("+20 ml");
+    expect(formatarVazao(-40)).toBe("−40 ml");
+    expect(formatarVazao(0)).toBe("0 ml");
+    expect(formatarVazao(null)).toBe("—");
+  });
+  it("a hora sai no horário de Brasília", () => {
+    expect(horaDaAfericao("2026-06-22T14:30:00.000Z")).toBe("11:30");
+    expect(horaDaAfericao(null)).toBe("—");
+    expect(horaDaAfericao("lixo")).toBe("—");
   });
 });

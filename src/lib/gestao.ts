@@ -19,12 +19,29 @@ export type Venda = {
   obs: string;
 };
 
+/** Foto de evidência guardada no espaço "gestao-evidencias" (migração 0026). */
+export type Evidencia = {
+  caminho: string;
+  nome: string;
+  /** Quando a foto foi anexada (ISO). */
+  em: string;
+};
+
+/** Uma vez que a rotina foi feita, com observação e fotos. */
+export type Execucao = {
+  data: string;
+  obs: string;
+  evidencias: Evidencia[];
+};
+
 export type Rotina = {
   id: string;
   titulo: string;
   frequencia_dias: number;
   responsavel: string;
   ultima_execucao: string | null;
+  /** Histórico de execuções registradas com observação e fotos (mais recente primeiro). */
+  execucoes?: Execucao[];
 };
 
 export type PedidoStatus = "solicitado" | "confirmado" | "entregue" | "cancelado";
@@ -61,6 +78,7 @@ export type Inspecao = {
   resultado: "ok" | "problema";
   responsavel: string;
   obs: string;
+  evidencias?: Evidencia[];
 };
 
 export type ItemManutencao = {

@@ -42,7 +42,51 @@ export type Afericao = {
   responsavel: string | null;
   obs: string | null;
   origem_id: string | null;
+  /** Momento exato da aferição (ISO), de onde sai a hora. */
+  realizada_em: string | null;
+  /** Valor lido no balde aferidor na vazão alta, em ml (tolerância de ± 100 ml). */
+  vazao_alta_ml: number | null;
+  /** Valor lido no balde aferidor na vazão baixa, em ml (tolerância de ± 100 ml). */
+  vazao_baixa_ml: number | null;
 };
+
+/** Tolerância da aferição de vazão, em ml, para mais ou para menos. */
+export const TOLERANCIA_VAZAO_ML = 100;
+
+export type ResultadoVazao = "aprovado" | "reprovado" | "sem-resultado";
+
+/** Uma vazão está dentro da tolerância se o valor lido vai de -100 a +100 ml (inclusive). */
+export function vazaoDentro(ml: number | null): boolean | null {
+  return ml == null ? null : Math.abs(ml) <= TOLERANCIA_VAZAO_ML;
+}
+
+/**
+ * Resultado da aferição: aprovado se as duas vazões lidas estão dentro da tolerância; reprovado se
+ * alguma está fora; sem resultado se nenhuma foi informada.
+ */
+export function resultadoAfericao(alta: number | null, baixa: number | null): ResultadoVazao {
+  const lidas = [vazaoDentro(alta), vazaoDentro(baixa)].filter((v) => v !== null);
+  if (lidas.length === 0) return "sem-resultado";
+  return lidas.every(Boolean) ? "aprovado" : "reprovado";
+}
+
+/** "+20 ml", "-40 ml", "0 ml" ou "—" (com o sinal de menos de verdade). */
+export function formatarVazao(ml: number | null | undefined): string {
+  if (ml == null) return "—";
+  return `${ml > 0 ? "+" : ml < 0 ? "−" : ""}${Math.abs(ml)} ml`;
+}
+
+/** Hora da aferição, "HH:MM", no horário de Brasília; "—" se não houver. */
+export function horaDaAfericao(realizadaEm: string | null | undefined): string {
+  if (!realizadaEm) return "—";
+  const d = new Date(realizadaEm);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 /** Situação de algo que se repete a cada `periodo` dias, pela data da última vez. */
 export function situacaoPeriodica(

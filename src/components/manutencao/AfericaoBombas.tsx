@@ -5,7 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Campo, Cartao, Painel, Seletor, SituacaoBadge, Vazio } from "@/components/gestao/ui";
 import { formatData, hoje, useUnidadeAtual } from "@/lib/gestao";
 import { useAfericoes, useGravarManutencao } from "@/lib/manutencao-dados";
-import { agruparAfericoes, contarPendentes, PERIODO_AFERICAO_DIAS } from "@/lib/manutencao-regras";
+import {
+  agruparAfericoes,
+  contarPendentes,
+  formatarVazao,
+  horaDaAfericao,
+  PERIODO_AFERICAO_DIAS,
+  resultadoAfericao,
+  TOLERANCIA_VAZAO_ML,
+  type Afericao,
+} from "@/lib/manutencao-regras";
+import { abrirRelatorio, relatorioAfericaoHtml } from "@/lib/manutencao-relatorios";
 
 const PRODUTOS = [
   "Gasolina Comum",
@@ -20,10 +30,43 @@ const vazio = () => ({
   data: hoje(),
   bomba: "",
   bico: "",
+  hora: horaAgora(),
   produto: PRODUTOS[0] as string,
+  vazaoAlta: "",
+  vazaoBaixa: "",
   responsavel: "",
   obs: "",
 });
+
+/** "HH:MM" agora, no horário de Brasília. */
+function horaAgora() {
+  return new Date().toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Valor em ml (inteiro, pode ser negativo): null se vazio, undefined se inválido. */
+function mililitros(t: string): number | null | undefined {
+  const limpo = t.trim().replace("−", "-").replace("+", "");
+  if (!limpo) return null;
+  return /^-?d+$/.test(limpo) ? Number(limpo) : undefined;
+}
+
+/** "· alta -20 ml · baixa -40 ml · Aprovado"; nada se não houver vazão lida. */
+function ResultadoVazao({ a }: { a: Afericao }) {
+  const r = resultadoAfericao(a.vazao_alta_ml, a.vazao_baixa_ml);
+  if (r === "sem-resultado") return null;
+  return (
+    <>
+      {" · "}alta {formatarVazao(a.vazao_alta_ml)} · baixa {formatarVazao(a.vazao_baixa_ml)} ·{" "}
+      <span className={r === "aprovado" ? "font-semibold" : "font-semibold text-destructive"}>
+        {r === "aprovado" ? "Aprovado" : "Reprovado"}
+      </span>
+    </>
+  );
+}
 
 export function AfericaoBombas() {
   const { unidade } = useUnidadeAtual();
@@ -49,13 +92,21 @@ export function AfericaoBombas() {
     if (!form.bomba.trim() || !form.bico.trim()) {
       return void toast.error("Informe a bomba e o bico.");
     }
+    const alta = mililitros(form.vazaoAlta);
+    const baixa = mililitros(form.vazaoBaixa);
+    if (alta === undefined || baixa === undefined)
+      return void toast.error("A vazão é um número em ml, como -20 ou 40.");
     setGravando(true);
     try {
       await lancarAfericao({
         data: form.data,
+        // Horário de Brasília (sem horário de verão).
+        realizada_em: new Date(`${form.data}T${form.hora || "00:00"}:00-03:00`).toISOString(),
         bomba: form.bomba.trim(),
         bico: form.bico.trim(),
         produto: form.produto,
+        vazao_alta_ml: alta,
+        vazao_baixa_ml: baixa,
         responsavel: form.responsavel.trim() || null,
         obs: form.obs.trim() || null,
       });
@@ -66,6 +117,13 @@ export function AfericaoBombas() {
     } finally {
       setGravando(false);
     }
+  }
+
+  // Chamado direto do clique: o navegador só deixa abrir a janela do relatório assim.
+  function relatorio(a: Afericao) {
+    const html = relatorioAfericaoHtml(a, unidade?.nome ?? "");
+    if (!abrirRelatorio(html))
+      toast.error("O navegador bloqueou a janela. Libere pop-ups para este site.");
   }
 
   async function excluir(id: string) {
@@ -110,6 +168,15 @@ export function AfericaoBombas() {
           </Campo>
           <Campo label="Produto">
             <Seletor opcoes={PRODUTOS} value={form.produto} onChange={set("produto")} />
+          </Campo>
+          <Campo label="Hora da aferição">
+            <Input type="time" value={form.hora} onChange={set("hora")} required />
+          </Campo>
+          <Campo label={`Vazão alta (ml, tolerância ± ${TOLERANCIA_VAZAO_ML})`}>
+            <Input inputMode="numeric" value={form.vazaoAlta} onChange={set("vazaoAlta")} />
+          </Campo>
+          <Campo label={`Vazão baixa (ml, tolerância ± ${TOLERANCIA_VAZAO_ML})`}>
+            <Input inputMode="numeric" value={form.vazaoBaixa} onChange={set("vazaoBaixa")} />
           </Campo>
           <Campo label="Responsável">
             <Input value={form.responsavel} onChange={set("responsavel")} />
@@ -177,6 +244,8 @@ export function AfericaoBombas() {
                       <li key={h.id} className="flex flex-wrap items-center justify-between gap-2">
                         <span>
                           <span className="font-semibold">{formatData(h.data)}</span>
+                          {h.realizada_em && ` ${horaDaAfericao(h.realizada_em)}`}
+                          <ResultadoVazao a={h} />
                           {h.responsavel && ` · ${h.responsavel}`}
                           {h.obs && ` · ${h.obs}`}
                           {h.origem_id && (
@@ -186,6 +255,9 @@ export function AfericaoBombas() {
                             </span>
                           )}
                         </span>
+                        <Button variant="outline" size="sm" onClick={() => relatorio(h)}>
+                          Relatório
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => excluir(h.id)}>
                           Excluir
                         </Button>

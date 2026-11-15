@@ -11,7 +11,9 @@ import {
   PERIODO_DRENAGEM_DIAS,
   PRODUTOS_DIESEL,
   resumoPorTanque,
+  type Drenagem,
 } from "@/lib/manutencao-regras";
+import { abrirRelatorio, relatorioDrenagemHtml } from "@/lib/manutencao-relatorios";
 
 const POR_PAGINA = 50;
 
@@ -103,6 +105,13 @@ export function DrenagemTanque() {
     } finally {
       setGravando(false);
     }
+  }
+
+  // Chamado direto do clique: o navegador só deixa abrir a janela do relatório assim.
+  function relatorio(d: Drenagem) {
+    const html = relatorioDrenagemHtml(d, unidade?.nome ?? "");
+    if (!abrirRelatorio(html))
+      toast.error("O navegador bloqueou a janela. Libere pop-ups para este site.");
   }
 
   async function excluir(id: string) {
@@ -344,6 +353,9 @@ export function DrenagemTanque() {
                         )}
                       </td>
                       <td className="py-2 text-right">
+                        <Button variant="outline" size="sm" onClick={() => relatorio(d)}>
+                          Relatório
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => excluir(d.id)}>
                           Excluir
                         </Button>

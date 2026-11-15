@@ -3,7 +3,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoEvidencias, GaleriaEvidencias } from "@/components/gestao/Evidencias";
 import { Campo, Painel, Seletor, SituacaoBadge, Vazio } from "@/components/gestao/ui";
+import { apagarEvidencias, enviarEvidencias } from "@/lib/evidencias";
+import { caminhosDeEvidencias, registrarExecucao } from "@/lib/evidencias-regras";
 import {
   formatData,
   hoje,
@@ -12,6 +15,7 @@ import {
   situacao,
   uid,
   useColecao,
+  useUnidadeAtual,
   type Rotina,
 } from "@/lib/gestao";
 
@@ -34,6 +38,8 @@ function Rotinas() {
   const [rotinas, salvar] = useColecao<Rotina>("rotinas");
   const [form, setForm] = useState({ titulo: "", frequencia: "Diária", responsavel: "" });
   const [editando, setEditando] = useState<string | null>(null);
+  const [concluindo, setConcluindo] = useState<string | null>(null);
+  const [historico, setHistorico] = useState<string | null>(null);
 
   function atualizar(r: Rotina) {
     salvar((l) => l.map((x) => (x.id === r.id ? r : x)));
@@ -67,10 +73,17 @@ function Rotinas() {
     toast.success(`${novas.length} rotina(s) adicionada(s)`);
   }
 
-  const concluir = (id: string) => {
-    salvar((l) => l.map((r) => (r.id === id ? { ...r, ultima_execucao: hoje() } : r)));
-    toast.success("Rotina marcada como feita hoje");
-  };
+  async function executada(r: Rotina) {
+    await salvar((l) => l.map((x) => (x.id === r.id ? r : x)));
+    setConcluindo(null);
+    toast.success("Execução registrada");
+  }
+
+  function excluir(r: Rotina) {
+    if (!confirm("Excluir esta rotina e as fotos das execuções?")) return;
+    void salvar((l) => l.filter((x) => x.id !== r.id));
+    void apagarEvidencias(caminhosDeEvidencias(...(r.execucoes ?? []).map((e) => e.evidencias)));
+  }
 
   const ordenadas = [...rotinas].sort((a, b) =>
     (proximaRotina(a) ?? "").localeCompare(proximaRotina(b) ?? ""),
@@ -137,9 +150,22 @@ function Rotinas() {
                         situacao={prox ? situacao(prox, 0) : "vencido"}
                         vencimento={prox}
                       />
-                      <Button size="sm" className="rounded-full" onClick={() => concluir(r.id)}>
+                      <Button
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => setConcluindo(concluindo === r.id ? null : r.id)}
+                      >
                         Feito hoje
                       </Button>
+                      {(r.execucoes?.length ?? 0) > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHistorico(historico === r.id ? null : r.id)}
+                        >
+                          Histórico ({r.execucoes!.length})
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -147,18 +173,30 @@ function Rotinas() {
                       >
                         Editar
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          confirm("Excluir esta rotina?") &&
-                          salvar((l) => l.filter((x) => x.id !== r.id))
-                        }
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => excluir(r)}>
                         Excluir
                       </Button>
                     </div>
                   </div>
+                  <GaleriaEvidencias evidencias={r.execucoes?.[0]?.evidencias} />
+                  {concluindo === r.id && (
+                    <FormExecucao
+                      rotina={r}
+                      onSalvar={executada}
+                      onCancelar={() => setConcluindo(null)}
+                    />
+                  )}
+                  {historico === r.id && (
+                    <ul className="mt-3 space-y-3 rounded-2xl bg-muted p-4 text-sm">
+                      {r.execucoes!.map((e, i) => (
+                        <li key={`${e.data}-${i}`}>
+                          <span className="font-semibold">{formatData(e.data)}</span>
+                          {e.obs && ` · ${e.obs}`}
+                          <GaleriaEvidencias evidencias={e.evidencias} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {editando === r.id && (
                     <EditarRotina
                       rotina={r}
@@ -173,6 +211,65 @@ function Rotinas() {
         )}
       </Painel>
     </div>
+  );
+}
+
+/** "Feito hoje": data, observação e fotos de evidência (câmera ou galeria). */
+function FormExecucao({
+  rotina,
+  onSalvar,
+  onCancelar,
+}: {
+  rotina: Rotina;
+  onSalvar: (r: Rotina) => Promise<void>;
+  onCancelar: () => void;
+}) {
+  const { unidade } = useUnidadeAtual();
+  const [data, setData] = useState(hoje());
+  const [obs, setObs] = useState("");
+  const [fotos, setFotos] = useState<File[]>([]);
+  const [gravando, setGravando] = useState(false);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!unidade) return;
+    setGravando(true);
+    try {
+      const evidencias = fotos.length ? await enviarEvidencias(fotos, unidade.id, "rotinas") : [];
+      await onSalvar(registrarExecucao(rotina, { data, obs: obs.trim(), evidencias }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível registrar a execução.");
+    } finally {
+      setGravando(false);
+    }
+  }
+
+  return (
+    <form onSubmit={enviar} className="mt-3 grid gap-3 rounded-2xl bg-muted p-4 sm:grid-cols-3">
+      <Campo label="Data da execução">
+        <Input
+          type="date"
+          value={data}
+          max={hoje()}
+          onChange={(e) => setData(e.target.value)}
+          required
+        />
+      </Campo>
+      <Campo label="Observação" className="sm:col-span-2">
+        <Input value={obs} onChange={(e) => setObs(e.target.value)} />
+      </Campo>
+      <Campo label="Evidências (fotos)" className="sm:col-span-3">
+        <CampoEvidencias fotos={fotos} onChange={setFotos} desabilitado={gravando} />
+      </Campo>
+      <div className="flex gap-2 sm:col-span-3">
+        <Button type="submit" size="sm" className="rounded-full" disabled={gravando}>
+          {gravando ? "Gravando…" : "Registrar execução"}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onCancelar} disabled={gravando}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   );
 }
 

@@ -895,8 +895,11 @@ export type Database = {
           obs: string | null;
           origem_id: string | null;
           produto: string;
+          realizada_em: string | null;
           responsavel: string | null;
           unidade_id: string;
+          vazao_alta_ml: number | null;
+          vazao_baixa_ml: number | null;
         };
         Insert: {
           bico: string;
@@ -909,8 +912,11 @@ export type Database = {
           obs?: string | null;
           origem_id?: string | null;
           produto: string;
+          realizada_em?: string | null;
           responsavel?: string | null;
           unidade_id: string;
+          vazao_alta_ml?: number | null;
+          vazao_baixa_ml?: number | null;
         };
         Update: {
           bico?: string;
@@ -923,8 +929,11 @@ export type Database = {
           obs?: string | null;
           origem_id?: string | null;
           produto?: string;
+          realizada_em?: string | null;
           responsavel?: string | null;
           unidade_id?: string;
+          vazao_alta_ml?: number | null;
+          vazao_baixa_ml?: number | null;
         };
         Relationships: [
           {

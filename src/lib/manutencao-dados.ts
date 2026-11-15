@@ -8,7 +8,8 @@ const PAGINA = 1000; // a API do banco devolve no máximo 1000 linhas por vez
 
 const COLUNAS_DRENAGEM =
   "id, data, tanque, produto, capacidade_litros, volume_amostra_litros, volume_agua_litros, tem_agua, aspecto_normal, cor, medida_adotada, responsavel, rg_responsavel, origem_id, dados_origem";
-const COLUNAS_AFERICAO = "id, data, bomba, bico, produto, responsavel, obs, origem_id";
+const COLUNAS_AFERICAO =
+  "id, data, bomba, bico, produto, responsavel, obs, origem_id, realizada_em, vazao_alta_ml, vazao_baixa_ml";
 
 /** Resposta "Água no medidor/mm?" guardada em dados_origem.pres_agua_mm. */
 export function aguaNoMedidor(dados: unknown): boolean | null {

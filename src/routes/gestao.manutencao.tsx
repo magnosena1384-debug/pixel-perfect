@@ -3,9 +3,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoEvidencias, GaleriaEvidencias } from "@/components/gestao/Evidencias";
 import { Campo, Painel, Seletor, SituacaoBadge, Vazio } from "@/components/gestao/ui";
 import { AfericaoBombas } from "@/components/manutencao/AfericaoBombas";
 import { DrenagemTanque } from "@/components/manutencao/DrenagemTanque";
+import { apagarEvidencias, enviarEvidencias } from "@/lib/evidencias";
+import { caminhosDeEvidencias } from "@/lib/evidencias-regras";
 import { useAfericoes, useDrenagens } from "@/lib/manutencao-dados";
 import { agruparAfericoes, contarPendentes, resumoPorTanque } from "@/lib/manutencao-regras";
 import {
@@ -71,6 +74,12 @@ function Manutencao() {
       },
     ]);
     setNovo({ nome: "", periodicidade: novo.periodicidade });
+  }
+
+  function excluirItem(i: ItemManutencao) {
+    if (!confirm("Excluir este item, seu histórico e as fotos das inspeções?")) return;
+    void salvar((l) => l.filter((x) => x.id !== i.id));
+    void apagarEvidencias(caminhosDeEvidencias(...i.historico.map((h) => h.evidencias)));
   }
 
   function registrar(id: string, insp: Inspecao) {
@@ -161,14 +170,7 @@ function Manutencao() {
                         >
                           Editar
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            confirm("Excluir este item e seu histórico?") &&
-                            salvar((l) => l.filter((x) => x.id !== i.id))
-                          }
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => excluirItem(i)}>
                           Excluir
                         </Button>
                       </div>
@@ -202,6 +204,7 @@ function Manutencao() {
                             )}
                             {h.responsavel && ` · ${h.responsavel}`}
                             {h.obs && ` · ${h.obs}`}
+                            <GaleriaEvidencias evidencias={h.evidencias} />
                           </li>
                         ))}
                       </ul>
@@ -241,15 +244,29 @@ function Manutencao() {
 }
 
 function FormInspecao({ onSalvar }: { onSalvar: (i: Inspecao) => void }) {
+  const { unidade } = useUnidadeAtual();
   const [f, setF] = useState<Inspecao>({ data: hoje(), resultado: "ok", responsavel: "", obs: "" });
+  const [fotos, setFotos] = useState<File[]>([]);
+  const [gravando, setGravando] = useState(false);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!unidade) return;
+    setGravando(true);
+    try {
+      const evidencias = fotos.length
+        ? await enviarEvidencias(fotos, unidade.id, "manutencao")
+        : [];
+      onSalvar(evidencias.length ? { ...f, evidencias } : f);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível gravar a inspeção.");
+    } finally {
+      setGravando(false);
+    }
+  }
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSalvar(f);
-      }}
-      className="mt-3 grid gap-3 rounded-2xl bg-muted p-4 sm:grid-cols-5"
-    >
+    <form onSubmit={enviar} className="mt-3 grid gap-3 rounded-2xl bg-muted p-4 sm:grid-cols-5">
       <Campo label="Data">
         <Input
           type="date"
@@ -276,10 +293,13 @@ function FormInspecao({ onSalvar }: { onSalvar: (i: Inspecao) => void }) {
         <Input value={f.obs} onChange={(e) => setF({ ...f, obs: e.target.value })} />
       </Campo>
       <div className="flex items-end">
-        <Button type="submit" className="w-full rounded-full">
-          Salvar
+        <Button type="submit" className="w-full rounded-full" disabled={gravando}>
+          {gravando ? "Gravando…" : "Salvar"}
         </Button>
       </div>
+      <Campo label="Evidências (fotos)" className="sm:col-span-5">
+        <CampoEvidencias fotos={fotos} onChange={setFotos} desabilitado={gravando} />
+      </Campo>
     </form>
   );
 }
