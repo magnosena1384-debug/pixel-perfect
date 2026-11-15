@@ -1,1188 +1,1300 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.18"
-  }
+    PostgrestVersion: "14.18";
+  };
   public: {
     Tables: {
       courses: {
         Row: {
-          capa_url: string | null
-          created_at: string
-          descricao: string
-          descricao_curta: string
-          id: string
-          preco_centavos: number
-          slug: string
-          status: Database["public"]["Enums"]["course_status"]
-          titulo: string
-        }
+          capa_url: string | null;
+          created_at: string;
+          descricao: string;
+          descricao_curta: string;
+          id: string;
+          preco_centavos: number;
+          slug: string;
+          status: Database["public"]["Enums"]["course_status"];
+          titulo: string;
+        };
         Insert: {
-          capa_url?: string | null
-          created_at?: string
-          descricao?: string
-          descricao_curta?: string
-          id?: string
-          preco_centavos?: number
-          slug: string
-          status?: Database["public"]["Enums"]["course_status"]
-          titulo: string
-        }
+          capa_url?: string | null;
+          created_at?: string;
+          descricao?: string;
+          descricao_curta?: string;
+          id?: string;
+          preco_centavos?: number;
+          slug: string;
+          status?: Database["public"]["Enums"]["course_status"];
+          titulo: string;
+        };
         Update: {
-          capa_url?: string | null
-          created_at?: string
-          descricao?: string
-          descricao_curta?: string
-          id?: string
-          preco_centavos?: number
-          slug?: string
-          status?: Database["public"]["Enums"]["course_status"]
-          titulo?: string
-        }
-        Relationships: []
-      }
+          capa_url?: string | null;
+          created_at?: string;
+          descricao?: string;
+          descricao_curta?: string;
+          id?: string;
+          preco_centavos?: number;
+          slug?: string;
+          status?: Database["public"]["Enums"]["course_status"];
+          titulo?: string;
+        };
+        Relationships: [];
+      };
       enrollments: {
         Row: {
-          course_id: string
-          fim: string | null
-          id: string
-          inicio: string
-          origem: string
-          status: Database["public"]["Enums"]["enrollment_status"]
-          user_id: string
-        }
+          course_id: string;
+          fim: string | null;
+          id: string;
+          inicio: string;
+          origem: string;
+          status: Database["public"]["Enums"]["enrollment_status"];
+          user_id: string;
+        };
         Insert: {
-          course_id: string
-          fim?: string | null
-          id?: string
-          inicio?: string
-          origem?: string
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          user_id: string
-        }
+          course_id: string;
+          fim?: string | null;
+          id?: string;
+          inicio?: string;
+          origem?: string;
+          status?: Database["public"]["Enums"]["enrollment_status"];
+          user_id: string;
+        };
         Update: {
-          course_id?: string
-          fim?: string | null
-          id?: string
-          inicio?: string
-          origem?: string
-          status?: Database["public"]["Enums"]["enrollment_status"]
-          user_id?: string
-        }
+          course_id?: string;
+          fim?: string | null;
+          id?: string;
+          inicio?: string;
+          origem?: string;
+          status?: Database["public"]["Enums"]["enrollment_status"];
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "enrollments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
+            foreignKeyName: "enrollments_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       gestao_acessos: {
         Row: {
-          modulos: string[]
-          unidade_id: string
-          user_id: string
-        }
+          modulos: string[];
+          unidade_id: string;
+          user_id: string;
+        };
         Insert: {
-          modulos?: string[]
-          unidade_id: string
-          user_id: string
-        }
+          modulos?: string[];
+          unidade_id: string;
+          user_id: string;
+        };
         Update: {
-          modulos?: string[]
-          unidade_id?: string
-          user_id?: string
-        }
+          modulos?: string[];
+          unidade_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "gestao_acessos_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
+            foreignKeyName: "gestao_acessos_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       gestao_itens: {
         Row: {
-          atualizado_em: string
-          atualizado_por: string | null
-          colecao: string
-          dados: Json
-          id: string
-          unidade_id: string
-        }
+          atualizado_em: string;
+          atualizado_por: string | null;
+          colecao: string;
+          dados: Json;
+          id: string;
+          unidade_id: string;
+        };
         Insert: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          colecao: string
-          dados: Json
-          id: string
-          unidade_id: string
-        }
+          atualizado_em?: string;
+          atualizado_por?: string | null;
+          colecao: string;
+          dados: Json;
+          id: string;
+          unidade_id: string;
+        };
         Update: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          colecao?: string
-          dados?: Json
-          id?: string
-          unidade_id?: string
-        }
+          atualizado_em?: string;
+          atualizado_por?: string | null;
+          colecao?: string;
+          dados?: Json;
+          id?: string;
+          unidade_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "gestao_itens_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
+            foreignKeyName: "gestao_itens_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lesson_assets: {
         Row: {
-          id: string
-          lesson_id: string
-          ordem: number
-          tipo: string
-          titulo: string
-          url: string
-        }
+          id: string;
+          lesson_id: string;
+          ordem: number;
+          tipo: string;
+          titulo: string;
+          url: string;
+        };
         Insert: {
-          id?: string
-          lesson_id: string
-          ordem?: number
-          tipo?: string
-          titulo: string
-          url: string
-        }
+          id?: string;
+          lesson_id: string;
+          ordem?: number;
+          tipo?: string;
+          titulo: string;
+          url: string;
+        };
         Update: {
-          id?: string
-          lesson_id?: string
-          ordem?: number
-          tipo?: string
-          titulo?: string
-          url?: string
-        }
+          id?: string;
+          lesson_id?: string;
+          ordem?: number;
+          tipo?: string;
+          titulo?: string;
+          url?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lesson_assets_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
+            foreignKeyName: "lesson_assets_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lesson_progress: {
         Row: {
-          atualizado_em: string
-          concluida: boolean
-          id: string
-          lesson_id: string
-          posicao_seg: number
-          user_id: string
-        }
+          atualizado_em: string;
+          concluida: boolean;
+          id: string;
+          lesson_id: string;
+          posicao_seg: number;
+          user_id: string;
+        };
         Insert: {
-          atualizado_em?: string
-          concluida?: boolean
-          id?: string
-          lesson_id: string
-          posicao_seg?: number
-          user_id: string
-        }
+          atualizado_em?: string;
+          concluida?: boolean;
+          id?: string;
+          lesson_id: string;
+          posicao_seg?: number;
+          user_id: string;
+        };
         Update: {
-          atualizado_em?: string
-          concluida?: boolean
-          id?: string
-          lesson_id?: string
-          posicao_seg?: number
-          user_id?: string
-        }
+          atualizado_em?: string;
+          concluida?: boolean;
+          id?: string;
+          lesson_id?: string;
+          posicao_seg?: number;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lesson_progress_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
+            foreignKeyName: "lesson_progress_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lesson_questions: {
         Row: {
-          created_at: string
-          id: string
-          lesson_id: string
-          pergunta: string
-          resposta: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          lesson_id: string;
+          pergunta: string;
+          resposta: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          lesson_id: string
-          pergunta: string
-          resposta?: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          lesson_id: string;
+          pergunta: string;
+          resposta?: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          lesson_id?: string
-          pergunta?: string
-          resposta?: string
-          user_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          lesson_id?: string;
+          pergunta?: string;
+          resposta?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lesson_questions_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: false
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
+            foreignKeyName: "lesson_questions_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lesson_transcripts: {
         Row: {
-          atualizado_em: string
-          lesson_id: string
-          texto: string
-        }
+          atualizado_em: string;
+          lesson_id: string;
+          texto: string;
+        };
         Insert: {
-          atualizado_em?: string
-          lesson_id: string
-          texto?: string
-        }
+          atualizado_em?: string;
+          lesson_id: string;
+          texto?: string;
+        };
         Update: {
-          atualizado_em?: string
-          lesson_id?: string
-          texto?: string
-        }
+          atualizado_em?: string;
+          lesson_id?: string;
+          texto?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "lesson_transcripts_lesson_id_fkey"
-            columns: ["lesson_id"]
-            isOneToOne: true
-            referencedRelation: "lessons"
-            referencedColumns: ["id"]
+            foreignKeyName: "lesson_transcripts_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: true;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       lessons: {
         Row: {
-          descricao: string
-          duracao_seg: number
-          id: string
-          is_preview: boolean
-          module_id: string
-          ordem: number
-          titulo: string
-          video_path: string | null
-        }
+          descricao: string;
+          duracao_seg: number;
+          id: string;
+          is_preview: boolean;
+          module_id: string;
+          ordem: number;
+          titulo: string;
+          video_path: string | null;
+        };
         Insert: {
-          descricao?: string
-          duracao_seg?: number
-          id?: string
-          is_preview?: boolean
-          module_id: string
-          ordem?: number
-          titulo: string
-          video_path?: string | null
-        }
+          descricao?: string;
+          duracao_seg?: number;
+          id?: string;
+          is_preview?: boolean;
+          module_id: string;
+          ordem?: number;
+          titulo: string;
+          video_path?: string | null;
+        };
         Update: {
-          descricao?: string
-          duracao_seg?: number
-          id?: string
-          is_preview?: boolean
-          module_id?: string
-          ordem?: number
-          titulo?: string
-          video_path?: string | null
-        }
+          descricao?: string;
+          duracao_seg?: number;
+          id?: string;
+          is_preview?: boolean;
+          module_id?: string;
+          ordem?: number;
+          titulo?: string;
+          video_path?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "lessons_module_id_fkey"
-            columns: ["module_id"]
-            isOneToOne: false
-            referencedRelation: "modules"
-            referencedColumns: ["id"]
+            foreignKeyName: "lessons_module_id_fkey";
+            columns: ["module_id"];
+            isOneToOne: false;
+            referencedRelation: "modules";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       modules: {
         Row: {
-          course_id: string
-          id: string
-          ordem: number
-          titulo: string
-        }
+          course_id: string;
+          id: string;
+          ordem: number;
+          titulo: string;
+        };
         Insert: {
-          course_id: string
-          id?: string
-          ordem?: number
-          titulo: string
-        }
+          course_id: string;
+          id?: string;
+          ordem?: number;
+          titulo: string;
+        };
         Update: {
-          course_id?: string
-          id?: string
-          ordem?: number
-          titulo?: string
-        }
+          course_id?: string;
+          id?: string;
+          ordem?: number;
+          titulo?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "modules_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
+            foreignKeyName: "modules_course_id_fkey";
+            columns: ["course_id"];
+            isOneToOne: false;
+            referencedRelation: "courses";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       patrimonio_bens: {
         Row: {
-          baixa_data: string | null
-          baixa_motivo: string | null
-          baixa_obs: string | null
-          categoria: string
-          criado_em: string
-          criado_por: string | null
-          data_compra: string
-          id: string
-          marca: string
-          modelo: string
-          nome: string
-          numero_serie: string | null
-          reimprimir_etiqueta: boolean
-          setor: string
-          situacao: string
-          tombamento: number
-          unidade_id: string
-          valor_compra_centavos: number
-          vida_util_anos: number
-        }
+          baixa_data: string | null;
+          baixa_motivo: string | null;
+          baixa_obs: string | null;
+          categoria: string;
+          criado_em: string;
+          criado_por: string | null;
+          data_compra: string;
+          id: string;
+          marca: string;
+          modelo: string;
+          nome: string;
+          numero_serie: string | null;
+          reimprimir_etiqueta: boolean;
+          setor: string;
+          situacao: string;
+          tombamento: number;
+          unidade_id: string;
+          valor_compra_centavos: number;
+          vida_util_anos: number;
+        };
         Insert: {
-          baixa_data?: string | null
-          baixa_motivo?: string | null
-          baixa_obs?: string | null
-          categoria: string
-          criado_em?: string
-          criado_por?: string | null
-          data_compra: string
-          id?: string
-          marca?: string
-          modelo?: string
-          nome: string
-          numero_serie?: string | null
-          reimprimir_etiqueta?: boolean
-          setor?: string
-          situacao?: string
-          tombamento?: number
-          unidade_id: string
-          valor_compra_centavos: number
-          vida_util_anos: number
-        }
+          baixa_data?: string | null;
+          baixa_motivo?: string | null;
+          baixa_obs?: string | null;
+          categoria: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          data_compra: string;
+          id?: string;
+          marca?: string;
+          modelo?: string;
+          nome: string;
+          numero_serie?: string | null;
+          reimprimir_etiqueta?: boolean;
+          setor?: string;
+          situacao?: string;
+          tombamento?: number;
+          unidade_id: string;
+          valor_compra_centavos: number;
+          vida_util_anos: number;
+        };
         Update: {
-          baixa_data?: string | null
-          baixa_motivo?: string | null
-          baixa_obs?: string | null
-          categoria?: string
-          criado_em?: string
-          criado_por?: string | null
-          data_compra?: string
-          id?: string
-          marca?: string
-          modelo?: string
-          nome?: string
-          numero_serie?: string | null
-          reimprimir_etiqueta?: boolean
-          setor?: string
-          situacao?: string
-          tombamento?: number
-          unidade_id?: string
-          valor_compra_centavos?: number
-          vida_util_anos?: number
-        }
-        Relationships: []
-      }
+          baixa_data?: string | null;
+          baixa_motivo?: string | null;
+          baixa_obs?: string | null;
+          categoria?: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          data_compra?: string;
+          id?: string;
+          marca?: string;
+          modelo?: string;
+          nome?: string;
+          numero_serie?: string | null;
+          reimprimir_etiqueta?: boolean;
+          setor?: string;
+          situacao?: string;
+          tombamento?: number;
+          unidade_id?: string;
+          valor_compra_centavos?: number;
+          vida_util_anos?: number;
+        };
+        Relationships: [];
+      };
       patrimonio_historico: {
         Row: {
-          bem_id: string
-          detalhe: string
-          evento: string
-          id: number
-          quando: string
-          quem: string | null
-          quem_nome: string
-        }
+          bem_id: string;
+          detalhe: string;
+          evento: string;
+          id: number;
+          quando: string;
+          quem: string | null;
+          quem_nome: string;
+        };
         Insert: {
-          bem_id: string
-          detalhe?: string
-          evento: string
-          id?: number
-          quando?: string
-          quem?: string | null
-          quem_nome?: string
-        }
+          bem_id: string;
+          detalhe?: string;
+          evento: string;
+          id?: number;
+          quando?: string;
+          quem?: string | null;
+          quem_nome?: string;
+        };
         Update: {
-          bem_id?: string
-          detalhe?: string
-          evento?: string
-          id?: number
-          quando?: string
-          quem?: string | null
-          quem_nome?: string
-        }
-        Relationships: []
-      }
+          bem_id?: string;
+          detalhe?: string;
+          evento?: string;
+          id?: number;
+          quando?: string;
+          quem?: string | null;
+          quem_nome?: string;
+        };
+        Relationships: [];
+      };
       patrimonio_inventarios: {
         Row: {
-          aberto_em: string
-          aberto_por_nome: string
-          fechado_em: string | null
-          fechado_por_nome: string | null
-          id: string
-          unidade_id: string
-        }
+          aberto_em: string;
+          aberto_por_nome: string;
+          fechado_em: string | null;
+          fechado_por_nome: string | null;
+          id: string;
+          unidade_id: string;
+        };
         Insert: {
-          aberto_em?: string
-          aberto_por_nome?: string
-          fechado_em?: string | null
-          fechado_por_nome?: string | null
-          id?: string
-          unidade_id: string
-        }
+          aberto_em?: string;
+          aberto_por_nome?: string;
+          fechado_em?: string | null;
+          fechado_por_nome?: string | null;
+          id?: string;
+          unidade_id: string;
+        };
         Update: {
-          aberto_em?: string
-          aberto_por_nome?: string
-          fechado_em?: string | null
-          fechado_por_nome?: string | null
-          id?: string
-          unidade_id?: string
-        }
-        Relationships: []
-      }
+          aberto_em?: string;
+          aberto_por_nome?: string;
+          fechado_em?: string | null;
+          fechado_por_nome?: string | null;
+          id?: string;
+          unidade_id?: string;
+        };
+        Relationships: [];
+      };
       patrimonio_leituras: {
         Row: {
-          aviso: string
-          bem_id: string
-          com_defeito: boolean
-          fora_da_empresa: boolean
-          inventario_id: string
-          lido_em: string
-          lido_por_nome: string
-          sem_etiqueta: boolean
-        }
+          aviso: string;
+          bem_id: string;
+          com_defeito: boolean;
+          fora_da_empresa: boolean;
+          inventario_id: string;
+          lido_em: string;
+          lido_por_nome: string;
+          sem_etiqueta: boolean;
+        };
         Insert: {
-          aviso?: string
-          bem_id: string
-          com_defeito?: boolean
-          fora_da_empresa?: boolean
-          inventario_id: string
-          lido_em?: string
-          lido_por_nome?: string
-          sem_etiqueta?: boolean
-        }
+          aviso?: string;
+          bem_id: string;
+          com_defeito?: boolean;
+          fora_da_empresa?: boolean;
+          inventario_id: string;
+          lido_em?: string;
+          lido_por_nome?: string;
+          sem_etiqueta?: boolean;
+        };
         Update: {
-          aviso?: string
-          bem_id?: string
-          com_defeito?: boolean
-          fora_da_empresa?: boolean
-          inventario_id?: string
-          lido_em?: string
-          lido_por_nome?: string
-          sem_etiqueta?: boolean
-        }
-        Relationships: []
-      }
+          aviso?: string;
+          bem_id?: string;
+          com_defeito?: boolean;
+          fora_da_empresa?: boolean;
+          inventario_id?: string;
+          lido_em?: string;
+          lido_por_nome?: string;
+          sem_etiqueta?: boolean;
+        };
+        Relationships: [];
+      };
       patrimonio_transferencias: {
         Row: {
-          bem_id: string
-          concluido_em: string | null
-          concluido_por_nome: string | null
-          destino_id: string
-          enviado_em: string
-          enviado_por_nome: string
-          id: string
-          observacao: string
-          origem_id: string
-          situacao: string
-          situacao_bem: string
-        }
+          bem_id: string;
+          concluido_em: string | null;
+          concluido_por_nome: string | null;
+          destino_id: string;
+          enviado_em: string;
+          enviado_por_nome: string;
+          id: string;
+          observacao: string;
+          origem_id: string;
+          situacao: string;
+          situacao_bem: string;
+        };
         Insert: {
-          bem_id: string
-          concluido_em?: string | null
-          concluido_por_nome?: string | null
-          destino_id: string
-          enviado_em?: string
-          enviado_por_nome?: string
-          id?: string
-          observacao?: string
-          origem_id: string
-          situacao?: string
-          situacao_bem: string
-        }
+          bem_id: string;
+          concluido_em?: string | null;
+          concluido_por_nome?: string | null;
+          destino_id: string;
+          enviado_em?: string;
+          enviado_por_nome?: string;
+          id?: string;
+          observacao?: string;
+          origem_id: string;
+          situacao?: string;
+          situacao_bem: string;
+        };
         Update: {
-          bem_id?: string
-          concluido_em?: string | null
-          concluido_por_nome?: string | null
-          destino_id?: string
-          enviado_em?: string
-          enviado_por_nome?: string
-          id?: string
-          observacao?: string
-          origem_id?: string
-          situacao?: string
-          situacao_bem?: string
-        }
-        Relationships: []
-      }
+          bem_id?: string;
+          concluido_em?: string | null;
+          concluido_por_nome?: string | null;
+          destino_id?: string;
+          enviado_em?: string;
+          enviado_por_nome?: string;
+          id?: string;
+          observacao?: string;
+          origem_id?: string;
+          situacao?: string;
+          situacao_bem?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
-          avatar_url: string | null
-          created_at: string
-          email: string
-          id: string
-          nome: string
-        }
+          avatar_url: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          nome: string;
+        };
         Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          id: string
-          nome?: string
-        }
+          avatar_url?: string | null;
+          created_at?: string;
+          email?: string;
+          id: string;
+          nome?: string;
+        };
         Update: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string
-          id?: string
-          nome?: string
-        }
-        Relationships: []
-      }
+          avatar_url?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          nome?: string;
+        };
+        Relationships: [];
+      };
       unidades: {
         Row: {
-          id: string
-          nome: string
-          ordem: number
-          webposto_empresa: number | null
-        }
+          id: string;
+          nome: string;
+          ordem: number;
+          webposto_empresa: number | null;
+        };
         Insert: {
-          id?: string
-          nome: string
-          ordem?: number
-          webposto_empresa?: number | null
-        }
+          id?: string;
+          nome: string;
+          ordem?: number;
+          webposto_empresa?: number | null;
+        };
         Update: {
-          id?: string
-          nome?: string
-          ordem?: number
-          webposto_empresa?: number | null
-        }
-        Relationships: []
-      }
+          id?: string;
+          nome?: string;
+          ordem?: number;
+          webposto_empresa?: number | null;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          id?: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       rh_banco_horas: {
         Row: {
-          admissao: string | null
-          colaborador: string
-          credito_min: number
-          debito_min: number
-          importacao_id: string | null
-          nome: string
-          referencia: string
-          saldo_min: number
-          setor: string
-          unidade_id: string
-        }
+          admissao: string | null;
+          colaborador: string;
+          credito_min: number;
+          debito_min: number;
+          importacao_id: string | null;
+          nome: string;
+          referencia: string;
+          saldo_min: number;
+          setor: string;
+          unidade_id: string;
+        };
         Insert: {
-          admissao?: string | null
-          colaborador: string
-          credito_min?: number
-          debito_min?: number
-          importacao_id?: string | null
-          nome: string
-          referencia: string
-          saldo_min?: number
-          setor?: string
-          unidade_id: string
-        }
+          admissao?: string | null;
+          colaborador: string;
+          credito_min?: number;
+          debito_min?: number;
+          importacao_id?: string | null;
+          nome: string;
+          referencia: string;
+          saldo_min?: number;
+          setor?: string;
+          unidade_id: string;
+        };
         Update: {
-          admissao?: string | null
-          colaborador?: string
-          credito_min?: number
-          debito_min?: number
-          importacao_id?: string | null
-          nome?: string
-          referencia?: string
-          saldo_min?: number
-          setor?: string
-          unidade_id?: string
-        }
-        Relationships: []
-      }
+          admissao?: string | null;
+          colaborador?: string;
+          credito_min?: number;
+          debito_min?: number;
+          importacao_id?: string | null;
+          nome?: string;
+          referencia?: string;
+          saldo_min?: number;
+          setor?: string;
+          unidade_id?: string;
+        };
+        Relationships: [];
+      };
       rh_importacoes: {
         Row: {
-          arquivo: string
-          criado_em: string
-          feito_por: string | null
-          id: string
-          periodo_ate: string | null
-          periodo_de: string | null
-          quantidade: number
-          relatorio: string
-          unidade_id: string
-        }
+          arquivo: string;
+          criado_em: string;
+          feito_por: string | null;
+          id: string;
+          periodo_ate: string | null;
+          periodo_de: string | null;
+          quantidade: number;
+          relatorio: string;
+          unidade_id: string;
+        };
         Insert: {
-          arquivo: string
-          criado_em?: string
-          feito_por?: string | null
-          id?: string
-          periodo_ate?: string | null
-          periodo_de?: string | null
-          quantidade?: number
-          relatorio: string
-          unidade_id: string
-        }
+          arquivo: string;
+          criado_em?: string;
+          feito_por?: string | null;
+          id?: string;
+          periodo_ate?: string | null;
+          periodo_de?: string | null;
+          quantidade?: number;
+          relatorio: string;
+          unidade_id: string;
+        };
         Update: {
-          arquivo?: string
-          criado_em?: string
-          feito_por?: string | null
-          id?: string
-          periodo_ate?: string | null
-          periodo_de?: string | null
-          quantidade?: number
-          relatorio?: string
-          unidade_id?: string
-        }
-        Relationships: []
-      }
+          arquivo?: string;
+          criado_em?: string;
+          feito_por?: string | null;
+          id?: string;
+          periodo_ate?: string | null;
+          periodo_de?: string | null;
+          quantidade?: number;
+          relatorio?: string;
+          unidade_id?: string;
+        };
+        Relationships: [];
+      };
       rh_irregularidades: {
         Row: {
-          cargo: string
-          colaborador: string
-          cpf: string
-          data: string
-          importacao_id: string | null
-          nome: string
-          setor: string
-          tipo: string
-          unidade_id: string
-          vinculo: string
-        }
+          cargo: string;
+          colaborador: string;
+          cpf: string;
+          data: string;
+          importacao_id: string | null;
+          nome: string;
+          setor: string;
+          tipo: string;
+          unidade_id: string;
+          vinculo: string;
+        };
         Insert: {
-          cargo?: string
-          colaborador: string
-          cpf?: string
-          data: string
-          importacao_id?: string | null
-          nome: string
-          setor?: string
-          tipo: string
-          unidade_id: string
-          vinculo?: string
-        }
+          cargo?: string;
+          colaborador: string;
+          cpf?: string;
+          data: string;
+          importacao_id?: string | null;
+          nome: string;
+          setor?: string;
+          tipo: string;
+          unidade_id: string;
+          vinculo?: string;
+        };
         Update: {
-          cargo?: string
-          colaborador?: string
-          cpf?: string
-          data?: string
-          importacao_id?: string | null
-          nome?: string
-          setor?: string
-          tipo?: string
-          unidade_id?: string
-          vinculo?: string
-        }
-        Relationships: []
-      }
+          cargo?: string;
+          colaborador?: string;
+          cpf?: string;
+          data?: string;
+          importacao_id?: string | null;
+          nome?: string;
+          setor?: string;
+          tipo?: string;
+          unidade_id?: string;
+          vinculo?: string;
+        };
+        Relationships: [];
+      };
       rh_ponto_dias: {
         Row: {
-          batidas: string[]
-          colaborador: string
-          data: string
-          descontos_min: number
-          diurna_min: number
-          extras100_min: number
-          extras_min: number
-          folga: boolean
-          hn_min: number
-          importacao_id: string | null
-          jornada: string
-          nome: string
-          noturna_min: number
-          observacao: string
-          trabalhou: boolean
-          unidade_id: string
-        }
+          batidas: string[];
+          colaborador: string;
+          data: string;
+          descontos_min: number;
+          diurna_min: number;
+          extras100_min: number;
+          extras_min: number;
+          folga: boolean;
+          hn_min: number;
+          importacao_id: string | null;
+          jornada: string;
+          nome: string;
+          noturna_min: number;
+          observacao: string;
+          trabalhou: boolean;
+          unidade_id: string;
+        };
         Insert: {
-          batidas?: string[]
-          colaborador: string
-          data: string
-          descontos_min?: number
-          diurna_min?: number
-          extras100_min?: number
-          extras_min?: number
-          folga?: boolean
-          hn_min?: number
-          importacao_id?: string | null
-          jornada?: string
-          nome: string
-          noturna_min?: number
-          observacao?: string
-          trabalhou?: boolean
-          unidade_id: string
-        }
+          batidas?: string[];
+          colaborador: string;
+          data: string;
+          descontos_min?: number;
+          diurna_min?: number;
+          extras100_min?: number;
+          extras_min?: number;
+          folga?: boolean;
+          hn_min?: number;
+          importacao_id?: string | null;
+          jornada?: string;
+          nome: string;
+          noturna_min?: number;
+          observacao?: string;
+          trabalhou?: boolean;
+          unidade_id: string;
+        };
         Update: {
-          batidas?: string[]
-          colaborador?: string
-          data?: string
-          descontos_min?: number
-          diurna_min?: number
-          extras100_min?: number
-          extras_min?: number
-          folga?: boolean
-          hn_min?: number
-          importacao_id?: string | null
-          jornada?: string
-          nome?: string
-          noturna_min?: number
-          observacao?: string
-          trabalhou?: boolean
-          unidade_id?: string
-        }
-        Relationships: []
-      }
+          batidas?: string[];
+          colaborador?: string;
+          data?: string;
+          descontos_min?: number;
+          diurna_min?: number;
+          extras100_min?: number;
+          extras_min?: number;
+          folga?: boolean;
+          hn_min?: number;
+          importacao_id?: string | null;
+          jornada?: string;
+          nome?: string;
+          noturna_min?: number;
+          observacao?: string;
+          trabalhou?: boolean;
+          unidade_id?: string;
+        };
+        Relationships: [];
+      };
       webposto_importacoes: {
         Row: {
-          criado_em: string
-          data_final: string
-          data_inicial: string
-          endpoint: string
-          erro: string | null
-          feito_por: string | null
-          id: string
-          quantidade: number
-          sem_unidade: number
-        }
+          criado_em: string;
+          data_final: string;
+          data_inicial: string;
+          endpoint: string;
+          erro: string | null;
+          feito_por: string | null;
+          id: string;
+          quantidade: number;
+          sem_unidade: number;
+        };
         Insert: {
-          criado_em?: string
-          data_final: string
-          data_inicial: string
-          endpoint: string
-          erro?: string | null
-          feito_por?: string | null
-          id?: string
-          quantidade?: number
-          sem_unidade?: number
-        }
+          criado_em?: string;
+          data_final: string;
+          data_inicial: string;
+          endpoint: string;
+          erro?: string | null;
+          feito_por?: string | null;
+          id?: string;
+          quantidade?: number;
+          sem_unidade?: number;
+        };
         Update: {
-          criado_em?: string
-          data_final?: string
-          data_inicial?: string
-          endpoint?: string
-          erro?: string | null
-          feito_por?: string | null
-          id?: string
-          quantidade?: number
-          sem_unidade?: number
-        }
-        Relationships: []
-      }
+          criado_em?: string;
+          data_final?: string;
+          data_inicial?: string;
+          endpoint?: string;
+          erro?: string | null;
+          feito_por?: string | null;
+          id?: string;
+          quantidade?: number;
+          sem_unidade?: number;
+        };
+        Relationships: [];
+      };
+      manutencao_drenagens: {
+        Row: {
+          aspecto_normal: boolean | null;
+          capacidade_litros: number | null;
+          cor: string | null;
+          criado_em: string;
+          criado_por: string | null;
+          dados_origem: Json | null;
+          data: string;
+          id: string;
+          medida_adotada: string | null;
+          origem_id: string | null;
+          produto: string;
+          responsavel: string | null;
+          rg_responsavel: string | null;
+          tanque: string;
+          tem_agua: boolean;
+          unidade_id: string;
+          volume_agua_litros: number | null;
+          volume_amostra_litros: number | null;
+        };
+        Insert: {
+          aspecto_normal?: boolean | null;
+          capacidade_litros?: number | null;
+          cor?: string | null;
+          criado_em?: string;
+          criado_por?: string | null;
+          dados_origem?: Json | null;
+          data: string;
+          id?: string;
+          medida_adotada?: string | null;
+          origem_id?: string | null;
+          produto: string;
+          responsavel?: string | null;
+          rg_responsavel?: string | null;
+          tanque: string;
+          tem_agua?: boolean;
+          unidade_id: string;
+          volume_agua_litros?: number | null;
+          volume_amostra_litros?: number | null;
+        };
+        Update: {
+          aspecto_normal?: boolean | null;
+          capacidade_litros?: number | null;
+          cor?: string | null;
+          criado_em?: string;
+          criado_por?: string | null;
+          dados_origem?: Json | null;
+          data?: string;
+          id?: string;
+          medida_adotada?: string | null;
+          origem_id?: string | null;
+          produto?: string;
+          responsavel?: string | null;
+          rg_responsavel?: string | null;
+          tanque?: string;
+          tem_agua?: boolean;
+          unidade_id?: string;
+          volume_agua_litros?: number | null;
+          volume_amostra_litros?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_drenagens_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      manutencao_afericoes: {
+        Row: {
+          bico: string;
+          bomba: string;
+          criado_em: string;
+          criado_por: string | null;
+          dados_origem: Json | null;
+          data: string;
+          id: string;
+          obs: string | null;
+          origem_id: string | null;
+          produto: string;
+          responsavel: string | null;
+          unidade_id: string;
+        };
+        Insert: {
+          bico: string;
+          bomba: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          dados_origem?: Json | null;
+          data: string;
+          id?: string;
+          obs?: string | null;
+          origem_id?: string | null;
+          produto: string;
+          responsavel?: string | null;
+          unidade_id: string;
+        };
+        Update: {
+          bico?: string;
+          bomba?: string;
+          criado_em?: string;
+          criado_por?: string | null;
+          dados_origem?: Json | null;
+          data?: string;
+          id?: string;
+          obs?: string | null;
+          origem_id?: string | null;
+          produto?: string;
+          responsavel?: string | null;
+          unidade_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_afericoes_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       webposto_vendas_itens: {
         Row: {
-          bico: boolean
-          cancelada: boolean
-          funcionario: string | null
-          hora: number | null
-          data_ref: string
-          empresa_codigo: number
-          importado_em: string
-          item_codigo: number
-          produto: string
-          quantidade: number
-          total: number
-          unidade_id: string | null
-          venda_codigo: number
-        }
+          bico: boolean;
+          cancelada: boolean;
+          funcionario: string | null;
+          hora: number | null;
+          data_ref: string;
+          empresa_codigo: number;
+          importado_em: string;
+          item_codigo: number;
+          produto: string;
+          quantidade: number;
+          total: number;
+          unidade_id: string | null;
+          venda_codigo: number;
+        };
         Insert: {
-          bico?: boolean
-          cancelada?: boolean
-          funcionario?: string | null
-          hora?: number | null
-          data_ref: string
-          empresa_codigo: number
-          importado_em?: string
-          item_codigo: number
-          produto: string
-          quantidade?: number
-          total?: number
-          unidade_id?: string | null
-          venda_codigo: number
-        }
+          bico?: boolean;
+          cancelada?: boolean;
+          funcionario?: string | null;
+          hora?: number | null;
+          data_ref: string;
+          empresa_codigo: number;
+          importado_em?: string;
+          item_codigo: number;
+          produto: string;
+          quantidade?: number;
+          total?: number;
+          unidade_id?: string | null;
+          venda_codigo: number;
+        };
         Update: {
-          bico?: boolean
-          cancelada?: boolean
-          funcionario?: string | null
-          hora?: number | null
-          data_ref?: string
-          empresa_codigo?: number
-          importado_em?: string
-          item_codigo?: number
-          produto?: string
-          quantidade?: number
-          total?: number
-          unidade_id?: string | null
-          venda_codigo?: number
-        }
+          bico?: boolean;
+          cancelada?: boolean;
+          funcionario?: string | null;
+          hora?: number | null;
+          data_ref?: string;
+          empresa_codigo?: number;
+          importado_em?: string;
+          item_codigo?: number;
+          produto?: string;
+          quantidade?: number;
+          total?: number;
+          unidade_id?: string | null;
+          venda_codigo?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "webposto_vendas_itens_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
+            foreignKeyName: "webposto_vendas_itens_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       webposto_registros: {
         Row: {
-          codigo: string
-          dados: Json
-          data_ref: string | null
-          empresa_codigo: number | null
-          endpoint: string
-          importado_em: string
-          unidade_id: string | null
-        }
+          codigo: string;
+          dados: Json;
+          data_ref: string | null;
+          empresa_codigo: number | null;
+          endpoint: string;
+          importado_em: string;
+          unidade_id: string | null;
+        };
         Insert: {
-          codigo: string
-          dados: Json
-          data_ref?: string | null
-          empresa_codigo?: number | null
-          endpoint: string
-          importado_em?: string
-          unidade_id?: string | null
-        }
+          codigo: string;
+          dados: Json;
+          data_ref?: string | null;
+          empresa_codigo?: number | null;
+          endpoint: string;
+          importado_em?: string;
+          unidade_id?: string | null;
+        };
         Update: {
-          codigo?: string
-          dados?: Json
-          data_ref?: string | null
-          empresa_codigo?: number | null
-          endpoint?: string
-          importado_em?: string
-          unidade_id?: string | null
-        }
+          codigo?: string;
+          dados?: Json;
+          data_ref?: string | null;
+          empresa_codigo?: number | null;
+          endpoint?: string;
+          importado_em?: string;
+          unidade_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "webposto_registros_unidade_id_fkey"
-            columns: ["unidade_id"]
-            isOneToOne: false
-            referencedRelation: "unidades"
-            referencedColumns: ["id"]
+            foreignKeyName: "webposto_registros_unidade_id_fkey";
+            columns: ["unidade_id"];
+            isOneToOne: false;
+            referencedRelation: "unidades";
+            referencedColumns: ["id"];
           },
-        ]
-      }
-    }
+        ];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
       can_access_lesson: {
-        Args: { _lesson_id: string; _user_id: string }
-        Returns: boolean
-      }
+        Args: { _lesson_id: string; _user_id: string };
+        Returns: boolean;
+      };
       has_active_enrollment: {
-        Args: { _course_id: string; _user_id: string }
-        Returns: boolean
-      }
+        Args: { _course_id: string; _user_id: string };
+        Returns: boolean;
+      };
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      lesson_course_id: { Args: { _lesson_id: string }; Returns: string }
+          _role: Database["public"]["Enums"]["app_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      lesson_course_id: { Args: { _lesson_id: string }; Returns: string };
       painel_vendas_webposto: {
-        Args: { _ate: string; _de: string }
+        Args: { _ate: string; _de: string };
         Returns: {
-          colaborador: string
-          hora: number | null
-          litros: number
-          nivel: string
-          produto: string | null
-          tipo: string | null
-          total: number
-          unidade_id: string
-          vendas: number
-        }[]
-      }
+          colaborador: string;
+          hora: number | null;
+          litros: number;
+          nivel: string;
+          produto: string | null;
+          tipo: string | null;
+          total: number;
+          unidade_id: string;
+          vendas: number;
+        }[];
+      };
       rh_gravar_banco_horas: {
         Args: {
-          _arquivo: string
-          _linhas: Json
-          _referencia: string
-          _unidade: string
-        }
-        Returns: number
-      }
+          _arquivo: string;
+          _linhas: Json;
+          _referencia: string;
+          _unidade: string;
+        };
+        Returns: number;
+      };
       rh_gravar_irregularidades: {
         Args: {
-          _arquivo: string
-          _ate: string
-          _de: string
-          _linhas: Json
-          _unidade: string
-        }
-        Returns: number
-      }
+          _arquivo: string;
+          _ate: string;
+          _de: string;
+          _linhas: Json;
+          _unidade: string;
+        };
+        Returns: number;
+      };
       rh_gravar_ponto: {
         Args: {
-          _arquivo: string
-          _ate: string
-          _de: string
-          _dias: Json
-          _unidade: string
-        }
-        Returns: number
-      }
+          _arquivo: string;
+          _ate: string;
+          _de: string;
+          _dias: Json;
+          _unidade: string;
+        };
+        Returns: number;
+      };
       webposto_consolidar_vendas: {
-        Args: { _de: string; _ate: string }
-        Returns: number
-      }
+        Args: { _de: string; _ate: string };
+        Returns: number;
+      };
       webposto_chaves: {
-        Args: never
+        Args: never;
         Returns: {
-          nome: string
-          chave: string
-        }[]
-      }
+          nome: string;
+          chave: string;
+        }[];
+      };
       rh_ticket_vendas: {
-        Args: { _ate: string; _de: string }
+        Args: { _ate: string; _de: string };
         Returns: {
-          cpf: string | null
-          cupons: number
-          nome: string
-          total: number
-          unidade_id: string
-        }[]
-      }
-      patrimonio_abrir_inventario: { Args: { _unidade: string }; Returns: string }
-      patrimonio_fechar_inventario: { Args: { _inventario: string }; Returns: Json }
+          cpf: string | null;
+          cupons: number;
+          nome: string;
+          total: number;
+          unidade_id: string;
+        }[];
+      };
+      patrimonio_abrir_inventario: { Args: { _unidade: string }; Returns: string };
+      patrimonio_fechar_inventario: { Args: { _inventario: string }; Returns: Json };
       patrimonio_ler: {
-        Args: { _inventario: string; _tombamento: number }
-        Returns: Json
-      }
+        Args: { _inventario: string; _tombamento: number };
+        Returns: Json;
+      };
       patrimonio_marcar_defeito: {
-        Args: { _bem: string; _defeito: boolean; _inventario: string }
-        Returns: undefined
-      }
-      patrimonio_pode_ver: { Args: { _unidade: string }; Returns: boolean }
+        Args: { _bem: string; _defeito: boolean; _inventario: string };
+        Returns: undefined;
+      };
+      patrimonio_pode_ver: { Args: { _unidade: string }; Returns: boolean };
       patrimonio_sem_etiqueta: {
-        Args: { _bem: string; _inventario: string }
-        Returns: undefined
-      }
+        Args: { _bem: string; _inventario: string };
+        Returns: undefined;
+      };
       patrimonio_cancelar_transferencia: {
-        Args: { _transferencia: string }
-        Returns: undefined
-      }
+        Args: { _transferencia: string };
+        Returns: undefined;
+      };
       patrimonio_empresas_do_grupo: {
-        Args: never
-        Returns: { id: string; nome: string }[]
-      }
-      patrimonio_receber: { Args: { _transferencia: string }; Returns: undefined }
+        Args: never;
+        Returns: { id: string; nome: string }[];
+      };
+      patrimonio_receber: { Args: { _transferencia: string }; Returns: undefined };
       patrimonio_serie_repetida: {
-        Args: { _exceto: string; _serie: string }
-        Returns: Json
-      }
-      patrimonio_validar: { Args: { _dados: Json }; Returns: undefined }
+        Args: { _exceto: string; _serie: string };
+        Returns: Json;
+      };
+      patrimonio_validar: { Args: { _dados: Json }; Returns: undefined };
       patrimonio_transferir: {
-        Args: { _bem: string; _destino: string; _observacao: string }
-        Returns: string
-      }
+        Args: { _bem: string; _destino: string; _observacao: string };
+        Returns: string;
+      };
       patrimonio_baixar: {
-        Args: { _bem: string; _data: string; _motivo: string; _observacao: string }
-        Returns: undefined
-      }
+        Args: { _bem: string; _data: string; _motivo: string; _observacao: string };
+        Returns: undefined;
+      };
       patrimonio_cadastrar: {
-        Args: { _dados: Json; _unidade: string }
-        Returns: Json
-      }
+        Args: { _dados: Json; _unidade: string };
+        Returns: Json;
+      };
       patrimonio_editar: {
-        Args: { _dados: Json; _id: string }
-        Returns: Json
-      }
+        Args: { _dados: Json; _id: string };
+        Returns: Json;
+      };
       patrimonio_etiquetas_impressas: {
-        Args: { _ids: string[] }
-        Returns: number
-      }
-      patrimonio_nome_usuario: { Args: never; Returns: string }
+        Args: { _ids: string[] };
+        Returns: number;
+      };
+      patrimonio_nome_usuario: { Args: never; Returns: string };
       patrimonio_pode_gerenciar: {
-        Args: { _unidade: string }
-        Returns: boolean
-      }
+        Args: { _unidade: string };
+        Returns: boolean;
+      };
       pode_gestao: {
-        Args: { _modulo: string; _unidade_id: string; _user_id: string }
-        Returns: boolean
-      }
-    }
+        Args: { _modulo: string; _unidade_id: string; _user_id: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
-      app_role: "admin" | "moderator" | "user"
-      course_status: "rascunho" | "publicado"
-      enrollment_status: "ativa" | "revogada" | "expirada"
-    }
+      app_role: "admin" | "moderator" | "user";
+      course_status: "rascunho" | "publicado";
+      enrollment_status: "ativa" | "revogada" | "expirada";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
@@ -1192,4 +1304,4 @@ export const Constants = {
       enrollment_status: ["ativa", "revogada", "expirada"],
     },
   },
-} as const
+} as const;

@@ -39,6 +39,23 @@ const extensao = (tipo) =>
             ? "xlsx"
             : "bin";
 
+// Tira de qualquer JSON os campos que parecem senha ou chave, antes de gravar.
+const SENSIVEL = /senha|password|secret|token|authentication/i;
+function limpar(corpo, tipo) {
+  if (!tipo.includes("json")) return corpo;
+  try {
+    const sem = (o) => {
+      if (Array.isArray(o)) return o.map(sem);
+      if (o && typeof o === "object")
+        return Object.fromEntries(Object.entries(o).filter(([k]) => !SENSIVEL.test(k)).map(([k, v]) => [k, sem(v)]));
+      return o;
+    };
+    return Buffer.from(JSON.stringify(sem(JSON.parse(corpo.toString("utf8")))));
+  } catch {
+    return corpo;
+  }
+}
+
 const navegador = await puppeteer.launch({
   executablePath: EDGE,
   headless: false,
@@ -74,7 +91,7 @@ function observar(pagina) {
       if (corpo.length > LIMITE || corpo.length === 0) return;
       n += 1;
       const arq = `${String(n).padStart(4, "0")}-${nome(url)}.${extensao(tipo)}`;
-      writeFileSync(join(SAIDA, "respostas", arq), corpo);
+      writeFileSync(join(SAIDA, "respostas", arq), limpar(corpo, tipo));
       registro({
         n,
         url,

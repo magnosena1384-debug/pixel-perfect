@@ -4,6 +4,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo, Painel, Seletor, SituacaoBadge, Vazio } from "@/components/gestao/ui";
+import { AfericaoBombas } from "@/components/manutencao/AfericaoBombas";
+import { DrenagemTanque } from "@/components/manutencao/DrenagemTanque";
+import { useAfericoes, useDrenagens } from "@/lib/manutencao-dados";
+import { agruparAfericoes, contarPendentes, resumoPorTanque } from "@/lib/manutencao-regras";
 import {
   antecedencia,
   CATEGORIAS_MANUTENCAO,
@@ -15,6 +19,7 @@ import {
   uid,
   ultimaInspecao,
   useColecao,
+  useUnidadeAtual,
   type Inspecao,
   type ItemManutencao,
   type Situacao,
@@ -24,8 +29,15 @@ export const Route = createFileRoute("/gestao/manutencao")({
   component: Manutencao,
 });
 
+// Abas com tela própria, ao lado das categorias de itens.
+const ABA_AFERICAO = "Aferição de bombas e bicos";
+const ABA_DRENAGEM = "Drenagem de tanque Diesel";
+
 function Manutencao() {
   const [itens, salvar] = useColecao<ItemManutencao>("manutencao", manutencaoPadrao);
+  const { unidade } = useUnidadeAtual();
+  const drenagens = useDrenagens(unidade?.id).data;
+  const afericoes = useAfericoes(unidade?.id).data;
   const [categoria, setCategoria] = useState<string>(CATEGORIAS_MANUTENCAO[0]!);
   const [registrando, setRegistrando] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
@@ -36,8 +48,13 @@ function Manutencao() {
     const prox = proximaInspecao(i);
     return { prox, s: prox ? situacao(prox, antecedencia(i.periodicidade_dias)) : "vencido" };
   };
-  const pendentes = (cat: string) =>
-    itens.filter((i) => i.categoria === cat && status(i).s !== "ok").length;
+  const pendentes = (cat: string) => {
+    if (cat === ABA_DRENAGEM)
+      return contarPendentes(resumoPorTanque(drenagens ?? []).map((t) => t.situacao));
+    if (cat === ABA_AFERICAO)
+      return contarPendentes(agruparAfericoes(afericoes ?? []).map((g) => g.situacao));
+    return itens.filter((i) => i.categoria === cat && status(i).s !== "ok").length;
+  };
   const daCategoria = itens.filter((i) => i.categoria === categoria);
 
   function adicionar(e: React.FormEvent) {
@@ -73,7 +90,7 @@ function Manutencao() {
   return (
     <div className="space-y-8">
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {CATEGORIAS_MANUTENCAO.map((c) => {
+        {[...CATEGORIAS_MANUTENCAO, ABA_AFERICAO, ABA_DRENAGEM].map((c) => {
           const n = pendentes(c);
           return (
             <button
@@ -92,127 +109,133 @@ function Manutencao() {
         })}
       </div>
 
-      <Painel titulo={categoria}>
-        {daCategoria.length === 0 ? (
-          <Vazio>Nenhum item nesta categoria.</Vazio>
-        ) : (
-          <div className="divide-y">
-            {daCategoria.map((i) => {
-              const { prox, s } = status(i);
-              const problema = i.historico[0]?.resultado === "problema";
-              return (
-                <div key={i.id} className="py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{i.nome}</p>
-                      <p className="text-sm text-muted-foreground">
-                        A cada {i.periodicidade_dias} dias · última: {formatData(ultimaInspecao(i))}{" "}
-                        · próxima: {formatData(prox)}
-                        {problema && (
-                          <span className="font-semibold text-destructive">
-                            {" "}
-                            · último resultado: problema
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SituacaoBadge situacao={s} vencimento={prox} />
-                      <Button
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setRegistrando(registrando === i.id ? null : i.id)}
-                      >
-                        Registrar inspeção
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAberto(aberto === i.id ? null : i.id)}
-                      >
-                        Histórico ({i.historico.length})
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditando(editando === i.id ? null : i.id)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          confirm("Excluir este item e seu histórico?") &&
-                          salvar((l) => l.filter((x) => x.id !== i.id))
-                        }
-                      >
-                        Excluir
-                      </Button>
-                    </div>
-                  </div>
-                  {editando === i.id && (
-                    <EditarItem
-                      item={i}
-                      onSalvar={(novo) => {
-                        salvar((l) => l.map((x) => (x.id === novo.id ? novo : x)));
-                        setEditando(null);
-                        toast.success("Item atualizado");
-                      }}
-                      onCancelar={() => setEditando(null)}
-                    />
-                  )}
-                  {registrando === i.id && (
-                    <FormInspecao onSalvar={(insp) => registrar(i.id, insp)} />
-                  )}
-                  {aberto === i.id && (
-                    <ul className="mt-3 space-y-1 rounded-2xl bg-muted p-4 text-sm">
-                      {i.historico.length === 0 && (
-                        <li className="text-muted-foreground">Sem inspeções registradas.</li>
-                      )}
-                      {i.historico.map((h, idx) => (
-                        <li key={idx}>
-                          <span className="font-semibold">{formatData(h.data)}</span> ·{" "}
-                          {h.resultado === "ok" ? (
-                            "OK"
-                          ) : (
-                            <span className="text-destructive">Problema</span>
+      {categoria === ABA_DRENAGEM ? (
+        <DrenagemTanque />
+      ) : categoria === ABA_AFERICAO ? (
+        <AfericaoBombas />
+      ) : (
+        <Painel titulo={categoria}>
+          {daCategoria.length === 0 ? (
+            <Vazio>Nenhum item nesta categoria.</Vazio>
+          ) : (
+            <div className="divide-y">
+              {daCategoria.map((i) => {
+                const { prox, s } = status(i);
+                const problema = i.historico[0]?.resultado === "problema";
+                return (
+                  <div key={i.id} className="py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{i.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          A cada {i.periodicidade_dias} dias · última:{" "}
+                          {formatData(ultimaInspecao(i))} · próxima: {formatData(prox)}
+                          {problema && (
+                            <span className="font-semibold text-destructive">
+                              {" "}
+                              · último resultado: problema
+                            </span>
                           )}
-                          {h.responsavel && ` · ${h.responsavel}`}
-                          {h.obs && ` · ${h.obs}`}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <SituacaoBadge situacao={s} vencimento={prox} />
+                        <Button
+                          size="sm"
+                          className="rounded-full"
+                          onClick={() => setRegistrando(registrando === i.id ? null : i.id)}
+                        >
+                          Registrar inspeção
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setAberto(aberto === i.id ? null : i.id)}
+                        >
+                          Histórico ({i.historico.length})
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditando(editando === i.id ? null : i.id)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            confirm("Excluir este item e seu histórico?") &&
+                            salvar((l) => l.filter((x) => x.id !== i.id))
+                          }
+                        >
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                    {editando === i.id && (
+                      <EditarItem
+                        item={i}
+                        onSalvar={(novo) => {
+                          salvar((l) => l.map((x) => (x.id === novo.id ? novo : x)));
+                          setEditando(null);
+                          toast.success("Item atualizado");
+                        }}
+                        onCancelar={() => setEditando(null)}
+                      />
+                    )}
+                    {registrando === i.id && (
+                      <FormInspecao onSalvar={(insp) => registrar(i.id, insp)} />
+                    )}
+                    {aberto === i.id && (
+                      <ul className="mt-3 space-y-1 rounded-2xl bg-muted p-4 text-sm">
+                        {i.historico.length === 0 && (
+                          <li className="text-muted-foreground">Sem inspeções registradas.</li>
+                        )}
+                        {i.historico.map((h, idx) => (
+                          <li key={idx}>
+                            <span className="font-semibold">{formatData(h.data)}</span> ·{" "}
+                            {h.resultado === "ok" ? (
+                              "OK"
+                            ) : (
+                              <span className="text-destructive">Problema</span>
+                            )}
+                            {h.responsavel && ` · ${h.responsavel}`}
+                            {h.obs && ` · ${h.obs}`}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-        <form onSubmit={adicionar} className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-4">
-          <Campo label={`Novo item em ${categoria}`} className="sm:col-span-2">
-            <Input
-              value={novo.nome}
-              onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
-              required
-            />
-          </Campo>
-          <Campo label="Periodicidade (dias)">
-            <Input
-              type="number"
-              min={1}
-              value={novo.periodicidade}
-              onChange={(e) => setNovo({ ...novo, periodicidade: e.target.value })}
-            />
-          </Campo>
-          <div className="flex items-end">
-            <Button type="submit" variant="outline" className="w-full rounded-full">
-              Adicionar item
-            </Button>
-          </div>
-        </form>
-      </Painel>
+          <form onSubmit={adicionar} className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-4">
+            <Campo label={`Novo item em ${categoria}`} className="sm:col-span-2">
+              <Input
+                value={novo.nome}
+                onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
+                required
+              />
+            </Campo>
+            <Campo label="Periodicidade (dias)">
+              <Input
+                type="number"
+                min={1}
+                value={novo.periodicidade}
+                onChange={(e) => setNovo({ ...novo, periodicidade: e.target.value })}
+              />
+            </Campo>
+            <div className="flex items-end">
+              <Button type="submit" variant="outline" className="w-full rounded-full">
+                Adicionar item
+              </Button>
+            </div>
+          </form>
+        </Painel>
+      )}
     </div>
   );
 }
